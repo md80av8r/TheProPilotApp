@@ -1,0 +1,34 @@
+# Xcode Build Files
+build/
+DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# User-specific Xcode files
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+
+# Provisioning & Certificates
+*.mobileprovision
+*.p12
+*.cer
+
+# macOS
+.DS_Store
+
+# Swift Package Manager
+.swiftpm/
+Packages/
+*.resolved
+
+# Archives & Exports
+export?/
+*.ipa
+*.zip
+
+
+
+
