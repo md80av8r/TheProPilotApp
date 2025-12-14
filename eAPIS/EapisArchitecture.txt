@@ -1,0 +1,372 @@
+# EAPIS System Architecture
+
+## Component Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        ProPilot App                              │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │                     EAPISView                             │  │
+│  │                  (Main Entry Point)                       │  │
+│  │                                                            │  │
+│  │  ┌─────────────────────┐    ┌─────────────────────┐     │  │
+│  │  │  PassengerListView  │    │  ManifestListView   │     │  │
+│  │  │  - Search           │    │  - Filter by status │     │  │
+│  │  │  - Favorites        │    │  - Quick actions    │     │  │
+│  │  └──────────┬──────────┘    └──────────┬──────────┘     │  │
+│  │             │                            │                 │  │
+│  │             ▼                            ▼                 │  │
+│  │  ┌─────────────────────┐    ┌─────────────────────┐     │  │
+│  │  │ AddEditPassenger    │    │ AddEditManifest     │     │  │
+│  │  │ View                │    │ View                │     │  │
+│  │  │ - Full form         │    │ - Flight details    │     │  │
+│  │  │ - Validation        │    │ - Passenger picker  │     │  │
+│  │  └─────────────────────┘    └──────────┬──────────┘     │  │
+│  │                                         │                 │  │
+│  │                                         ▼                 │  │
+│  │                              ┌─────────────────────┐     │  │
+│  │                              │ DocumentExportView  │     │  │
+│  │                              │ - Format selection  │     │  │
+│  │                              │ - Preview           │     │  │
+│  │                              │ - Share/Export      │     │  │
+│  │                              └─────────────────────┘     │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │              EAPISCloudKitManager                         │  │
+│  │              (Singleton Service)                          │  │
+│  │                                                            │  │
+│  │  @Published var passengers: [Passenger]                  │  │
+│  │  @Published var manifests: [EAPISManifest]               │  │
+│  │                                                            │  │
+│  │  + savePassenger(_ passenger: Passenger)                 │  │
+│  │  + deletePassenger(_ passenger: Passenger)               │  │
+│  │  + saveManifest(_ manifest: EAPISManifest)               │  │
+│  │  + deleteManifest(_ manifest: EAPISManifest)             │  │
+│  │  + performFullSync()                                      │  │
+│  └───────────────────────┬──────────────────────────────────┘  │
+│                          │                                       │
+└──────────────────────────┼───────────────────────────────────────┘
+                           │
+                           ▼
+              ┌────────────────────────┐
+              │    CloudKit (iCloud)   │
+              │                        │
+              │  Record Types:         │
+              │  - Passenger           │
+              │  - EAPISManifest       │
+              │                        │
+              │  Private Database      │
+              │  (Encrypted)           │
+              └────────────────────────┘
+                           │
+                           ▼
+              ┌────────────────────────┐
+              │   App Group Cache      │
+              │   (Offline Access)     │
+              │                        │
+              │  group.com.propilot    │
+              │  /eapis_cache.json     │
+              └────────────────────────┘
+```
+
+## Data Flow
+
+### Creating a Passenger
+```
+User Input → AddEditPassengerView → EAPISCloudKitManager
+                                              ↓
+                                    CloudKit.save(record)
+                                              ↓
+                                    Update @Published passengers
+                                              ↓
+                                    Save to local cache
+                                              ↓
+                                    UI automatically updates
+```
+
+### Creating a Manifest
+```
+User selects passengers → PassengerPickerView
+                                   ↓
+User enters flight info → AddEditManifestView
+                                   ↓
+Validation checks → EAPISCloudKitManager.saveManifest()
+                                   ↓
+                         CloudKit.save(record)
+                                   ↓
+                    Update @Published manifests
+                                   ↓
+                         UI refreshes
+```
+
+### Generating Documents
+```
+Manifest + Passengers → DocumentExportView
+                              ↓
+         Select format (GENDEC, Canada, Mexico, etc.)
+                              ↓
+         EAPISDocumentGenerator.generate()
+                              ↓
+         Formatted text document
+                              ↓
+         Share/Copy/Email/Save
+```
+
+## Model Relationships
+
+```
+┌──────────────────┐          ┌──────────────────┐
+│    Passenger     │          │   EAPISManifest  │
+├──────────────────┤          ├──────────────────┤
+│ id: String       │◄────┐    │ id: String       │
+│ firstName        │     │    │ flightNumber     │
+│ lastName         │     │    │ aircraftReg      │
+│ passportNumber   │     └────│ passengerIDs[]   │
+│ nationality      │          │ departureAirport │
+│ ...              │          │ arrivalAirport   │
+└──────────────────┘          │ pilotInCommand   │
+                              │ status           │
+        ┌────────────────┐    │ ...              │
+        │   Trip         │    └──────────────────┘
+        │  (Optional)    │            ▲
+        ├────────────────┤            │
+        │ id: String     │◄───────────┘
+        │ flightNumber   │      tripID (optional)
+        │ origin         │
+        │ destination    │
+        │ ...            │
+        └────────────────┘
+```
+
+## CloudKit Schema
+
+### Passenger Record
+```
+CloudKit Container: iCloud.com.propilot.app
+Database: Private
+Record Type: Passenger
+
+Fields:
+├── firstName (String)
+├── middleName (String)
+├── lastName (String)
+├── dateOfBirth (Date/Time)
+├── gender (String: M/F/X)
+├── nationality (String: ISO country code)
+├── passportNumber (String)
+├── passportIssuingCountry (String: ISO)
+├── passportExpirationDate (Date/Time)
+├── address fields (String)
+├── contact fields (String)
+├── optional fields (Int64/String)
+└── metadata (Date/Time, Int64)
+```
+
+### EAPISManifest Record
+```
+CloudKit Container: iCloud.com.propilot.app
+Database: Private
+Record Type: EAPISManifest
+
+Fields:
+├── tripID (String, optional)
+├── flight info (String)
+├── route info (String, Date/Time)
+├── crew info (String)
+├── passengerIDs (String: comma-separated)
+├── purpose fields (String)
+├── customs fields (String, Int64)
+├── status (String: Draft/Ready/Filed/Archived)
+├── filing info (Date/Time, String)
+└── metadata (Date/Time, String)
+```
+
+## File Structure
+
+```
+EAPIS Module
+├── Models
+│   ├── EAPISPassenger.swift
+│   └── EAPISManifest.swift
+│
+├── Managers
+│   ├── EAPISCloudKitManager.swift
+│   └── EAPISDocumentGenerator.swift
+│
+├── Views
+│   ├── EAPISView.swift (Main)
+│   ├── PassengerListView
+│   ├── AddEditPassengerView.swift
+│   ├── PassengerDetailView
+│   ├── ManifestListView
+│   ├── AddEditManifestView.swift
+│   ├── ManifestDetailView
+│   └── DocumentExportView.swift
+│
+└── Documentation
+    ├── README_EAPIS.md
+    ├── EAPIS_INTEGRATION_GUIDE.md
+    └── ARCHITECTURE.txt (this file)
+```
+
+## Integration Points with ProPilot
+
+### Current Integration
+```
+ProPilot App
+└── New Tab: EAPISView
+    └── Standalone passenger & manifest management
+```
+
+### Optional Future Integration
+```
+ProPilot App
+├── Trip Detail View
+│   └── "Create EAPIS Manifest" button
+│       └── Pre-fills: tripID, flightNumber, route, dates
+│
+├── Aircraft Settings
+│   └── Pull: registration, type
+│
+├── Pilot Profile
+│   └── Pull: name, license number
+│
+└── Watch App (potential)
+    └── Quick passenger count
+    └── Manifest status check
+```
+
+## State Management
+
+### Published Properties (Observable)
+```swift
+EAPISCloudKitManager (Singleton)
+├── @Published var passengers: [Passenger]
+├── @Published var manifests: [EAPISManifest]
+├── @Published var isSyncing: Bool
+├── @Published var lastSyncDate: Date?
+└── @Published var syncError: String?
+```
+
+All views observe these published properties and automatically update when data changes.
+
+### Data Persistence
+```
+1. CloudKit (Primary, cloud-synced)
+   └── Private database
+       └── Encrypted at rest
+
+2. App Group Cache (Secondary, local)
+   └── /group.com.propilot.app/eapis_cache.json
+       └── For offline access
+       └── Refreshed after each sync
+```
+
+## Document Generation Pipeline
+
+```
+Input: Manifest + Passengers + Format
+       ↓
+EAPISDocumentGenerator
+       ↓
+Switch on format:
+├── .gendec → generateGENDEC()
+├── .canada → generateCanadaManifest()
+├── .mexico → generateMexicoManifest()
+├── .caribbean → generateCaribbeanManifest()
+└── .europe → generateEuropeManifest()
+       ↓
+Formatted String Output
+       ↓
+DocumentExportView
+       ↓
+User Actions:
+├── Share (UIActivityViewController)
+├── Copy (UIPasteboard)
+├── Save (File export)
+└── Email (Share with mailto)
+```
+
+## Performance Considerations
+
+### CloudKit Operations
+- Async/await throughout (no blocking)
+- Batch operations for multiple records
+- Cursor-based pagination for large datasets
+- Local cache to minimize network calls
+
+### Memory Management
+- ObservableObject for reactive updates
+- @StateObject lifecycle management
+- Proper cleanup in deinit (if needed)
+- Efficient array filtering (computed properties)
+
+### Offline Support
+- Full functionality with cached data
+- Queue operations for when online
+- Conflict resolution on sync
+- User feedback for sync status
+
+## Security & Privacy
+
+### Data Protection
+```
+CloudKit Private Database
+└── User must be signed into iCloud
+    └── Data encrypted in transit (TLS)
+        └── Data encrypted at rest
+            └── Only accessible by user's devices
+```
+
+### Sensitive Information
+- Passport numbers: Never in list views
+- Personal data: CloudKit private only
+- No third-party services
+- No analytics or tracking
+- User controls all data deletion
+
+## Testing Strategy
+
+### Unit Tests (Potential)
+- Passenger validation logic
+- Manifest validation logic
+- Document generation output
+- CloudKit conversion methods
+
+### Integration Tests
+- CloudKit save/fetch operations
+- Sync conflict resolution
+- Cache persistence
+- Document export functionality
+
+### Manual Testing Checklist
+- [ ] Add/edit/delete passengers
+- [ ] Add/edit/delete manifests
+- [ ] Generate all document formats
+- [ ] Test offline mode
+- [ ] Verify CloudKit sync
+- [ ] Test on multiple devices
+- [ ] Export documents
+- [ ] Share functionality
+
+---
+
+## Quick Reference
+
+**Entry Point:** `EAPISView.swift`
+
+**Data Manager:** `EAPISCloudKitManager.shared`
+
+**CloudKit Container:** `iCloud.com.propilot.app`
+
+**App Group:** `group.com.propilot.app`
+
+**Document Formats:** 5 (GENDEC, Canada, Mexico, Caribbean, Europe)
+
+**Total Lines:** ~2,500
+
+**iOS Version:** 16.0+
+
+**Dependencies:** SwiftUI, CloudKit, Foundation

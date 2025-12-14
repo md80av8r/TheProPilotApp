@@ -1,0 +1,1765 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		97006EA42EEB58AF00319FF0 /* OffDutyStatusManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97006EA22EEB563F00319FF0 /* OffDutyStatusManager.swift */; };
+		9703AF7F2EAEE0C5002E9E26 /* DocumentCropProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF7E2EAEE0C5002E9E26 /* DocumentCropProcessor.swift */; };
+		9703AF812EAEE0D3002E9E26 /* DocumentCropSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF802EAEE0D3002E9E26 /* DocumentCropSettingsView.swift */; };
+		9703AF832EAFC6CD002E9E26 /* DocumentDeletionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF822EAFC6CD002E9E26 /* DocumentDeletionManager.swift */; };
+		9703AF852EAFC758002E9E26 /* TripDocumentListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF842EAFC758002E9E26 /* TripDocumentListView.swift */; };
+		9703AF872EAFEE74002E9E26 /* PilotNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF862EAFEE74002E9E26 /* PilotNote.swift */; };
+		9703AF892EAFEE8E002E9E26 /* ProPilotDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF882EAFEE8E002E9E26 /* ProPilotDocument.swift */; };
+		9703AF8B2EAFEE9F002E9E26 /* FlightCalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF8A2EAFEE9F002E9E26 /* FlightCalculatorView.swift */; };
+		9703AF8D2EAFEEAF002E9E26 /* CurrencyRate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF8C2EAFEEAF002E9E26 /* CurrencyRate.swift */; };
+		9703AF8F2EAFEFC7002E9E26 /* FlightOperationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF8E2EAFEFC7002E9E26 /* FlightOperationsView.swift */; };
+		9703AF932EB0606B002E9E26 /* LegsExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF922EB0606B002E9E26 /* LegsExportView.swift */; };
+		9703AF952EB07357002E9E26 /* FlightLegsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF942EB07357002E9E26 /* FlightLegsView.swift */; };
+		97046B122ECD344A0066DC9F /* GradientGlowButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97046B112ECD344A0066DC9F /* GradientGlowButton.swift */; };
+		97046B162ECD4D880066DC9F /* KDTW_KCLE.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 97046B152ECD4D880066DC9F /* KDTW_KCLE.gpx */; };
+		970C5DA32E1F109800B6E48F /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 970C5DA22E1F108C00B6E48F /* README.md */; };
+		97111C4B2E3A4F1300850DA5 /* ChainRouteDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97111C4A2E3A4F1300850DA5 /* ChainRouteDisplay.swift */; };
+		97126E042EEDC8E000D6D150 /* WATCH_LEG_HISTORY_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 97126E032EEDC8E000D6D150 /* WATCH_LEG_HISTORY_FIX.md */; };
+		97126E062EEDC9B800D6D150 /* LEG_ADVANCEMENT_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 97126E052EEDC9B800D6D150 /* LEG_ADVANCEMENT_FIX.md */; };
+		97126E082EEDCBA100D6D150 /* ADD_LEG_UI_REFRESH_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 97126E072EEDCBA100D6D150 /* ADD_LEG_UI_REFRESH_FIX.md */; };
+		97126E0A2EEDCFFA00D6D150 /* ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 97126E092EEDCFFA00D6D150 /* ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md */; };
+		97126E0C2EEE062C00D6D150 /* Untitled 2.txt in Resources */ = {isa = PBXBuildFile; fileRef = 97126E0B2EEE062500D6D150 /* Untitled 2.txt */; };
+		971461092EE4809F00751961 /* TripTimelineGanttChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971461082EE4809F00751961 /* TripTimelineGanttChart.swift */; };
+		9714610B2EE4AB4900751961 /* ICalDiagnosticView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9714610A2EE4AB4900751961 /* ICalDiagnosticView.swift */; };
+		9714610D2EE4AFD100751961 /* ParsedFlightData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9714610C2EE4AFD100751961 /* ParsedFlightData.swift */; };
+		971974EA2ED49D8500CC1511 /* NotificationNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D75BB22E50F2BE00EF6DB3 /* NotificationNames.swift */; };
+		971975392ED76B9900CC1511 /* DocumentEmailConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971975382ED76B9900CC1511 /* DocumentEmailConfig.swift */; };
+		9719753D2ED76D0D00CC1511 /* DocumentEmailData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719753C2ED76D0D00CC1511 /* DocumentEmailData.swift */; };
+		9719753F2ED76DBD00CC1511 /* TripType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719753E2ED76DBD00CC1511 /* TripType.swift */; };
+		971975402ED772CF00CC1511 /* TripType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719753E2ED76DBD00CC1511 /* TripType.swift */; };
+		972D01932ECBF2850064BD51 /* TimeFormattingUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 972D01922ECBF2840064BD51 /* TimeFormattingUtilities.swift */; };
+		9738A27A2EE8D78300C6CA28 /* DUTY_TIMER_TRIP_INTEGRATION.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A2792EE8D78300C6CA28 /* DUTY_TIMER_TRIP_INTEGRATION.md */; };
+		9738A27C2EE8D7A400C6CA28 /* DUTY_TIME_QUICK_START.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A27B2EE8D7A400C6CA28 /* DUTY_TIME_QUICK_START.md */; };
+		9738A27E2EE8D7EB00C6CA28 /* DUTY_TIME_EXAMPLES.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A27D2EE8D7EB00C6CA28 /* DUTY_TIME_EXAMPLES.md */; };
+		9738A2802EE8D82600C6CA28 /* IMPLEMENTATION_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A27F2EE8D82600C6CA28 /* IMPLEMENTATION_SUMMARY.md */; };
+		9738A2822EE8D87A00C6CA28 /* DUTY_TIME_VISUAL_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A2812EE8D87A00C6CA28 /* DUTY_TIME_VISUAL_GUIDE.md */; };
+		9738A2842EE8DCC200C6CA28 /* PER_FDP_LIMIT_EXPLAINED.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A2832EE8DCC200C6CA28 /* PER_FDP_LIMIT_EXPLAINED.md */; };
+		9738A2862EE8DDDC00C6CA28 /* CARGO_OPS_CHANGES.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A2852EE8DDDC00C6CA28 /* CARGO_OPS_CHANGES.md */; };
+		9738A2882EE8DFB800C6CA28 /* 16_HOUR_DUTY_TRACKING.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A2872EE8DFB800C6CA28 /* 16_HOUR_DUTY_TRACKING.md */; };
+		9738A28A2EE8E35200C6CA28 /* RestStatusManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9738A2892EE8E35200C6CA28 /* RestStatusManager.swift */; };
+		9738A28E2EE8E3CE00C6CA28 /* REST_INTEGRATION_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A28D2EE8E3CE00C6CA28 /* REST_INTEGRATION_GUIDE.md */; };
+		9738A2922EE8FC9B00C6CA28 /* LEG_DATE_ENHANCEMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A2912EE8FC9B00C6CA28 /* LEG_DATE_ENHANCEMENTS.md */; };
+		973AFA0B2EE0954900CDF4AB /* RosterToTripHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973AFA0A2EE0954900CDF4AB /* RosterToTripHelper.swift */; };
+		973AFA0D2EE097BF00CDF4AB /* GMTClockSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973AFA0C2EE097BF00CDF4AB /* GMTClockSettings.swift */; };
+		973AFA0F2EE097BF00CDF4AB /* GMTClockPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973AFA0E2EE097BF00CDF4AB /* GMTClockPill.swift */; };
+		973AFA112EE097BF00CDF4AB /* GMTClockOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973AFA102EE097BF00CDF4AB /* GMTClockOverlay.swift */; };
+		973AFA132EE097BF00CDF4AB /* ClocksAndTimersSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973AFA122EE097BF00CDF4AB /* ClocksAndTimersSettingsView.swift */; };
+		97418DCC2EE2390900560D71 /* CloudAirport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97418DCB2EE238FF00560D71 /* CloudAirport.swift */; };
+		97449E842EDA3DD600CB038A /* PerDiemSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97449E832EDA3DD600CB038A /* PerDiemSettingsView.swift */; };
+		97449E862EDA3E3200CB038A /* FAR117SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97449E852EDA3E3200CB038A /* FAR117SettingsView.swift */; };
+		97449E882EDA3E4700CB038A /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97449E872EDA3E4700CB038A /* NotificationSettingsView.swift */; };
+		9747C2522ECC0DBE00953014 /* GPXTestPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9747C2512ECC0DBE00953014 /* GPXTestPlayer.swift */; };
+		9747C2542ECC0DCA00953014 /* GPXTestIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9747C2532ECC0DCA00953014 /* GPXTestIntegration.swift */; };
+		974ED3532E2BC4B200901DA7 /* PilotActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 974ED3522E2BC4B200901DA7 /* PilotActivityManager.swift */; };
+		974ED36C2E2BE20B00901DA7 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 974ED36B2E2BE20B00901DA7 /* AppConstants.swift */; };
+		974ED3A52E2C3A7600901DA7 /* ProPilotApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 974ED3A42E2C3A7600901DA7 /* ProPilotApp.swift */; };
+		975493892E92E68700C80B17 /* CrewContactManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975493882E92E68700C80B17 /* CrewContactManager.swift */; };
+		9754938B2E93652800C80B17 /* CrewImportHelperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9754938A2E93652800C80B17 /* CrewImportHelperView.swift */; };
+		975582302EE8B80C0009D2CF /* DutyLimitSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9755822F2EE8B80C0009D2CF /* DutyLimitSettings.swift */; };
+		975582322EE8B88A0009D2CF /* DutyLimitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975582312EE8B88A0009D2CF /* DutyLimitSettingsView.swift */; };
+		9756B82E2E95CC0800F59538 /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9756B82D2E95CC0800F59538 /* TabManager.swift */; };
+		9756B8302E95E92400F59538 /* WeatherData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9756B82F2E95E92400F59538 /* WeatherData.swift */; };
+		975C23C32ECD4F2D0092249D /* YIP_DTW.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 976A7D592E8C7B3D00E2676E /* YIP_DTW.gpx */; };
+		975C23D02ECD70F50092249D /* NOCSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C23CF2ECD70F50092249D /* NOCSettingsStore.swift */; };
+		975C23D22ECDF6460092249D /* NOCRosterGanttView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C23D12ECDF6460092249D /* NOCRosterGanttView.swift */; };
+		975C23D42ECE00390092249D /* NOCWebPortalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C23D32ECE00390092249D /* NOCWebPortalView.swift */; };
+		975C23D62ECE00810092249D /* NOC_WEBVIEW_INTEGRATION.md in Resources */ = {isa = PBXBuildFile; fileRef = 975C23D52ECE00810092249D /* NOC_WEBVIEW_INTEGRATION.md */; };
+		975C23D82ECE00A40092249D /* NOCQuickAccessButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C23D72ECE00A40092249D /* NOCQuickAccessButton.swift */; };
+		975C23DA2ECE00F70092249D /* NOC_WEBVIEW_QUICK_START.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C23D92ECE00F70092249D /* NOC_WEBVIEW_QUICK_START.swift */; };
+		975C6D8E2E5F20C000830C35 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C6D8D2E5F20C000830C35 /* DocumentPicker.swift */; };
+		975C6D902E5F250A00830C35 /* FlightDataField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C6D8F2E5F250A00830C35 /* FlightDataField.swift */; };
+		976052912ECA105B007CB9C5 /* CrewContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052902ECA105B007CB9C5 /* CrewContactsView.swift */; };
+		976052932ECA112A007CB9C5 /* AllLegsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052922ECA112A007CB9C5 /* AllLegsView.swift */; };
+		976052952ECA11BF007CB9C5 /* AirlineConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052942ECA11BF007CB9C5 /* AirlineConfigurationView.swift */; };
+		976052972ECA124C007CB9C5 /* ScannerEmailConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052962ECA124C007CB9C5 /* ScannerEmailConfigView.swift */; };
+		976052992ECA59E1007CB9C5 /* ActiveTripBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052982ECA59E1007CB9C5 /* ActiveTripBannerView.swift */; };
+		9760529B2ECA6C02007CB9C5 /* BottomSheetTripsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9760529A2ECA6C02007CB9C5 /* BottomSheetTripsView.swift */; };
+		9760529D2ECA81E6007CB9C5 /* CloudKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9760529C2ECA81E6007CB9C5 /* CloudKitManager.swift */; };
+		976052A32ECAA448007CB9C5 /* TripCompletionSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052A22ECAA448007CB9C5 /* TripCompletionSummaryView.swift */; };
+		976052A52ECAA46B007CB9C5 /* WatchPhoneLegSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052A42ECAA46B007CB9C5 /* WatchPhoneLegSyncManager.swift */; };
+		976052B62ECAB1C4007CB9C5 /* WatchTripSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052A82ECAA5E9007CB9C5 /* WatchTripSummaryView.swift */; };
+		976052BA2ECAB442007CB9C5 /* WatchConnectivityStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052B92ECAB442007CB9C5 /* WatchConnectivityStatusView.swift */; };
+		976052CB2ECB5F4E007CB9C5 /* PHONE_WATCH_TIME_PARSING_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 976052CA2ECB5F4E007CB9C5 /* PHONE_WATCH_TIME_PARSING_FIX.md */; };
+		976052D32ECB635B007CB9C5 /* WATCH_CONNECTIVITY_INTEGRATION_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 976052D22ECB635B007CB9C5 /* WATCH_CONNECTIVITY_INTEGRATION_GUIDE.md */; };
+		976052DD2ECB9AF3007CB9C5 /* TranslucentTimePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052DC2ECB9AF3007CB9C5 /* TranslucentTimePicker.swift */; };
+		9762A6A02EDE7EC800764AFC /* NOCRevisionAlertBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9762A69F2EDE7EC800764AFC /* NOCRevisionAlertBanner.swift */; };
+		9762A6B12EE07F0800764AFC /* ProPilotWidgetsExtension.appex in CopyFiles */ = {isa = PBXBuildFile; fileRef = 97655AF42E50BB29007F4CDB /* ProPilotWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9763B30C2EE38465003865D6 /* AreaGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9763B30B2EE38465003865D6 /* AreaGuideView.swift */; };
+		9763CEDA2E52B5C800344E7D /* ProPilotWatchApp Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 97D75B7E2E50C15F00EF6DB3 /* ProPilotWatchApp Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9763CEDE2E54D34D00344E7D /* DocumentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9763CEDD2E54D34D00344E7D /* DocumentStore.swift */; };
+		97690F482EA45DDA00FA9775 /* TripDocumentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97690F472EA45DDA00FA9775 /* TripDocumentManager.swift */; };
+		97690F4A2EA45F2600FA9775 /* AircraftHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97690F492EA45F2600FA9775 /* AircraftHistoryManager.swift */; };
+		97690F4E2EA5A3CC00FA9775 /* TimeRoundingUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97690F4D2EA5A3CC00FA9775 /* TimeRoundingUtility.swift */; };
+		97690F4F2EA5A6C800FA9775 /* TimeRoundingUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97690F4D2EA5A3CC00FA9775 /* TimeRoundingUtility.swift */; };
+		97690F522EA5A82600FA9775 /* UserDefaults+AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D69EBD2E3D735600FFF195 /* UserDefaults+AppGroup.swift */; };
+		97698C132EC82EF8003523F6 /* TimerSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97698C122EC82EF8003523F6 /* TimerSettingsView.swift */; };
+		97698C152EC82F4F003523F6 /* FlexibleTimerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97698C142EC82F4F003523F6 /* FlexibleTimerManager.swift */; };
+		97698C172EC833C0003523F6 /* TripDateUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97698C162EC833C0003523F6 /* TripDateUtility.swift */; };
+		97698C192EC8356D003523F6 /* TimeDisplayUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97698C182EC8356D003523F6 /* TimeDisplayUtility.swift */; };
+		97698C1A2EC83A55003523F6 /* AutoTimeSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A4F7A62E83878E00EBE49E /* AutoTimeSettings.swift */; };
+		97698C1B2EC83A6F003523F6 /* TimeDisplayUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97698C182EC8356D003523F6 /* TimeDisplayUtility.swift */; };
+		976A7D5D2E8D658600E2676E /* TripCreationSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976A7D5C2E8D658600E2676E /* TripCreationSettings.swift */; };
+		976A7D5F2E8D661300E2676E /* FlightLeg.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BEA2E1E9B9F0040362B /* FlightLeg.swift */; };
+		976A7D602E8D669C00E2676E /* CrewMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BDD2E1E9B9F0040362B /* CrewMember.swift */; };
+		976BC3F82EDCBE4100056B92 /* DismissedRosterItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976BC3F72EDCBE4000056B92 /* DismissedRosterItem.swift */; };
+		976BC3FA2EDCBE5500056B92 /* DismissedRosterItemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976BC3F92EDCBE5500056B92 /* DismissedRosterItemsView.swift */; };
+		976BC3FC2EDCBE6400056B92 /* SwipeableRosterItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976BC3FB2EDCBE6400056B92 /* SwipeableRosterItemRow.swift */; };
+		976D546A2EDA894700A7D60C /* iPhoneWatchSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976D54692EDA894700A7D60C /* iPhoneWatchSettingsView.swift */; };
+		976D546E2EDB452300A7D60C /* TripGenerationSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976D546D2EDB452300A7D60C /* TripGenerationSettings.swift */; };
+		976D54702EDB457C00A7D60C /* TripGenerationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976D546F2EDB457C00A7D60C /* TripGenerationService.swift */; };
+		976D54722EDB45DB00A7D60C /* TripGenerationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976D54712EDB45DB00A7D60C /* TripGenerationSettingsView.swift */; };
+		976D54732EDB4B7800A7D60C /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7C022E1E9B9F0040362B /* Trip.swift */; };
+		976D54752EDB513C00A7D60C /* TripGenerationSettingsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976D54742EDB513C00A7D60C /* TripGenerationSettingsRow.swift */; };
+		976D54772EDB54EE00A7D60C /* TripGenerationAlertModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976D54762EDB54EE00A7D60C /* TripGenerationAlertModifier.swift */; };
+		976F1C802E64A23A00F15444 /* UnifiedLogbookManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976F1C7F2E64A23A00F15444 /* UnifiedLogbookManager.swift */; };
+		976F1C822E64A2ED00F15444 /* SimpleElectronicLogbookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976F1C812E64A2ED00F15444 /* SimpleElectronicLogbookView.swift */; };
+		977056FC2E5CCA54000C607C /* DataManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977056FB2E5CCA54000C607C /* DataManagementView.swift */; };
+		9770689D2E64D39D005A674D /* LogbookUIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9770689C2E64D385005A674D /* LogbookUIComponents.swift */; };
+		97747C8B2ED7B19800126113 /* TripSharingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747C8A2ED7B19800126113 /* TripSharingManager.swift */; };
+		97747C8D2ED7D3CB00126113 /* BackupFileHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747C8C2ED7D3CB00126113 /* BackupFileHandler.swift */; };
+		97747CD92ED8BBE900126113 /* DutyTimerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747CD82ED8BBE900126113 /* DutyTimerManager.swift */; };
+		97747CDB2ED8C56E00126113 /* AutoTimeLoggingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747CDA2ED8C56E00126113 /* AutoTimeLoggingSettingsView.swift */; };
+		97747CDD2ED8C8FB00126113 /* DataBackupSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747CDC2ED8C8FB00126113 /* DataBackupSettingsView.swift */; };
+		97747CE12ED8D68E00126113 /* AppleWatchStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747CE02ED8D68E00126113 /* AppleWatchStatusView.swift */; };
+		97747CE32ED8DDDD00126113 /* ClocksAndTimersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747CE22ED8DDDD00126113 /* ClocksAndTimersView.swift */; };
+		97747CE92ED8E73800126113 /* ForeFlightStyleTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747CE82ED8E73800126113 /* ForeFlightStyleTimerView.swift */; };
+		97747CED2ED9137B00126113 /* FlexibleTimerView 2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747CEC2ED9137B00126113 /* FlexibleTimerView 2.swift */; };
+		97747CEF2ED9318600126113 /* ElectronicLogbookViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747CEE2ED9318600126113 /* ElectronicLogbookViewer.swift */; };
+		977992EC2EC8D76F00A8CA39 /* SnappingScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977992EB2EC8D76F00A8CA39 /* SnappingScrollView.swift */; };
+		977992F02EC8DA0500A8CA39 /* ENHANCED_BANNER_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 977992EF2EC8DA0500A8CA39 /* ENHANCED_BANNER_SUMMARY.md */; };
+		977992F22EC8DB2900A8CA39 /* BANNER_UPDATES_COMPLETE.md in Resources */ = {isa = PBXBuildFile; fileRef = 977992F12EC8DB2900A8CA39 /* BANNER_UPDATES_COMPLETE.md */; };
+		977992F42EC91A7C00A8CA39 /* SmartTimeEntryField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977992F32EC91A7C00A8CA39 /* SmartTimeEntryField.swift */; };
+		977C64EC2E81A663002B9552 /* AppBackupData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C64EB2E81A663002B9552 /* AppBackupData.swift */; };
+		977C64EE2E81ABAA002B9552 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C64ED2E81ABAA002B9552 /* ShareSheet.swift */; };
+		977C7C052E1E9B9F0040362B /* AircraftManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BD62E1E9B9F0040362B /* AircraftManagementView.swift */; };
+		977C7C072E1E9B9F0040362B /* NOCSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BF82E1E9B9F0040362B /* NOCSettingsView.swift */; };
+		977C7C082E1E9B9F0040362B /* ScheduleCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BFF2E1E9B9F0040362B /* ScheduleCalendarView.swift */; };
+		977C7C092E1E9B9F0040362B /* CrewMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BDD2E1E9B9F0040362B /* CrewMember.swift */; };
+		977C7C0A2E1E9B9F0040362B /* LegsReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BF12E1E9B9F0040362B /* LegsReportView.swift */; };
+		977C7C0B2E1E9B9F0040362B /* LogbookTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BF52E1E9B9F0040362B /* LogbookTheme.swift */; };
+		977C7C0C2E1E9B9F0040362B /* FlightAwareCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BE52E1E9B9F0040362B /* FlightAwareCredentials.swift */; };
+		977C7C0E2E1E9B9F0040362B /* HorizontalLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BEF2E1E9B9F0040362B /* HorizontalLogView.swift */; };
+		977C7C0F2E1E9B9F0040362B /* NOCWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BF92E1E9B9F0040362B /* NOCWebView.swift */; };
+		977C7C102E1E9B9F0040362B /* SimpleGPSSignalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7C012E1E9B9F0040362B /* SimpleGPSSignalView.swift */; };
+		977C7C112E1E9B9F0040362B /* LandscapeDataEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BF02E1E9B9F0040362B /* LandscapeDataEntryView.swift */; };
+		977C7C122E1E9B9F0040362B /* PerDiemTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BFB2E1E9B9F0040362B /* PerDiemTabView.swift */; };
+		977C7C132E1E9B9F0040362B /* EnhancedICAOTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BE22E1E9B9F0040362B /* EnhancedICAOTextField.swift */; };
+		977C7C142E1E9B9F0040362B /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BED2E1E9B9F0040362B /* Helpers.swift */; };
+		977C7C152E1E9B9F0040362B /* ClocksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BDB2E1E9B9F0040362B /* ClocksView.swift */; };
+		977C7C162E1E9B9F0040362B /* HomeBaseConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BEE2E1E9B9F0040362B /* HomeBaseConfigurationView.swift */; };
+		977C7C182E1E9B9F0040362B /* FlightLeg.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BEA2E1E9B9F0040362B /* FlightLeg.swift */; };
+		977C7C192E1E9B9F0040362B /* LogbookView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BF42E1E9B9F0040362B /* LogbookView.swift */; };
+		977C7C1A2E1E9B9F0040362B /* ForeFlightLogBookRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BEC2E1E9B9F0040362B /* ForeFlightLogBookRow.swift */; };
+		977C7C1B2E1E9B9F0040362B /* PerDiemSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BFA2E1E9B9F0040362B /* PerDiemSummaryView.swift */; };
+		977C7C1D2E1E9B9F0040362B /* FlightAwareManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BE72E1E9B9F0040362B /* FlightAwareManager.swift */; };
+		977C7C1E2E1E9B9F0040362B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7C002E1E9B9F0040362B /* SettingsView.swift */; };
+		977C7C1F2E1E9B9F0040362B /* AirlineSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BD82E1E9B9F0040362B /* AirlineSettingsView.swift */; };
+		977C7C212E1E9B9F0040362B /* AutoCompleteTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BDA2E1E9B9F0040362B /* AutoCompleteTestView.swift */; };
+		977C7C222E1E9B9F0040362B /* LogPageTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BF62E1E9B9F0040362B /* LogPageTableView.swift */; };
+		977C7C232E1E9B9F0040362B /* RosterModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BFD2E1E9B9F0040362B /* RosterModels.swift */; };
+		977C7C242E1E9B9F0040362B /* DataEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BDF2E1E9B9F0040362B /* DataEntryView.swift */; };
+		977C7C272E1E9B9F0040362B /* AppMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BD92E1E9B9F0040362B /* AppMonitor.swift */; };
+		977C7C282E1E9B9F0040362B /* FlightAwareViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BE92E1E9B9F0040362B /* FlightAwareViews.swift */; };
+		977C7C292E1E9B9F0040362B /* LogBookStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BF32E1E9B9F0040362B /* LogBookStore.swift */; };
+		977C7C2B2E1E9B9F0040362B /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7C022E1E9B9F0040362B /* Trip.swift */; };
+		977C7C2C2E1E9B9F0040362B /* FlightTrackingUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BEB2E1E9B9F0040362B /* FlightTrackingUtility.swift */; };
+		977C7C2D2E1E9B9F0040362B /* AirlineSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BD72E1E9B9F0040362B /* AirlineSettings.swift */; };
+		977C7C2E2E1E9B9F0040362B /* FlightAwareModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BE82E1E9B9F0040362B /* FlightAwareModels.swift */; };
+		977C7C2F2E1E9B9F0040362B /* EmailSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BE02E1E9B9F0040362B /* EmailSettings.swift */; };
+		977C7C302E1E9B9F0040362B /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BE42E1E9B9F0040362B /* ExportView.swift */; };
+		977C7C312E1E9B9F0040362B /* FlightAwareIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BE62E1E9B9F0040362B /* FlightAwareIntegration.swift */; };
+		977D00762EEA5C560036EAD0 /* AircraftLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977D00752EEA5C560036EAD0 /* AircraftLibraryView.swift */; };
+		977D00772EEA5C560036EAD0 /* AircraftLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977D00742EEA5C560036EAD0 /* AircraftLibraryStore.swift */; };
+		977D00782EEA5C560036EAD0 /* AircraftDefinition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977D00732EEA5C560036EAD0 /* AircraftDefinition.swift */; };
+		977D007B2EEA63180036EAD0 /* UnifiedAircraftDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977D00792EEA63180036EAD0 /* UnifiedAircraftDatabase.swift */; };
+		977D007C2EEA63180036EAD0 /* UnifiedAircraftView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977D007A2EEA63180036EAD0 /* UnifiedAircraftView.swift */; };
+		977D007F2EEAFD1A0036EAD0 /* FAR117StatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977D007E2EEAFD1A0036EAD0 /* FAR117StatusBanner.swift */; };
+		977D00812EEAFD590036EAD0 /* GroupedRosterDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977D00802EEAFD590036EAD0 /* GroupedRosterDisplay.swift */; };
+		978B5C072EECD1BF00316AE1 /* FIXES_APPLIED_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 978B5C062EECD1BF00316AE1 /* FIXES_APPLIED_SUMMARY.md */; };
+		978B5C092EECD37900316AE1 /* DEBUG_LOGGING_CLEANUP.md in Resources */ = {isa = PBXBuildFile; fileRef = 978B5C082EECD37900316AE1 /* DEBUG_LOGGING_CLEANUP.md */; };
+		978B5C0B2EECD3B100316AE1 /* COMPLETE_FIX_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 978B5C0A2EECD3B100316AE1 /* COMPLETE_FIX_SUMMARY.md */; };
+		978B5C0F2EECD63C00316AE1 /* FINAL_LOGGING_CLEANUP_ROUND3.md in Resources */ = {isa = PBXBuildFile; fileRef = 978B5C0E2EECD63C00316AE1 /* FINAL_LOGGING_CLEANUP_ROUND3.md */; };
+		978B5C112EECDDB200316AE1 /* CRITICAL_CRASH_FIX_IPHONE17.md in Resources */ = {isa = PBXBuildFile; fileRef = 978B5C102EECDDB200316AE1 /* CRITICAL_CRASH_FIX_IPHONE17.md */; };
+		978B5C132EED8AD100316AE1 /* ZULU_LOCAL_TIME_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 978B5C122EED8AD100316AE1 /* ZULU_LOCAL_TIME_FIX.md */; };
+		978B5C152EED8E3C00316AE1 /* ZULU_TIME_SYSTEM_ARCHITECTURE.md in Resources */ = {isa = PBXBuildFile; fileRef = 978B5C142EED8E3C00316AE1 /* ZULU_TIME_SYSTEM_ARCHITECTURE.md */; };
+		978B5C172EED8FC500316AE1 /* TIME_PICKER_INVENTORY.md in Resources */ = {isa = PBXBuildFile; fileRef = 978B5C162EED8FC500316AE1 /* TIME_PICKER_INVENTORY.md */; };
+		978B5C192EED90DE00316AE1 /* WATCH_24HOUR_PICKER_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 978B5C182EED90DE00316AE1 /* WATCH_24HOUR_PICKER_FIX.md */; };
+		978B5C1B2EED912C00316AE1 /* WATCH_FIX_COMPLETE.md in Resources */ = {isa = PBXBuildFile; fileRef = 978B5C1A2EED912C00316AE1 /* WATCH_FIX_COMPLETE.md */; };
+		978B5C1D2EED953B00316AE1 /* STORAGE_UNIFICATION_COMPLETE.md in Resources */ = {isa = PBXBuildFile; fileRef = 978B5C1C2EED953B00316AE1 /* STORAGE_UNIFICATION_COMPLETE.md */; };
+		978B5C222EED9FDE00316AE1 /* WatchTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052AC2ECAA638007CB9C5 /* WatchTheme.swift */; };
+		9799E7402EAE5B8600F0FADE /* TripFolderBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9799E73F2EAE5B8600F0FADE /* TripFolderBrowserView.swift */; };
+		9799E7422EAE68ED00F0FADE /* PDFThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9799E7412EAE68ED00F0FADE /* PDFThumbnailView.swift */; };
+		9799E7442EAE6A0500F0FADE /* PDFThumbnailGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9799E7432EAE6A0500F0FADE /* PDFThumbnailGenerator.swift */; };
+		97A4F79E2E8291F400EBE49E /* GPSSpeedMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A4F79D2E8291F400EBE49E /* GPSSpeedMonitor.swift */; };
+		97A4F7A52E8380E900EBE49E /* AutoTimeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A4F7A42E8380E900EBE49E /* AutoTimeSettingsView.swift */; };
+		97A4F7A72E83878E00EBE49E /* AutoTimeSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A4F7A62E83878E00EBE49E /* AutoTimeSettings.swift */; };
+		97A617D82E7E4EA700BAE84A /* DocumentScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A617D72E7E4E9D00BAE84A /* DocumentScannerView.swift */; };
+		97A617DA2E7F335800BAE84A /* EmailComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A617D92E7F335800BAE84A /* EmailComposerView.swift */; };
+		97A7C8562ECD04B4009E4A5E /* ProximitySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A7C8552ECD04B4009E4A5E /* ProximitySettingsView.swift */; };
+		97AFBB832EE4C1A700C63E38 /* Rolling30DayComplianceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AFBB822EE4C1A700C63E38 /* Rolling30DayComplianceView.swift */; };
+		97AFBB852EE5466600C63E38 /* PendingTripsHelperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AFBB842EE5466600C63E38 /* PendingTripsHelperView.swift */; };
+		97AFBB912EE6558100C63E38 /* JUMPSEAT_IMPLEMENTATION_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 97AFBB872EE6558100C63E38 /* JUMPSEAT_IMPLEMENTATION_GUIDE.md */; };
+		97AFBBA52EE7812900C63E38 /* UserAirportCodeMappings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AFBBA42EE7812900C63E38 /* UserAirportCodeMappings.swift */; };
+		97AFBBA92EE78CB300C63E38 /* EnhancedAircraftManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AFBBA72EE78CB300C63E38 /* EnhancedAircraftManagementView.swift */; };
+		97AFBBAA2EE78CB300C63E38 /* AircraftDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AFBBA62EE78CB300C63E38 /* AircraftDatabase.swift */; };
+		97AFBBAB2EE78CB300C63E38 /* EnhancedAirportCodeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AFBBA82EE78CB300C63E38 /* EnhancedAirportCodeManager.swift */; };
+		97BCC3A72E29263E00D36E5B /* PhoneWatchConnectivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97B321F82E280D9700ADFC0B /* PhoneWatchConnectivity.swift */; };
+		97BCC3AB2E294A4200D36E5B /* MoreRowItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BCC3AA2E294A4200D36E5B /* MoreRowItem.swift */; };
+		97BCC3AD2E29549600D36E5B /* TripScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BCC3AC2E29549600D36E5B /* TripScannerView.swift */; };
+		97BCC3B32E29A81A00D36E5B /* TemplateGeneratorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BCC3B22E29A81A00D36E5B /* TemplateGeneratorView.swift */; };
+		97BCC3B72E29A83500D36E5B /* DataValidatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BCC3B62E29A83500D36E5B /* DataValidatorView.swift */; };
+		97C37E142EE1F9F900975E84 /* schema.json in Resources */ = {isa = PBXBuildFile; fileRef = 97C37E132EE1F9F900975E84 /* schema.json */; };
+		97C759AD2E2A69210048549B /* OPSCallingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C759AC2E2A69210048549B /* OPSCallingManager.swift */; };
+		97D69EBE2E3D735600FFF195 /* UserDefaults+AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D69EBD2E3D735600FFF195 /* UserDefaults+AppGroup.swift */; };
+		97D69EC02E3D954C00FFF195 /* DutyTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D69EBF2E3D954C00FFF195 /* DutyTimerLiveActivity.swift */; };
+		97D75BA52E50D25A00EF6DB3 /* SharePointFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D75BA42E50D25A00EF6DB3 /* SharePointFile.swift */; };
+		97D75BAF2E50D6DD00EF6DB3 /* CompleteExcelViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D75BAE2E50D6DD00EF6DB3 /* CompleteExcelViewer.swift */; };
+		97D75BB12E50E6FE00EF6DB3 /* AuthenticatedExcelViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D75BB02E50E6FE00EF6DB3 /* AuthenticatedExcelViewer.swift */; };
+		97D75BB52E528F6900EF6DB3 /* AppIcon.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C759B32E2ABB0A0048549B /* AppIcon.xcassets */; };
+		97DC6EE92E3323890002F472 /* ScannerIntegrationsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97DC6EE82E3323890002F472 /* ScannerIntegrationsExtensions.swift */; };
+		97DC6F202E3675500002F472 /* ScheduleDataAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97DC6F1F2E3675500002F472 /* ScheduleDataAnalyzer.swift */; };
+		97EC0B182E229FFF00EFE8F5 /* GPSRAIMManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EC0B172E229FFF00EFE8F5 /* GPSRAIMManager.swift */; };
+		97EC0B2C2E22D2D900EFE8F5 /* PilotLocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EC0B2B2E22D2D900EFE8F5 /* PilotLocationManager.swift */; };
+		97EC0B312E22F45500EFE8F5 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BDC2E1E9B9F0040362B /* ContentView.swift */; };
+		97EC0B372E242CED00EFE8F5 /* FlightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EC0B362E242CED00EFE8F5 /* FlightEntry.swift */; };
+		97EC0B392E242CFF00EFE8F5 /* ComprehensiveLogbookStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EC0B382E242CFF00EFE8F5 /* ComprehensiveLogbookStore.swift */; };
+		97EC0B3D2E2431FB00EFE8F5 /* AirportDatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EC0B3C2E2431FB00EFE8F5 /* AirportDatabaseManager.swift */; };
+		97EC0B412E24364300EFE8F5 /* NightHoursCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EC0B402E24364300EFE8F5 /* NightHoursCalculator.swift */; };
+		97EC0B452E243CC800EFE8F5 /* LogbookFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EC0B442E243CC800EFE8F5 /* LogbookFormat.swift */; };
+		97EC0B472E24421A00EFE8F5 /* ElectronicLogbookHelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97EC0B462E24421A00EFE8F5 /* ElectronicLogbookHelpView.swift */; };
+		97F2C3E32EDDE3DC002B9BD6 /* LiveActivityDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F2C3E22EDDE3DC002B9BD6 /* LiveActivityDebugView.swift */; };
+		97F2C3E52EDDE3DC002B9BD6 /* DYNAMIC_ISLAND_LOGGING_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F2C3E42EDDE3DC002B9BD6 /* DYNAMIC_ISLAND_LOGGING_FIX.md */; };
+		97F2C3E72EDDE493002B9BD6 /* DEBUG_VIEW_ERRORS_FIXED.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F2C3E62EDDE493002B9BD6 /* DEBUG_VIEW_ERRORS_FIXED.md */; };
+		97F2C3EC2EDE074F002B9BD6 /* GPX_LEG_ADVANCEMENT_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F2C3EB2EDE074F002B9BD6 /* GPX_LEG_ADVANCEMENT_FIX.md */; };
+		97F2C3EE2EDE0A33002B9BD6 /* GPX_LEG_STANDBY_ISSUE_EXPLAINED.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F2C3ED2EDE0A33002B9BD6 /* GPX_LEG_STANDBY_ISSUE_EXPLAINED.md */; };
+		97F2C3F22EDE1D16002B9BD6 /* FAR117ComplianceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F2C3F12EDE1D16002B9BD6 /* FAR117ComplianceView.swift */; };
+		97F2C3F62EDE5020002B9BD6 /* ContinuationPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F2C3F52EDE5020002B9BD6 /* ContinuationPrompt.swift */; };
+		97F2C3F82EDE5039002B9BD6 /* ContinuationPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F2C3F72EDE5039002B9BD6 /* ContinuationPromptView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9762A6A72EE07D3E00764AFC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9770D65A2E07A62500D18769 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9772E6602E4028C400B5A0B4;
+			remoteInfo = ProPilotWidgetsExtension;
+		};
+		9762A6A92EE07D6600764AFC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9770D65A2E07A62500D18769 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9772E6602E4028C400B5A0B4;
+			remoteInfo = ProPilotWidgetsExtension;
+		};
+		9762A6AB2EE07D7F00764AFC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9770D65A2E07A62500D18769 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9772E6602E4028C400B5A0B4;
+			remoteInfo = ProPilotWidgetsExtension;
+		};
+		9763CED72E52B4D300344E7D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9770D65A2E07A62500D18769 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 97DE533F2E315A03007D6475;
+			remoteInfo = "ProPilotWatchApp Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9756BE722E2FB8F500469A77 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				9763CEDA2E52B5C800344E7D /* ProPilotWatchApp Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9762A6B02EE07EE200764AFC /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				9762A6B12EE07F0800764AFC /* ProPilotWidgetsExtension.appex in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		97006EA22EEB563F00319FF0 /* OffDutyStatusManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OffDutyStatusManager.swift; sourceTree = "<group>"; };
+		9703AF7E2EAEE0C5002E9E26 /* DocumentCropProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCropProcessor.swift; sourceTree = "<group>"; };
+		9703AF802EAEE0D3002E9E26 /* DocumentCropSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentCropSettingsView.swift; sourceTree = "<group>"; };
+		9703AF822EAFC6CD002E9E26 /* DocumentDeletionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentDeletionManager.swift; sourceTree = "<group>"; };
+		9703AF842EAFC758002E9E26 /* TripDocumentListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDocumentListView.swift; sourceTree = "<group>"; };
+		9703AF862EAFEE74002E9E26 /* PilotNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotNote.swift; sourceTree = "<group>"; };
+		9703AF882EAFEE8E002E9E26 /* ProPilotDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProPilotDocument.swift; sourceTree = "<group>"; };
+		9703AF8A2EAFEE9F002E9E26 /* FlightCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightCalculatorView.swift; sourceTree = "<group>"; };
+		9703AF8C2EAFEEAF002E9E26 /* CurrencyRate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyRate.swift; sourceTree = "<group>"; };
+		9703AF8E2EAFEFC7002E9E26 /* FlightOperationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightOperationsView.swift; sourceTree = "<group>"; };
+		9703AF922EB0606B002E9E26 /* LegsExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegsExportView.swift; sourceTree = "<group>"; };
+		9703AF942EB07357002E9E26 /* FlightLegsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightLegsView.swift; sourceTree = "<group>"; };
+		97046B112ECD344A0066DC9F /* GradientGlowButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientGlowButton.swift; sourceTree = "<group>"; };
+		97046B152ECD4D880066DC9F /* KDTW_KCLE.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = KDTW_KCLE.gpx; sourceTree = "<group>"; };
+		970C5DA22E1F108C00B6E48F /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		97111C4A2E3A4F1300850DA5 /* ChainRouteDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChainRouteDisplay.swift; sourceTree = "<group>"; };
+		97126E032EEDC8E000D6D150 /* WATCH_LEG_HISTORY_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WATCH_LEG_HISTORY_FIX.md; sourceTree = "<group>"; };
+		97126E052EEDC9B800D6D150 /* LEG_ADVANCEMENT_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LEG_ADVANCEMENT_FIX.md; sourceTree = "<group>"; };
+		97126E072EEDCBA100D6D150 /* ADD_LEG_UI_REFRESH_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ADD_LEG_UI_REFRESH_FIX.md; sourceTree = "<group>"; };
+		97126E092EEDCFFA00D6D150 /* ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md; sourceTree = "<group>"; };
+		97126E0B2EEE062500D6D150 /* Untitled 2.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Untitled 2.txt"; sourceTree = "<group>"; };
+		971461082EE4809F00751961 /* TripTimelineGanttChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTimelineGanttChart.swift; sourceTree = "<group>"; };
+		9714610A2EE4AB4900751961 /* ICalDiagnosticView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICalDiagnosticView.swift; sourceTree = "<group>"; };
+		9714610C2EE4AFD100751961 /* ParsedFlightData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedFlightData.swift; sourceTree = "<group>"; };
+		971975382ED76B9900CC1511 /* DocumentEmailConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEmailConfig.swift; sourceTree = "<group>"; };
+		9719753C2ED76D0D00CC1511 /* DocumentEmailData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEmailData.swift; sourceTree = "<group>"; };
+		9719753E2ED76DBD00CC1511 /* TripType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripType.swift; sourceTree = "<group>"; };
+		972D01922ECBF2840064BD51 /* TimeFormattingUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormattingUtilities.swift; sourceTree = "<group>"; };
+		9738A2792EE8D78300C6CA28 /* DUTY_TIMER_TRIP_INTEGRATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DUTY_TIMER_TRIP_INTEGRATION.md; sourceTree = "<group>"; };
+		9738A27B2EE8D7A400C6CA28 /* DUTY_TIME_QUICK_START.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DUTY_TIME_QUICK_START.md; sourceTree = "<group>"; };
+		9738A27D2EE8D7EB00C6CA28 /* DUTY_TIME_EXAMPLES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DUTY_TIME_EXAMPLES.md; sourceTree = "<group>"; };
+		9738A27F2EE8D82600C6CA28 /* IMPLEMENTATION_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = IMPLEMENTATION_SUMMARY.md; sourceTree = "<group>"; };
+		9738A2812EE8D87A00C6CA28 /* DUTY_TIME_VISUAL_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DUTY_TIME_VISUAL_GUIDE.md; sourceTree = "<group>"; };
+		9738A2832EE8DCC200C6CA28 /* PER_FDP_LIMIT_EXPLAINED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PER_FDP_LIMIT_EXPLAINED.md; sourceTree = "<group>"; };
+		9738A2852EE8DDDC00C6CA28 /* CARGO_OPS_CHANGES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CARGO_OPS_CHANGES.md; sourceTree = "<group>"; };
+		9738A2872EE8DFB800C6CA28 /* 16_HOUR_DUTY_TRACKING.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = 16_HOUR_DUTY_TRACKING.md; sourceTree = "<group>"; };
+		9738A2892EE8E35200C6CA28 /* RestStatusManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestStatusManager.swift; sourceTree = "<group>"; };
+		9738A28D2EE8E3CE00C6CA28 /* REST_INTEGRATION_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = REST_INTEGRATION_GUIDE.md; sourceTree = "<group>"; };
+		9738A2912EE8FC9B00C6CA28 /* LEG_DATE_ENHANCEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LEG_DATE_ENHANCEMENTS.md; sourceTree = "<group>"; };
+		973AFA0A2EE0954900CDF4AB /* RosterToTripHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosterToTripHelper.swift; sourceTree = "<group>"; };
+		973AFA0C2EE097BF00CDF4AB /* GMTClockSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GMTClockSettings.swift; sourceTree = "<group>"; };
+		973AFA0E2EE097BF00CDF4AB /* GMTClockPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GMTClockPill.swift; sourceTree = "<group>"; };
+		973AFA102EE097BF00CDF4AB /* GMTClockOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GMTClockOverlay.swift; sourceTree = "<group>"; };
+		973AFA122EE097BF00CDF4AB /* ClocksAndTimersSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClocksAndTimersSettingsView.swift; sourceTree = "<group>"; };
+		97418DCB2EE238FF00560D71 /* CloudAirport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudAirport.swift; sourceTree = "<group>"; };
+		97449E832EDA3DD600CB038A /* PerDiemSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerDiemSettingsView.swift; sourceTree = "<group>"; };
+		97449E852EDA3E3200CB038A /* FAR117SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FAR117SettingsView.swift; sourceTree = "<group>"; };
+		97449E872EDA3E4700CB038A /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		9747C2512ECC0DBE00953014 /* GPXTestPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPXTestPlayer.swift; sourceTree = "<group>"; };
+		9747C2532ECC0DCA00953014 /* GPXTestIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPXTestIntegration.swift; sourceTree = "<group>"; };
+		974ED3522E2BC4B200901DA7 /* PilotActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotActivityManager.swift; sourceTree = "<group>"; };
+		974ED36B2E2BE20B00901DA7 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
+		974ED3A42E2C3A7600901DA7 /* ProPilotApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProPilotApp.swift; sourceTree = "<group>"; };
+		975493882E92E68700C80B17 /* CrewContactManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewContactManager.swift; sourceTree = "<group>"; };
+		9754938A2E93652800C80B17 /* CrewImportHelperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewImportHelperView.swift; sourceTree = "<group>"; };
+		9755822F2EE8B80C0009D2CF /* DutyLimitSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DutyLimitSettings.swift; sourceTree = "<group>"; };
+		975582312EE8B88A0009D2CF /* DutyLimitSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DutyLimitSettingsView.swift; sourceTree = "<group>"; };
+		9756B82D2E95CC0800F59538 /* TabManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
+		9756B82F2E95E92400F59538 /* WeatherData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherData.swift; sourceTree = "<group>"; };
+		9756EE422E2D987E00810911 /* ProPilotApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ProPilotApp.entitlements; sourceTree = "<group>"; };
+		975C23CF2ECD70F50092249D /* NOCSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCSettingsStore.swift; sourceTree = "<group>"; };
+		975C23D12ECDF6460092249D /* NOCRosterGanttView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCRosterGanttView.swift; sourceTree = "<group>"; };
+		975C23D32ECE00390092249D /* NOCWebPortalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCWebPortalView.swift; sourceTree = "<group>"; };
+		975C23D52ECE00810092249D /* NOC_WEBVIEW_INTEGRATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOC_WEBVIEW_INTEGRATION.md; sourceTree = "<group>"; };
+		975C23D72ECE00A40092249D /* NOCQuickAccessButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCQuickAccessButton.swift; sourceTree = "<group>"; };
+		975C23D92ECE00F70092249D /* NOC_WEBVIEW_QUICK_START.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOC_WEBVIEW_QUICK_START.swift; sourceTree = "<group>"; };
+		975C6D8D2E5F20C000830C35 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
+		975C6D8F2E5F250A00830C35 /* FlightDataField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightDataField.swift; sourceTree = "<group>"; };
+		976052902ECA105B007CB9C5 /* CrewContactsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewContactsView.swift; sourceTree = "<group>"; };
+		976052922ECA112A007CB9C5 /* AllLegsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllLegsView.swift; sourceTree = "<group>"; };
+		976052942ECA11BF007CB9C5 /* AirlineConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirlineConfigurationView.swift; sourceTree = "<group>"; };
+		976052962ECA124C007CB9C5 /* ScannerEmailConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerEmailConfigView.swift; sourceTree = "<group>"; };
+		976052982ECA59E1007CB9C5 /* ActiveTripBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveTripBannerView.swift; sourceTree = "<group>"; };
+		9760529A2ECA6C02007CB9C5 /* BottomSheetTripsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomSheetTripsView.swift; sourceTree = "<group>"; };
+		9760529C2ECA81E6007CB9C5 /* CloudKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitManager.swift; sourceTree = "<group>"; };
+		976052A22ECAA448007CB9C5 /* TripCompletionSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripCompletionSummaryView.swift; sourceTree = "<group>"; };
+		976052A42ECAA46B007CB9C5 /* WatchPhoneLegSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPhoneLegSyncManager.swift; sourceTree = "<group>"; };
+		976052A82ECAA5E9007CB9C5 /* WatchTripSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTripSummaryView.swift; sourceTree = "<group>"; };
+		976052AC2ECAA638007CB9C5 /* WatchTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTheme.swift; sourceTree = "<group>"; };
+		976052B92ECAB442007CB9C5 /* WatchConnectivityStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityStatusView.swift; sourceTree = "<group>"; };
+		976052CA2ECB5F4E007CB9C5 /* PHONE_WATCH_TIME_PARSING_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PHONE_WATCH_TIME_PARSING_FIX.md; sourceTree = "<group>"; };
+		976052D22ECB635B007CB9C5 /* WATCH_CONNECTIVITY_INTEGRATION_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WATCH_CONNECTIVITY_INTEGRATION_GUIDE.md; sourceTree = "<group>"; };
+		976052DC2ECB9AF3007CB9C5 /* TranslucentTimePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslucentTimePicker.swift; sourceTree = "<group>"; };
+		9762A69F2EDE7EC800764AFC /* NOCRevisionAlertBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCRevisionAlertBanner.swift; sourceTree = "<group>"; };
+		9763B30B2EE38465003865D6 /* AreaGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AreaGuideView.swift; sourceTree = "<group>"; };
+		9763B30D2EE3DB39003865D6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9763CEDD2E54D34D00344E7D /* DocumentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentStore.swift; sourceTree = "<group>"; };
+		97655AF32E50BB23007F4CDB /* TheProPilotApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TheProPilotApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		97655AF42E50BB29007F4CDB /* ProPilotWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ProPilotWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		97690F472EA45DDA00FA9775 /* TripDocumentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDocumentManager.swift; sourceTree = "<group>"; };
+		97690F492EA45F2600FA9775 /* AircraftHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftHistoryManager.swift; sourceTree = "<group>"; };
+		97690F4D2EA5A3CC00FA9775 /* TimeRoundingUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeRoundingUtility.swift; sourceTree = "<group>"; };
+		97698C122EC82EF8003523F6 /* TimerSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerSettingsView.swift; sourceTree = "<group>"; };
+		97698C142EC82F4F003523F6 /* FlexibleTimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlexibleTimerManager.swift; sourceTree = "<group>"; };
+		97698C162EC833C0003523F6 /* TripDateUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDateUtility.swift; sourceTree = "<group>"; };
+		97698C182EC8356D003523F6 /* TimeDisplayUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeDisplayUtility.swift; sourceTree = "<group>"; };
+		976A7D592E8C7B3D00E2676E /* YIP_DTW.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = YIP_DTW.gpx; sourceTree = "<group>"; };
+		976A7D5C2E8D658600E2676E /* TripCreationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripCreationSettings.swift; sourceTree = "<group>"; };
+		976BC3F72EDCBE4000056B92 /* DismissedRosterItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissedRosterItem.swift; sourceTree = "<group>"; };
+		976BC3F92EDCBE5500056B92 /* DismissedRosterItemsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissedRosterItemsView.swift; sourceTree = "<group>"; };
+		976BC3FB2EDCBE6400056B92 /* SwipeableRosterItemRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeableRosterItemRow.swift; sourceTree = "<group>"; };
+		976D54692EDA894700A7D60C /* iPhoneWatchSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iPhoneWatchSettingsView.swift; sourceTree = "<group>"; };
+		976D546D2EDB452300A7D60C /* TripGenerationSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGenerationSettings.swift; sourceTree = "<group>"; };
+		976D546F2EDB457C00A7D60C /* TripGenerationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGenerationService.swift; sourceTree = "<group>"; };
+		976D54712EDB45DB00A7D60C /* TripGenerationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGenerationSettingsView.swift; sourceTree = "<group>"; };
+		976D54742EDB513C00A7D60C /* TripGenerationSettingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGenerationSettingsRow.swift; sourceTree = "<group>"; };
+		976D54762EDB54EE00A7D60C /* TripGenerationAlertModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGenerationAlertModifier.swift; sourceTree = "<group>"; };
+		976F1C7F2E64A23A00F15444 /* UnifiedLogbookManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedLogbookManager.swift; sourceTree = "<group>"; };
+		976F1C812E64A2ED00F15444 /* SimpleElectronicLogbookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleElectronicLogbookView.swift; sourceTree = "<group>"; };
+		977056FB2E5CCA54000C607C /* DataManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManagementView.swift; sourceTree = "<group>"; };
+		9770689C2E64D385005A674D /* LogbookUIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogbookUIComponents.swift; sourceTree = "<group>"; };
+		97747C8A2ED7B19800126113 /* TripSharingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripSharingManager.swift; sourceTree = "<group>"; };
+		97747C8C2ED7D3CB00126113 /* BackupFileHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupFileHandler.swift; sourceTree = "<group>"; };
+		97747CD82ED8BBE900126113 /* DutyTimerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DutyTimerManager.swift; sourceTree = "<group>"; };
+		97747CDA2ED8C56E00126113 /* AutoTimeLoggingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoTimeLoggingSettingsView.swift; sourceTree = "<group>"; };
+		97747CDC2ED8C8FB00126113 /* DataBackupSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBackupSettingsView.swift; sourceTree = "<group>"; };
+		97747CE02ED8D68E00126113 /* AppleWatchStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleWatchStatusView.swift; sourceTree = "<group>"; };
+		97747CE22ED8DDDD00126113 /* ClocksAndTimersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClocksAndTimersView.swift; sourceTree = "<group>"; };
+		97747CE82ED8E73800126113 /* ForeFlightStyleTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForeFlightStyleTimerView.swift; sourceTree = "<group>"; };
+		97747CEC2ED9137B00126113 /* FlexibleTimerView 2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FlexibleTimerView 2.swift"; sourceTree = "<group>"; };
+		97747CEE2ED9318600126113 /* ElectronicLogbookViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectronicLogbookViewer.swift; sourceTree = "<group>"; };
+		977992EB2EC8D76F00A8CA39 /* SnappingScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnappingScrollView.swift; sourceTree = "<group>"; };
+		977992EF2EC8DA0500A8CA39 /* ENHANCED_BANNER_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ENHANCED_BANNER_SUMMARY.md; sourceTree = "<group>"; };
+		977992F12EC8DB2900A8CA39 /* BANNER_UPDATES_COMPLETE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = BANNER_UPDATES_COMPLETE.md; sourceTree = "<group>"; };
+		977992F32EC91A7C00A8CA39 /* SmartTimeEntryField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTimeEntryField.swift; sourceTree = "<group>"; };
+		977C64EB2E81A663002B9552 /* AppBackupData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackupData.swift; sourceTree = "<group>"; };
+		977C64ED2E81ABAA002B9552 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
+		977C7BD62E1E9B9F0040362B /* AircraftManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftManagementView.swift; sourceTree = "<group>"; };
+		977C7BD72E1E9B9F0040362B /* AirlineSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirlineSettings.swift; sourceTree = "<group>"; };
+		977C7BD82E1E9B9F0040362B /* AirlineSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirlineSettingsView.swift; sourceTree = "<group>"; };
+		977C7BD92E1E9B9F0040362B /* AppMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMonitor.swift; sourceTree = "<group>"; };
+		977C7BDA2E1E9B9F0040362B /* AutoCompleteTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoCompleteTestView.swift; sourceTree = "<group>"; };
+		977C7BDB2E1E9B9F0040362B /* ClocksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClocksView.swift; sourceTree = "<group>"; };
+		977C7BDC2E1E9B9F0040362B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		977C7BDD2E1E9B9F0040362B /* CrewMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrewMember.swift; sourceTree = "<group>"; };
+		977C7BDF2E1E9B9F0040362B /* DataEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataEntryView.swift; sourceTree = "<group>"; };
+		977C7BE02E1E9B9F0040362B /* EmailSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSettings.swift; sourceTree = "<group>"; };
+		977C7BE22E1E9B9F0040362B /* EnhancedICAOTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedICAOTextField.swift; sourceTree = "<group>"; };
+		977C7BE42E1E9B9F0040362B /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
+		977C7BE52E1E9B9F0040362B /* FlightAwareCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAwareCredentials.swift; sourceTree = "<group>"; };
+		977C7BE62E1E9B9F0040362B /* FlightAwareIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAwareIntegration.swift; sourceTree = "<group>"; };
+		977C7BE72E1E9B9F0040362B /* FlightAwareManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAwareManager.swift; sourceTree = "<group>"; };
+		977C7BE82E1E9B9F0040362B /* FlightAwareModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAwareModels.swift; sourceTree = "<group>"; };
+		977C7BE92E1E9B9F0040362B /* FlightAwareViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightAwareViews.swift; sourceTree = "<group>"; };
+		977C7BEA2E1E9B9F0040362B /* FlightLeg.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightLeg.swift; sourceTree = "<group>"; };
+		977C7BEB2E1E9B9F0040362B /* FlightTrackingUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightTrackingUtility.swift; sourceTree = "<group>"; };
+		977C7BEC2E1E9B9F0040362B /* ForeFlightLogBookRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForeFlightLogBookRow.swift; sourceTree = "<group>"; };
+		977C7BED2E1E9B9F0040362B /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
+		977C7BEE2E1E9B9F0040362B /* HomeBaseConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeBaseConfigurationView.swift; sourceTree = "<group>"; };
+		977C7BEF2E1E9B9F0040362B /* HorizontalLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizontalLogView.swift; sourceTree = "<group>"; };
+		977C7BF02E1E9B9F0040362B /* LandscapeDataEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandscapeDataEntryView.swift; sourceTree = "<group>"; };
+		977C7BF12E1E9B9F0040362B /* LegsReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegsReportView.swift; sourceTree = "<group>"; };
+		977C7BF22E1E9B9F0040362B /* Log_Page.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = Log_Page.pdf; sourceTree = "<group>"; };
+		977C7BF32E1E9B9F0040362B /* LogBookStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogBookStore.swift; sourceTree = "<group>"; };
+		977C7BF42E1E9B9F0040362B /* LogbookView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogbookView.swift; sourceTree = "<group>"; };
+		977C7BF52E1E9B9F0040362B /* LogbookTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogbookTheme.swift; sourceTree = "<group>"; };
+		977C7BF62E1E9B9F0040362B /* LogPageTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogPageTableView.swift; sourceTree = "<group>"; };
+		977C7BF82E1E9B9F0040362B /* NOCSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCSettingsView.swift; sourceTree = "<group>"; };
+		977C7BF92E1E9B9F0040362B /* NOCWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCWebView.swift; sourceTree = "<group>"; };
+		977C7BFA2E1E9B9F0040362B /* PerDiemSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerDiemSummaryView.swift; sourceTree = "<group>"; };
+		977C7BFB2E1E9B9F0040362B /* PerDiemTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerDiemTabView.swift; sourceTree = "<group>"; };
+		977C7BFD2E1E9B9F0040362B /* RosterModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosterModels.swift; sourceTree = "<group>"; };
+		977C7BFF2E1E9B9F0040362B /* ScheduleCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCalendarView.swift; sourceTree = "<group>"; };
+		977C7C002E1E9B9F0040362B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		977C7C012E1E9B9F0040362B /* SimpleGPSSignalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleGPSSignalView.swift; sourceTree = "<group>"; };
+		977C7C022E1E9B9F0040362B /* Trip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trip.swift; sourceTree = "<group>"; };
+		977D00732EEA5C560036EAD0 /* AircraftDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftDefinition.swift; sourceTree = "<group>"; };
+		977D00742EEA5C560036EAD0 /* AircraftLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftLibraryStore.swift; sourceTree = "<group>"; };
+		977D00752EEA5C560036EAD0 /* AircraftLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftLibraryView.swift; sourceTree = "<group>"; };
+		977D00792EEA63180036EAD0 /* UnifiedAircraftDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedAircraftDatabase.swift; sourceTree = "<group>"; };
+		977D007A2EEA63180036EAD0 /* UnifiedAircraftView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedAircraftView.swift; sourceTree = "<group>"; };
+		977D007D2EEA6D850036EAD0 /* PROPILOT_FUNCTION_INDEX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PROPILOT_FUNCTION_INDEX.md; sourceTree = "<group>"; };
+		977D007E2EEAFD1A0036EAD0 /* FAR117StatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FAR117StatusBanner.swift; sourceTree = "<group>"; };
+		977D00802EEAFD590036EAD0 /* GroupedRosterDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupedRosterDisplay.swift; sourceTree = "<group>"; };
+		978B5C062EECD1BF00316AE1 /* FIXES_APPLIED_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FIXES_APPLIED_SUMMARY.md; sourceTree = "<group>"; };
+		978B5C082EECD37900316AE1 /* DEBUG_LOGGING_CLEANUP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DEBUG_LOGGING_CLEANUP.md; sourceTree = "<group>"; };
+		978B5C0A2EECD3B100316AE1 /* COMPLETE_FIX_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = COMPLETE_FIX_SUMMARY.md; sourceTree = "<group>"; };
+		978B5C0E2EECD63C00316AE1 /* FINAL_LOGGING_CLEANUP_ROUND3.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FINAL_LOGGING_CLEANUP_ROUND3.md; sourceTree = "<group>"; };
+		978B5C102EECDDB200316AE1 /* CRITICAL_CRASH_FIX_IPHONE17.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CRITICAL_CRASH_FIX_IPHONE17.md; sourceTree = "<group>"; };
+		978B5C122EED8AD100316AE1 /* ZULU_LOCAL_TIME_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ZULU_LOCAL_TIME_FIX.md; sourceTree = "<group>"; };
+		978B5C142EED8E3C00316AE1 /* ZULU_TIME_SYSTEM_ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ZULU_TIME_SYSTEM_ARCHITECTURE.md; sourceTree = "<group>"; };
+		978B5C162EED8FC500316AE1 /* TIME_PICKER_INVENTORY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TIME_PICKER_INVENTORY.md; sourceTree = "<group>"; };
+		978B5C182EED90DE00316AE1 /* WATCH_24HOUR_PICKER_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WATCH_24HOUR_PICKER_FIX.md; sourceTree = "<group>"; };
+		978B5C1A2EED912C00316AE1 /* WATCH_FIX_COMPLETE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WATCH_FIX_COMPLETE.md; sourceTree = "<group>"; };
+		978B5C1C2EED953B00316AE1 /* STORAGE_UNIFICATION_COMPLETE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = STORAGE_UNIFICATION_COMPLETE.md; sourceTree = "<group>"; };
+		9799E73F2EAE5B8600F0FADE /* TripFolderBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripFolderBrowserView.swift; sourceTree = "<group>"; };
+		9799E7412EAE68ED00F0FADE /* PDFThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailView.swift; sourceTree = "<group>"; };
+		9799E7432EAE6A0500F0FADE /* PDFThumbnailGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailGenerator.swift; sourceTree = "<group>"; };
+		97A4F79D2E8291F400EBE49E /* GPSSpeedMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSSpeedMonitor.swift; sourceTree = "<group>"; };
+		97A4F7A42E8380E900EBE49E /* AutoTimeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoTimeSettingsView.swift; sourceTree = "<group>"; };
+		97A4F7A62E83878E00EBE49E /* AutoTimeSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoTimeSettings.swift; sourceTree = "<group>"; };
+		97A617D72E7E4E9D00BAE84A /* DocumentScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentScannerView.swift; sourceTree = "<group>"; };
+		97A617D92E7F335800BAE84A /* EmailComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailComposerView.swift; sourceTree = "<group>"; };
+		97A7C8552ECD04B4009E4A5E /* ProximitySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximitySettingsView.swift; sourceTree = "<group>"; };
+		97AFBB822EE4C1A700C63E38 /* Rolling30DayComplianceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rolling30DayComplianceView.swift; sourceTree = "<group>"; };
+		97AFBB842EE5466600C63E38 /* PendingTripsHelperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingTripsHelperView.swift; sourceTree = "<group>"; };
+		97AFBB872EE6558100C63E38 /* JUMPSEAT_IMPLEMENTATION_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = JUMPSEAT_IMPLEMENTATION_GUIDE.md; sourceTree = "<group>"; };
+		97AFBBA42EE7812900C63E38 /* UserAirportCodeMappings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAirportCodeMappings.swift; sourceTree = "<group>"; };
+		97AFBBA62EE78CB300C63E38 /* AircraftDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftDatabase.swift; sourceTree = "<group>"; };
+		97AFBBA72EE78CB300C63E38 /* EnhancedAircraftManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedAircraftManagementView.swift; sourceTree = "<group>"; };
+		97AFBBA82EE78CB300C63E38 /* EnhancedAirportCodeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnhancedAirportCodeManager.swift; sourceTree = "<group>"; };
+		97B321F82E280D9700ADFC0B /* PhoneWatchConnectivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneWatchConnectivity.swift; sourceTree = "<group>"; };
+		97BCC3AA2E294A4200D36E5B /* MoreRowItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreRowItem.swift; sourceTree = "<group>"; };
+		97BCC3AC2E29549600D36E5B /* TripScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripScannerView.swift; sourceTree = "<group>"; };
+		97BCC3B22E29A81A00D36E5B /* TemplateGeneratorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateGeneratorView.swift; sourceTree = "<group>"; };
+		97BCC3B62E29A83500D36E5B /* DataValidatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataValidatorView.swift; sourceTree = "<group>"; };
+		97C37E132EE1F9F900975E84 /* schema.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = schema.json; sourceTree = "<group>"; };
+		97C759AC2E2A69210048549B /* OPSCallingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OPSCallingManager.swift; sourceTree = "<group>"; };
+		97C759B32E2ABB0A0048549B /* AppIcon.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AppIcon.xcassets; sourceTree = "<group>"; };
+		97D69EBD2E3D735600FFF195 /* UserDefaults+AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+AppGroup.swift"; sourceTree = "<group>"; };
+		97D69EBF2E3D954C00FFF195 /* DutyTimerLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DutyTimerLiveActivity.swift; sourceTree = "<group>"; };
+		97D75B7E2E50C15F00EF6DB3 /* ProPilotWatchApp Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ProPilotWatchApp Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		97D75BA42E50D25A00EF6DB3 /* SharePointFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharePointFile.swift; sourceTree = "<group>"; };
+		97D75BAE2E50D6DD00EF6DB3 /* CompleteExcelViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteExcelViewer.swift; sourceTree = "<group>"; };
+		97D75BB02E50E6FE00EF6DB3 /* AuthenticatedExcelViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticatedExcelViewer.swift; sourceTree = "<group>"; };
+		97D75BB22E50F2BE00EF6DB3 /* NotificationNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationNames.swift; sourceTree = "<group>"; };
+		97DC6EE82E3323890002F472 /* ScannerIntegrationsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerIntegrationsExtensions.swift; sourceTree = "<group>"; };
+		97DC6F1F2E3675500002F472 /* ScheduleDataAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleDataAnalyzer.swift; sourceTree = "<group>"; };
+		97EC0B172E229FFF00EFE8F5 /* GPSRAIMManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSRAIMManager.swift; sourceTree = "<group>"; };
+		97EC0B2B2E22D2D900EFE8F5 /* PilotLocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PilotLocationManager.swift; sourceTree = "<group>"; };
+		97EC0B362E242CED00EFE8F5 /* FlightEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightEntry.swift; sourceTree = "<group>"; };
+		97EC0B382E242CFF00EFE8F5 /* ComprehensiveLogbookStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComprehensiveLogbookStore.swift; sourceTree = "<group>"; };
+		97EC0B3C2E2431FB00EFE8F5 /* AirportDatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportDatabaseManager.swift; sourceTree = "<group>"; };
+		97EC0B402E24364300EFE8F5 /* NightHoursCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightHoursCalculator.swift; sourceTree = "<group>"; };
+		97EC0B442E243CC800EFE8F5 /* LogbookFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogbookFormat.swift; sourceTree = "<group>"; };
+		97EC0B462E24421A00EFE8F5 /* ElectronicLogbookHelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectronicLogbookHelpView.swift; sourceTree = "<group>"; };
+		97F2C3E22EDDE3DC002B9BD6 /* LiveActivityDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityDebugView.swift; sourceTree = "<group>"; };
+		97F2C3E42EDDE3DC002B9BD6 /* DYNAMIC_ISLAND_LOGGING_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DYNAMIC_ISLAND_LOGGING_FIX.md; sourceTree = "<group>"; };
+		97F2C3E62EDDE493002B9BD6 /* DEBUG_VIEW_ERRORS_FIXED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DEBUG_VIEW_ERRORS_FIXED.md; sourceTree = "<group>"; };
+		97F2C3EB2EDE074F002B9BD6 /* GPX_LEG_ADVANCEMENT_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = GPX_LEG_ADVANCEMENT_FIX.md; sourceTree = "<group>"; };
+		97F2C3ED2EDE0A33002B9BD6 /* GPX_LEG_STANDBY_ISSUE_EXPLAINED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = GPX_LEG_STANDBY_ISSUE_EXPLAINED.md; sourceTree = "<group>"; };
+		97F2C3F12EDE1D16002B9BD6 /* FAR117ComplianceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FAR117ComplianceView.swift; sourceTree = "<group>"; };
+		97F2C3F52EDE5020002B9BD6 /* ContinuationPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinuationPrompt.swift; sourceTree = "<group>"; };
+		97F2C3F72EDE5039002B9BD6 /* ContinuationPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinuationPromptView.swift; sourceTree = "<group>"; };
+		97F2C3FB2EDE5096002B9BD6 /* TripGenerationServiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGenerationServiceSettingsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		971975332ED5677D00CC1511 /* Exceptions for "ProPilotWatchApp Watch App" folder in "ProPilotWatchApp Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 97DE533F2E315A03007D6475 /* ProPilotWatchApp Watch App */;
+		};
+		971975362ED5687C00CC1511 /* Exceptions for "ProPilotWidgets" folder in "TheProPilotApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				PilotDutyAttributes.swift,
+			);
+			target = 9770D6612E07A62500D18769 /* TheProPilotApp */;
+		};
+		971975372ED5687C00CC1511 /* Exceptions for "ProPilotWidgets" folder in "ProPilotWatchApp Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				PilotDutyAttributes.swift,
+			);
+			target = 97DE533F2E315A03007D6475 /* ProPilotWatchApp Watch App */;
+		};
+		9762A6AF2EE07EC300764AFC /* Exceptions for "ProPilotWidgets" folder in "ProPilotWidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 9772E6602E4028C400B5A0B4 /* ProPilotWidgetsExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		97418DD22EE306AE00560D71 /* New Group */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "New Group";
+			sourceTree = "<group>";
+		};
+		975C77D12EE21BEE0060728C /* EAPIS */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = EAPIS;
+			sourceTree = "<group>";
+		};
+		9772E6642E4028C500B5A0B4 /* ProPilotWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				971975362ED5687C00CC1511 /* Exceptions for "ProPilotWidgets" folder in "TheProPilotApp" target */,
+				971975372ED5687C00CC1511 /* Exceptions for "ProPilotWidgets" folder in "ProPilotWatchApp Watch App" target */,
+				9762A6AF2EE07EC300764AFC /* Exceptions for "ProPilotWidgets" folder in "ProPilotWidgetsExtension" target */,
+			);
+			path = ProPilotWidgets;
+			sourceTree = "<group>";
+		};
+		978B5C1E2EED96F000316AE1 /* New Folder */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "New Folder";
+			sourceTree = "<group>";
+		};
+		97DE53412E315A03007D6475 /* ProPilotWatchApp Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				971975332ED5677D00CC1511 /* Exceptions for "ProPilotWatchApp Watch App" folder in "ProPilotWatchApp Watch App" target */,
+			);
+			path = "ProPilotWatchApp Watch App";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9770D65F2E07A62500D18769 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9772E65E2E4028C400B5A0B4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		97DE533D2E315A03007D6475 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		9770D6592E07A62500D18769 = {
+			isa = PBXGroup;
+			children = (
+				97AFBB902EE6558100C63E38 /* Jumpseat */,
+				975C77D12EE21BEE0060728C /* EAPIS */,
+				97046B152ECD4D880066DC9F /* KDTW_KCLE.gpx */,
+				977D007D2EEA6D850036EAD0 /* PROPILOT_FUNCTION_INDEX.md */,
+				97C37E132EE1F9F900975E84 /* schema.json */,
+				976A7D592E8C7B3D00E2676E /* YIP_DTW.gpx */,
+				9772E6642E4028C500B5A0B4 /* ProPilotWidgets */,
+				976052982ECA59E1007CB9C5 /* ActiveTripBannerView.swift */,
+				977C7BD62E1E9B9F0040362B /* AircraftManagementView.swift */,
+				976052942ECA11BF007CB9C5 /* AirlineConfigurationView.swift */,
+				977C7BD72E1E9B9F0040362B /* AirlineSettings.swift */,
+				977C7BD82E1E9B9F0040362B /* AirlineSettingsView.swift */,
+				97EC0B3C2E2431FB00EFE8F5 /* AirportDatabaseManager.swift */,
+				976052922ECA112A007CB9C5 /* AllLegsView.swift */,
+				977D00732EEA5C560036EAD0 /* AircraftDefinition.swift */,
+				977D00792EEA63180036EAD0 /* UnifiedAircraftDatabase.swift */,
+				977D007A2EEA63180036EAD0 /* UnifiedAircraftView.swift */,
+				977D00742EEA5C560036EAD0 /* AircraftLibraryStore.swift */,
+				977D00752EEA5C560036EAD0 /* AircraftLibraryView.swift */,
+				977C64EB2E81A663002B9552 /* AppBackupData.swift */,
+				974ED36B2E2BE20B00901DA7 /* AppConstants.swift */,
+				97C759B32E2ABB0A0048549B /* AppIcon.xcassets */,
+				97747CE02ED8D68E00126113 /* AppleWatchStatusView.swift */,
+				977C7BD92E1E9B9F0040362B /* AppMonitor.swift */,
+				9763B30B2EE38465003865D6 /* AreaGuideView.swift */,
+				977C7BDA2E1E9B9F0040362B /* AutoCompleteTestView.swift */,
+				97A4F7A42E8380E900EBE49E /* AutoTimeSettingsView.swift */,
+				97AFBBA62EE78CB300C63E38 /* AircraftDatabase.swift */,
+				97AFBBA72EE78CB300C63E38 /* EnhancedAircraftManagementView.swift */,
+				97AFBBA82EE78CB300C63E38 /* EnhancedAirportCodeManager.swift */,
+				97747CDA2ED8C56E00126113 /* AutoTimeLoggingSettingsView.swift */,
+				97A4F7A62E83878E00EBE49E /* AutoTimeSettings.swift */,
+				97D75BB02E50E6FE00EF6DB3 /* AuthenticatedExcelViewer.swift */,
+				97747C8C2ED7D3CB00126113 /* BackupFileHandler.swift */,
+				9760529A2ECA6C02007CB9C5 /* BottomSheetTripsView.swift */,
+				97111C4A2E3A4F1300850DA5 /* ChainRouteDisplay.swift */,
+				977C7BDB2E1E9B9F0040362B /* ClocksView.swift */,
+				97747CE22ED8DDDD00126113 /* ClocksAndTimersView.swift */,
+				97418DCB2EE238FF00560D71 /* CloudAirport.swift */,
+				9760529C2ECA81E6007CB9C5 /* CloudKitManager.swift */,
+				97418DD22EE306AE00560D71 /* New Group */,
+				97D75BAE2E50D6DD00EF6DB3 /* CompleteExcelViewer.swift */,
+				97EC0B382E242CFF00EFE8F5 /* ComprehensiveLogbookStore.swift */,
+				977C7BDC2E1E9B9F0040362B /* ContentView.swift */,
+				97F2C3F52EDE5020002B9BD6 /* ContinuationPrompt.swift */,
+				97F2C3F72EDE5039002B9BD6 /* ContinuationPromptView.swift */,
+				976052902ECA105B007CB9C5 /* CrewContactsView.swift */,
+				977C7BDD2E1E9B9F0040362B /* CrewMember.swift */,
+				9754938A2E93652800C80B17 /* CrewImportHelperView.swift */,
+				975493882E92E68700C80B17 /* CrewContactManager.swift */,
+				9703AF8C2EAFEEAF002E9E26 /* CurrencyRate.swift */,
+				97747CDC2ED8C8FB00126113 /* DataBackupSettingsView.swift */,
+				977C7BDF2E1E9B9F0040362B /* DataEntryView.swift */,
+				977056FB2E5CCA54000C607C /* DataManagementView.swift */,
+				97BCC3B62E29A83500D36E5B /* DataValidatorView.swift */,
+				976BC3F72EDCBE4000056B92 /* DismissedRosterItem.swift */,
+				976BC3F92EDCBE5500056B92 /* DismissedRosterItemsView.swift */,
+				97D69EBF2E3D954C00FFF195 /* DutyTimerLiveActivity.swift */,
+				9703AF7E2EAEE0C5002E9E26 /* DocumentCropProcessor.swift */,
+				971975382ED76B9900CC1511 /* DocumentEmailConfig.swift */,
+				9703AF802EAEE0D3002E9E26 /* DocumentCropSettingsView.swift */,
+				9703AF822EAFC6CD002E9E26 /* DocumentDeletionManager.swift */,
+				9719753C2ED76D0D00CC1511 /* DocumentEmailData.swift */,
+				975C6D8D2E5F20C000830C35 /* DocumentPicker.swift */,
+				97A617D72E7E4E9D00BAE84A /* DocumentScannerView.swift */,
+				9763CEDD2E54D34D00344E7D /* DocumentStore.swift */,
+				97747CD82ED8BBE900126113 /* DutyTimerManager.swift */,
+				9703AF882EAFEE8E002E9E26 /* ProPilotDocument.swift */,
+				97EC0B462E24421A00EFE8F5 /* ElectronicLogbookHelpView.swift */,
+				97747CEE2ED9318600126113 /* ElectronicLogbookViewer.swift */,
+				977C7BE02E1E9B9F0040362B /* EmailSettings.swift */,
+				97A617D92E7F335800BAE84A /* EmailComposerView.swift */,
+				977C7BE22E1E9B9F0040362B /* EnhancedICAOTextField.swift */,
+				977C7BE42E1E9B9F0040362B /* ExportView.swift */,
+				97F2C3F12EDE1D16002B9BD6 /* FAR117ComplianceView.swift */,
+				977D007E2EEAFD1A0036EAD0 /* FAR117StatusBanner.swift */,
+				97449E852EDA3E3200CB038A /* FAR117SettingsView.swift */,
+				977D00802EEAFD590036EAD0 /* GroupedRosterDisplay.swift */,
+				97AFBB822EE4C1A700C63E38 /* Rolling30DayComplianceView.swift */,
+				97698C142EC82F4F003523F6 /* FlexibleTimerManager.swift */,
+				97747CEC2ED9137B00126113 /* FlexibleTimerView 2.swift */,
+				975C6D8F2E5F250A00830C35 /* FlightDataField.swift */,
+				977C7BE52E1E9B9F0040362B /* FlightAwareCredentials.swift */,
+				977C7BE62E1E9B9F0040362B /* FlightAwareIntegration.swift */,
+				977C7BE72E1E9B9F0040362B /* FlightAwareManager.swift */,
+				977C7BE82E1E9B9F0040362B /* FlightAwareModels.swift */,
+				977C7BE92E1E9B9F0040362B /* FlightAwareViews.swift */,
+				9703AF8A2EAFEE9F002E9E26 /* FlightCalculatorView.swift */,
+				97EC0B362E242CED00EFE8F5 /* FlightEntry.swift */,
+				977C7BEA2E1E9B9F0040362B /* FlightLeg.swift */,
+				9703AF942EB07357002E9E26 /* FlightLegsView.swift */,
+				9703AF8E2EAFEFC7002E9E26 /* FlightOperationsView.swift */,
+				97747CE82ED8E73800126113 /* ForeFlightStyleTimerView.swift */,
+				977C7BEB2E1E9B9F0040362B /* FlightTrackingUtility.swift */,
+				977C7BEC2E1E9B9F0040362B /* ForeFlightLogBookRow.swift */,
+				97EC0B172E229FFF00EFE8F5 /* GPSRAIMManager.swift */,
+				97A4F79D2E8291F400EBE49E /* GPSSpeedMonitor.swift */,
+				9747C2532ECC0DCA00953014 /* GPXTestIntegration.swift */,
+				9747C2512ECC0DBE00953014 /* GPXTestPlayer.swift */,
+				97046B112ECD344A0066DC9F /* GradientGlowButton.swift */,
+				977C7BED2E1E9B9F0040362B /* Helpers.swift */,
+				971461082EE4809F00751961 /* TripTimelineGanttChart.swift */,
+				977C7BEE2E1E9B9F0040362B /* HomeBaseConfigurationView.swift */,
+				977C7BEF2E1E9B9F0040362B /* HorizontalLogView.swift */,
+				9763B30D2EE3DB39003865D6 /* Info.plist */,
+				976D54692EDA894700A7D60C /* iPhoneWatchSettingsView.swift */,
+				977C7BF02E1E9B9F0040362B /* LandscapeDataEntryView.swift */,
+				9714610A2EE4AB4900751961 /* ICalDiagnosticView.swift */,
+				9714610C2EE4AFD100751961 /* ParsedFlightData.swift */,
+				9703AF922EB0606B002E9E26 /* LegsExportView.swift */,
+				977C7BF12E1E9B9F0040362B /* LegsReportView.swift */,
+				977C7BF22E1E9B9F0040362B /* Log_Page.pdf */,
+				97EC0B442E243CC800EFE8F5 /* LogbookFormat.swift */,
+				977C7BF32E1E9B9F0040362B /* LogBookStore.swift */,
+				977C7BF52E1E9B9F0040362B /* LogbookTheme.swift */,
+				9770689C2E64D385005A674D /* LogbookUIComponents.swift */,
+				977C7BF42E1E9B9F0040362B /* LogbookView.swift */,
+				977C7BF62E1E9B9F0040362B /* LogPageTableView.swift */,
+				97BCC3AA2E294A4200D36E5B /* MoreRowItem.swift */,
+				97EC0B402E24364300EFE8F5 /* NightHoursCalculator.swift */,
+				9762A69F2EDE7EC800764AFC /* NOCRevisionAlertBanner.swift */,
+				975C23D72ECE00A40092249D /* NOCQuickAccessButton.swift */,
+				975C23D92ECE00F70092249D /* NOC_WEBVIEW_QUICK_START.swift */,
+				975C23D12ECDF6460092249D /* NOCRosterGanttView.swift */,
+				977C7BF82E1E9B9F0040362B /* NOCSettingsView.swift */,
+				975C23CF2ECD70F50092249D /* NOCSettingsStore.swift */,
+				975C23D32ECE00390092249D /* NOCWebPortalView.swift */,
+				977C7BF92E1E9B9F0040362B /* NOCWebView.swift */,
+				97449E872EDA3E4700CB038A /* NotificationSettingsView.swift */,
+				9703AF862EAFEE74002E9E26 /* PilotNote.swift */,
+				97D75BB22E50F2BE00EF6DB3 /* NotificationNames.swift */,
+				97C759AC2E2A69210048549B /* OPSCallingManager.swift */,
+				977C7BFA2E1E9B9F0040362B /* PerDiemSummaryView.swift */,
+				97449E832EDA3DD600CB038A /* PerDiemSettingsView.swift */,
+				9799E7432EAE6A0500F0FADE /* PDFThumbnailGenerator.swift */,
+				9799E7412EAE68ED00F0FADE /* PDFThumbnailView.swift */,
+				977C7BFB2E1E9B9F0040362B /* PerDiemTabView.swift */,
+				9738A2892EE8E35200C6CA28 /* RestStatusManager.swift */,
+				975582312EE8B88A0009D2CF /* DutyLimitSettingsView.swift */,
+				9755822F2EE8B80C0009D2CF /* DutyLimitSettings.swift */,
+				97006EA22EEB563F00319FF0 /* OffDutyStatusManager.swift */,
+				97AFBB842EE5466600C63E38 /* PendingTripsHelperView.swift */,
+				97B321F82E280D9700ADFC0B /* PhoneWatchConnectivity.swift */,
+				974ED3522E2BC4B200901DA7 /* PilotActivityManager.swift */,
+				97EC0B2B2E22D2D900EFE8F5 /* PilotLocationManager.swift */,
+				9756EE422E2D987E00810911 /* ProPilotApp.entitlements */,
+				974ED3A42E2C3A7600901DA7 /* ProPilotApp.swift */,
+				97DE53412E315A03007D6475 /* ProPilotWatchApp Watch App */,
+				970C5DA22E1F108C00B6E48F /* README.md */,
+				97A7C8552ECD04B4009E4A5E /* ProximitySettingsView.swift */,
+				977C7BFD2E1E9B9F0040362B /* RosterModels.swift */,
+				973AFA0A2EE0954900CDF4AB /* RosterToTripHelper.swift */,
+				976052962ECA124C007CB9C5 /* ScannerEmailConfigView.swift */,
+				97DC6EE82E3323890002F472 /* ScannerIntegrationsExtensions.swift */,
+				977C7BFF2E1E9B9F0040362B /* ScheduleCalendarView.swift */,
+				97DC6F1F2E3675500002F472 /* ScheduleDataAnalyzer.swift */,
+				977C7C002E1E9B9F0040362B /* SettingsView.swift */,
+				97D75BA42E50D25A00EF6DB3 /* SharePointFile.swift */,
+				977C64ED2E81ABAA002B9552 /* ShareSheet.swift */,
+				977C7C012E1E9B9F0040362B /* SimpleGPSSignalView.swift */,
+				976F1C812E64A2ED00F15444 /* SimpleElectronicLogbookView.swift */,
+				977992F32EC91A7C00A8CA39 /* SmartTimeEntryField.swift */,
+				977992EB2EC8D76F00A8CA39 /* SnappingScrollView.swift */,
+				976BC3FB2EDCBE6400056B92 /* SwipeableRosterItemRow.swift */,
+				976052DC2ECB9AF3007CB9C5 /* TranslucentTimePicker.swift */,
+				97698C122EC82EF8003523F6 /* TimerSettingsView.swift */,
+				9756B82D2E95CC0800F59538 /* TabManager.swift */,
+				97BCC3B22E29A81A00D36E5B /* TemplateGeneratorView.swift */,
+				97698C182EC8356D003523F6 /* TimeDisplayUtility.swift */,
+				977C7C022E1E9B9F0040362B /* Trip.swift */,
+				97126E0B2EEE062500D6D150 /* Untitled 2.txt */,
+				9719753E2ED76DBD00CC1511 /* TripType.swift */,
+				97698C162EC833C0003523F6 /* TripDateUtility.swift */,
+				9703AF842EAFC758002E9E26 /* TripDocumentListView.swift */,
+				9799E73F2EAE5B8600F0FADE /* TripFolderBrowserView.swift */,
+				976D54762EDB54EE00A7D60C /* TripGenerationAlertModifier.swift */,
+				976D546F2EDB457C00A7D60C /* TripGenerationService.swift */,
+				97F2C3FB2EDE5096002B9BD6 /* TripGenerationServiceSettingsView.swift */,
+				976D546D2EDB452300A7D60C /* TripGenerationSettings.swift */,
+				976D54742EDB513C00A7D60C /* TripGenerationSettingsRow.swift */,
+				976D54712EDB45DB00A7D60C /* TripGenerationSettingsView.swift */,
+				97690F4D2EA5A3CC00FA9775 /* TimeRoundingUtility.swift */,
+				97747C8A2ED7B19800126113 /* TripSharingManager.swift */,
+				97690F472EA45DDA00FA9775 /* TripDocumentManager.swift */,
+				97690F492EA45F2600FA9775 /* AircraftHistoryManager.swift */,
+				976A7D5C2E8D658600E2676E /* TripCreationSettings.swift */,
+				97BCC3AC2E29549600D36E5B /* TripScannerView.swift */,
+				976F1C7F2E64A23A00F15444 /* UnifiedLogbookManager.swift */,
+				97AFBBA42EE7812900C63E38 /* UserAirportCodeMappings.swift */,
+				97D69EBD2E3D735600FFF195 /* UserDefaults+AppGroup.swift */,
+				9756B82F2E95E92400F59538 /* WeatherData.swift */,
+				97655AF32E50BB23007F4CDB /* TheProPilotApp.app */,
+				97655AF42E50BB29007F4CDB /* ProPilotWidgetsExtension.appex */,
+				97D75B7E2E50C15F00EF6DB3 /* ProPilotWatchApp Watch App.app */,
+				976052A22ECAA448007CB9C5 /* TripCompletionSummaryView.swift */,
+				976052A42ECAA46B007CB9C5 /* WatchPhoneLegSyncManager.swift */,
+				976052A82ECAA5E9007CB9C5 /* WatchTripSummaryView.swift */,
+				976052AC2ECAA638007CB9C5 /* WatchTheme.swift */,
+				976052B92ECAB442007CB9C5 /* WatchConnectivityStatusView.swift */,
+				972D01922ECBF2840064BD51 /* TimeFormattingUtilities.swift */,
+				97F2C3E22EDDE3DC002B9BD6 /* LiveActivityDebugView.swift */,
+				973AFA0C2EE097BF00CDF4AB /* GMTClockSettings.swift */,
+				973AFA0E2EE097BF00CDF4AB /* GMTClockPill.swift */,
+				973AFA102EE097BF00CDF4AB /* GMTClockOverlay.swift */,
+				973AFA122EE097BF00CDF4AB /* ClocksAndTimersSettingsView.swift */,
+				9738A2792EE8D78300C6CA28 /* DUTY_TIMER_TRIP_INTEGRATION.md */,
+				975C23D52ECE00810092249D /* NOC_WEBVIEW_INTEGRATION.md */,
+				9738A27B2EE8D7A400C6CA28 /* DUTY_TIME_QUICK_START.md */,
+				977992EF2EC8DA0500A8CA39 /* ENHANCED_BANNER_SUMMARY.md */,
+				977992F12EC8DB2900A8CA39 /* BANNER_UPDATES_COMPLETE.md */,
+				9738A27D2EE8D7EB00C6CA28 /* DUTY_TIME_EXAMPLES.md */,
+				976052CA2ECB5F4E007CB9C5 /* PHONE_WATCH_TIME_PARSING_FIX.md */,
+				976052D22ECB635B007CB9C5 /* WATCH_CONNECTIVITY_INTEGRATION_GUIDE.md */,
+				9738A27F2EE8D82600C6CA28 /* IMPLEMENTATION_SUMMARY.md */,
+				97F2C3E42EDDE3DC002B9BD6 /* DYNAMIC_ISLAND_LOGGING_FIX.md */,
+				97F2C3E62EDDE493002B9BD6 /* DEBUG_VIEW_ERRORS_FIXED.md */,
+				97F2C3EB2EDE074F002B9BD6 /* GPX_LEG_ADVANCEMENT_FIX.md */,
+				97F2C3ED2EDE0A33002B9BD6 /* GPX_LEG_STANDBY_ISSUE_EXPLAINED.md */,
+				9738A2812EE8D87A00C6CA28 /* DUTY_TIME_VISUAL_GUIDE.md */,
+				9738A2832EE8DCC200C6CA28 /* PER_FDP_LIMIT_EXPLAINED.md */,
+				9738A2852EE8DDDC00C6CA28 /* CARGO_OPS_CHANGES.md */,
+				9738A2872EE8DFB800C6CA28 /* 16_HOUR_DUTY_TRACKING.md */,
+				9738A28D2EE8E3CE00C6CA28 /* REST_INTEGRATION_GUIDE.md */,
+				9738A2912EE8FC9B00C6CA28 /* LEG_DATE_ENHANCEMENTS.md */,
+				978B5C062EECD1BF00316AE1 /* FIXES_APPLIED_SUMMARY.md */,
+				978B5C082EECD37900316AE1 /* DEBUG_LOGGING_CLEANUP.md */,
+				978B5C0A2EECD3B100316AE1 /* COMPLETE_FIX_SUMMARY.md */,
+				978B5C0E2EECD63C00316AE1 /* FINAL_LOGGING_CLEANUP_ROUND3.md */,
+				978B5C102EECDDB200316AE1 /* CRITICAL_CRASH_FIX_IPHONE17.md */,
+				978B5C122EED8AD100316AE1 /* ZULU_LOCAL_TIME_FIX.md */,
+				978B5C142EED8E3C00316AE1 /* ZULU_TIME_SYSTEM_ARCHITECTURE.md */,
+				978B5C162EED8FC500316AE1 /* TIME_PICKER_INVENTORY.md */,
+				978B5C182EED90DE00316AE1 /* WATCH_24HOUR_PICKER_FIX.md */,
+				978B5C1A2EED912C00316AE1 /* WATCH_FIX_COMPLETE.md */,
+				978B5C1C2EED953B00316AE1 /* STORAGE_UNIFICATION_COMPLETE.md */,
+				978B5C1E2EED96F000316AE1 /* New Folder */,
+				97126E032EEDC8E000D6D150 /* WATCH_LEG_HISTORY_FIX.md */,
+				97126E052EEDC9B800D6D150 /* LEG_ADVANCEMENT_FIX.md */,
+				97126E072EEDCBA100D6D150 /* ADD_LEG_UI_REFRESH_FIX.md */,
+				97126E092EEDCFFA00D6D150 /* ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md */,
+			);
+			sourceTree = "<group>";
+		};
+		97AFBB902EE6558100C63E38 /* Jumpseat */ = {
+			isa = PBXGroup;
+			children = (
+				97AFBB872EE6558100C63E38 /* JUMPSEAT_IMPLEMENTATION_GUIDE.md */,
+			);
+			path = Jumpseat;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9770D6612E07A62500D18769 /* TheProPilotApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9770D6882E07A62600D18769 /* Build configuration list for PBXNativeTarget "TheProPilotApp" */;
+			buildPhases = (
+				9770D65E2E07A62500D18769 /* Sources */,
+				9770D65F2E07A62500D18769 /* Frameworks */,
+				9770D6602E07A62500D18769 /* Resources */,
+				9756BE722E2FB8F500469A77 /* Embed Watch Content */,
+				9762A6B02EE07EE200764AFC /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9763CED82E52B4D300344E7D /* PBXTargetDependency */,
+				9762A6A82EE07D3E00764AFC /* PBXTargetDependency */,
+				9762A6AA2EE07D6600764AFC /* PBXTargetDependency */,
+				9762A6AC2EE07D7F00764AFC /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				97418DD22EE306AE00560D71 /* New Group */,
+				978B5C1E2EED96F000316AE1 /* New Folder */,
+			);
+			name = TheProPilotApp;
+			packageProductDependencies = (
+			);
+			productName = BlockCalcv2;
+			productReference = 97655AF32E50BB23007F4CDB /* TheProPilotApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		9772E6602E4028C400B5A0B4 /* ProPilotWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9772E6712E4028C500B5A0B4 /* Build configuration list for PBXNativeTarget "ProPilotWidgetsExtension" */;
+			buildPhases = (
+				9772E65D2E4028C400B5A0B4 /* Sources */,
+				9772E65E2E4028C400B5A0B4 /* Frameworks */,
+				9772E65F2E4028C400B5A0B4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				9772E6642E4028C500B5A0B4 /* ProPilotWidgets */,
+			);
+			name = ProPilotWidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = ProPilotWidgetsExtension;
+			productReference = 97655AF42E50BB29007F4CDB /* ProPilotWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		97DE533F2E315A03007D6475 /* ProPilotWatchApp Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 97DE534C2E315A03007D6475 /* Build configuration list for PBXNativeTarget "ProPilotWatchApp Watch App" */;
+			buildPhases = (
+				97DE533C2E315A03007D6475 /* Sources */,
+				97DE533D2E315A03007D6475 /* Frameworks */,
+				97DE533E2E315A03007D6475 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				97DE53412E315A03007D6475 /* ProPilotWatchApp Watch App */,
+			);
+			name = "ProPilotWatchApp Watch App";
+			packageProductDependencies = (
+			);
+			productName = "ProPilotWatchApp Watch App";
+			productReference = 97D75B7E2E50C15F00EF6DB3 /* ProPilotWatchApp Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9770D65A2E07A62500D18769 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 2610;
+				TargetAttributes = {
+					9770D6612E07A62500D18769 = {
+						CreatedOnToolsVersion = 16.2;
+						LastSwiftMigration = 1640;
+					};
+					9772E6602E4028C400B5A0B4 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					97DE533F2E315A03007D6475 = {
+						CreatedOnToolsVersion = 16.4;
+						LastSwiftMigration = 1640;
+					};
+				};
+			};
+			buildConfigurationList = 9770D65D2E07A62500D18769 /* Build configuration list for PBXProject "TheProPilotApp" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 9770D6592E07A62500D18769;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 9770D6592E07A62500D18769;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9770D6612E07A62500D18769 /* TheProPilotApp */,
+				97DE533F2E315A03007D6475 /* ProPilotWatchApp Watch App */,
+				9772E6602E4028C400B5A0B4 /* ProPilotWidgetsExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9770D6602E07A62500D18769 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				97126E062EEDC9B800D6D150 /* LEG_ADVANCEMENT_FIX.md in Resources */,
+				978B5C1B2EED912C00316AE1 /* WATCH_FIX_COMPLETE.md in Resources */,
+				9738A2842EE8DCC200C6CA28 /* PER_FDP_LIMIT_EXPLAINED.md in Resources */,
+				978B5C092EECD37900316AE1 /* DEBUG_LOGGING_CLEANUP.md in Resources */,
+				977992F22EC8DB2900A8CA39 /* BANNER_UPDATES_COMPLETE.md in Resources */,
+				975C23C32ECD4F2D0092249D /* YIP_DTW.gpx in Resources */,
+				97AFBB912EE6558100C63E38 /* JUMPSEAT_IMPLEMENTATION_GUIDE.md in Resources */,
+				975C23D62ECE00810092249D /* NOC_WEBVIEW_INTEGRATION.md in Resources */,
+				976052D32ECB635B007CB9C5 /* WATCH_CONNECTIVITY_INTEGRATION_GUIDE.md in Resources */,
+				97F2C3EE2EDE0A33002B9BD6 /* GPX_LEG_STANDBY_ISSUE_EXPLAINED.md in Resources */,
+				97046B162ECD4D880066DC9F /* KDTW_KCLE.gpx in Resources */,
+				97F2C3EC2EDE074F002B9BD6 /* GPX_LEG_ADVANCEMENT_FIX.md in Resources */,
+				976052CB2ECB5F4E007CB9C5 /* PHONE_WATCH_TIME_PARSING_FIX.md in Resources */,
+				9738A2802EE8D82600C6CA28 /* IMPLEMENTATION_SUMMARY.md in Resources */,
+				9738A2862EE8DDDC00C6CA28 /* CARGO_OPS_CHANGES.md in Resources */,
+				978B5C0B2EECD3B100316AE1 /* COMPLETE_FIX_SUMMARY.md in Resources */,
+				97F2C3E72EDDE493002B9BD6 /* DEBUG_VIEW_ERRORS_FIXED.md in Resources */,
+				978B5C0F2EECD63C00316AE1 /* FINAL_LOGGING_CLEANUP_ROUND3.md in Resources */,
+				978B5C132EED8AD100316AE1 /* ZULU_LOCAL_TIME_FIX.md in Resources */,
+				97126E0C2EEE062C00D6D150 /* Untitled 2.txt in Resources */,
+				97126E082EEDCBA100D6D150 /* ADD_LEG_UI_REFRESH_FIX.md in Resources */,
+				978B5C112EECDDB200316AE1 /* CRITICAL_CRASH_FIX_IPHONE17.md in Resources */,
+				978B5C1D2EED953B00316AE1 /* STORAGE_UNIFICATION_COMPLETE.md in Resources */,
+				97C37E142EE1F9F900975E84 /* schema.json in Resources */,
+				97F2C3E52EDDE3DC002B9BD6 /* DYNAMIC_ISLAND_LOGGING_FIX.md in Resources */,
+				978B5C172EED8FC500316AE1 /* TIME_PICKER_INVENTORY.md in Resources */,
+				977992F02EC8DA0500A8CA39 /* ENHANCED_BANNER_SUMMARY.md in Resources */,
+				978B5C192EED90DE00316AE1 /* WATCH_24HOUR_PICKER_FIX.md in Resources */,
+				9738A27C2EE8D7A400C6CA28 /* DUTY_TIME_QUICK_START.md in Resources */,
+				978B5C072EECD1BF00316AE1 /* FIXES_APPLIED_SUMMARY.md in Resources */,
+				9738A27E2EE8D7EB00C6CA28 /* DUTY_TIME_EXAMPLES.md in Resources */,
+				97D75BB52E528F6900EF6DB3 /* AppIcon.xcassets in Resources */,
+				9738A2882EE8DFB800C6CA28 /* 16_HOUR_DUTY_TRACKING.md in Resources */,
+				978B5C152EED8E3C00316AE1 /* ZULU_TIME_SYSTEM_ARCHITECTURE.md in Resources */,
+				970C5DA32E1F109800B6E48F /* README.md in Resources */,
+				9738A2922EE8FC9B00C6CA28 /* LEG_DATE_ENHANCEMENTS.md in Resources */,
+				97126E0A2EEDCFFA00D6D150 /* ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md in Resources */,
+				9738A27A2EE8D78300C6CA28 /* DUTY_TIMER_TRIP_INTEGRATION.md in Resources */,
+				9738A2822EE8D87A00C6CA28 /* DUTY_TIME_VISUAL_GUIDE.md in Resources */,
+				97126E042EEDC8E000D6D150 /* WATCH_LEG_HISTORY_FIX.md in Resources */,
+				9738A28E2EE8E3CE00C6CA28 /* REST_INTEGRATION_GUIDE.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9772E65F2E4028C400B5A0B4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		97DE533E2E315A03007D6475 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9770D65E2E07A62500D18769 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				973AFA112EE097BF00CDF4AB /* GMTClockOverlay.swift in Sources */,
+				977C7C052E1E9B9F0040362B /* AircraftManagementView.swift in Sources */,
+				97747CE32ED8DDDD00126113 /* ClocksAndTimersView.swift in Sources */,
+				976052BA2ECAB442007CB9C5 /* WatchConnectivityStatusView.swift in Sources */,
+				9799E7402EAE5B8600F0FADE /* TripFolderBrowserView.swift in Sources */,
+				977C7C072E1E9B9F0040362B /* NOCSettingsView.swift in Sources */,
+				971461092EE4809F00751961 /* TripTimelineGanttChart.swift in Sources */,
+				976D54752EDB513C00A7D60C /* TripGenerationSettingsRow.swift in Sources */,
+				97AFBB852EE5466600C63E38 /* PendingTripsHelperView.swift in Sources */,
+				97F2C3E32EDDE3DC002B9BD6 /* LiveActivityDebugView.swift in Sources */,
+				977C7C082E1E9B9F0040362B /* ScheduleCalendarView.swift in Sources */,
+				977C7C092E1E9B9F0040362B /* CrewMember.swift in Sources */,
+				97A4F7A72E83878E00EBE49E /* AutoTimeSettings.swift in Sources */,
+				97A617DA2E7F335800BAE84A /* EmailComposerView.swift in Sources */,
+				9747C2522ECC0DBE00953014 /* GPXTestPlayer.swift in Sources */,
+				9703AF852EAFC758002E9E26 /* TripDocumentListView.swift in Sources */,
+				977C7C0A2E1E9B9F0040362B /* LegsReportView.swift in Sources */,
+				973AFA0B2EE0954900CDF4AB /* RosterToTripHelper.swift in Sources */,
+				977C64EC2E81A663002B9552 /* AppBackupData.swift in Sources */,
+				975C6D8E2E5F20C000830C35 /* DocumentPicker.swift in Sources */,
+				975C23D42ECE00390092249D /* NOCWebPortalView.swift in Sources */,
+				977C7C0B2E1E9B9F0040362B /* LogbookTheme.swift in Sources */,
+				97AFBBA92EE78CB300C63E38 /* EnhancedAircraftManagementView.swift in Sources */,
+				97AFBBAA2EE78CB300C63E38 /* AircraftDatabase.swift in Sources */,
+				97AFBBAB2EE78CB300C63E38 /* EnhancedAirportCodeManager.swift in Sources */,
+				97747CED2ED9137B00126113 /* FlexibleTimerView 2.swift in Sources */,
+				97747CD92ED8BBE900126113 /* DutyTimerManager.swift in Sources */,
+				973AFA132EE097BF00CDF4AB /* ClocksAndTimersSettingsView.swift in Sources */,
+				9760529D2ECA81E6007CB9C5 /* CloudKitManager.swift in Sources */,
+				975C23DA2ECE00F70092249D /* NOC_WEBVIEW_QUICK_START.swift in Sources */,
+				9703AF8B2EAFEE9F002E9E26 /* FlightCalculatorView.swift in Sources */,
+				97BCC3B72E29A83500D36E5B /* DataValidatorView.swift in Sources */,
+				977C7C0C2E1E9B9F0040362B /* FlightAwareCredentials.swift in Sources */,
+				97DC6F202E3675500002F472 /* ScheduleDataAnalyzer.swift in Sources */,
+				97C759AD2E2A69210048549B /* OPSCallingManager.swift in Sources */,
+				977C7C0E2E1E9B9F0040362B /* HorizontalLogView.swift in Sources */,
+				977C7C0F2E1E9B9F0040362B /* NOCWebView.swift in Sources */,
+				97BCC3A72E29263E00D36E5B /* PhoneWatchConnectivity.swift in Sources */,
+				976D54702EDB457C00A7D60C /* TripGenerationService.swift in Sources */,
+				976D546A2EDA894700A7D60C /* iPhoneWatchSettingsView.swift in Sources */,
+				975C23D82ECE00A40092249D /* NOCQuickAccessButton.swift in Sources */,
+				976F1C802E64A23A00F15444 /* UnifiedLogbookManager.swift in Sources */,
+				9714610D2EE4AFD100751961 /* ParsedFlightData.swift in Sources */,
+				977C7C102E1E9B9F0040362B /* SimpleGPSSignalView.swift in Sources */,
+				9756B8302E95E92400F59538 /* WeatherData.swift in Sources */,
+				97AFBBA52EE7812900C63E38 /* UserAirportCodeMappings.swift in Sources */,
+				976A7D5D2E8D658600E2676E /* TripCreationSettings.swift in Sources */,
+				977992F42EC91A7C00A8CA39 /* SmartTimeEntryField.swift in Sources */,
+				977C7C112E1E9B9F0040362B /* LandscapeDataEntryView.swift in Sources */,
+				977C7C122E1E9B9F0040362B /* PerDiemTabView.swift in Sources */,
+				97690F482EA45DDA00FA9775 /* TripDocumentManager.swift in Sources */,
+				97111C4B2E3A4F1300850DA5 /* ChainRouteDisplay.swift in Sources */,
+				976BC3F82EDCBE4100056B92 /* DismissedRosterItem.swift in Sources */,
+				977C7C132E1E9B9F0040362B /* EnhancedICAOTextField.swift in Sources */,
+				97449E842EDA3DD600CB038A /* PerDiemSettingsView.swift in Sources */,
+				97046B122ECD344A0066DC9F /* GradientGlowButton.swift in Sources */,
+				97F2C3F82EDE5039002B9BD6 /* ContinuationPromptView.swift in Sources */,
+				977D007B2EEA63180036EAD0 /* UnifiedAircraftDatabase.swift in Sources */,
+				977D007C2EEA63180036EAD0 /* UnifiedAircraftView.swift in Sources */,
+				97747CDD2ED8C8FB00126113 /* DataBackupSettingsView.swift in Sources */,
+				977C7C142E1E9B9F0040362B /* Helpers.swift in Sources */,
+				97A4F79E2E8291F400EBE49E /* GPSSpeedMonitor.swift in Sources */,
+				978B5C222EED9FDE00316AE1 /* WatchTheme.swift in Sources */,
+				977C7C152E1E9B9F0040362B /* ClocksView.swift in Sources */,
+				977C7C162E1E9B9F0040362B /* HomeBaseConfigurationView.swift in Sources */,
+				97A617D82E7E4EA700BAE84A /* DocumentScannerView.swift in Sources */,
+				9719753D2ED76D0D00CC1511 /* DocumentEmailData.swift in Sources */,
+				9719753F2ED76DBD00CC1511 /* TripType.swift in Sources */,
+				974ED3532E2BC4B200901DA7 /* PilotActivityManager.swift in Sources */,
+				9762A6A02EDE7EC800764AFC /* NOCRevisionAlertBanner.swift in Sources */,
+				977D00762EEA5C560036EAD0 /* AircraftLibraryView.swift in Sources */,
+				977D00772EEA5C560036EAD0 /* AircraftLibraryStore.swift in Sources */,
+				977D00782EEA5C560036EAD0 /* AircraftDefinition.swift in Sources */,
+				9714610B2EE4AB4900751961 /* ICalDiagnosticView.swift in Sources */,
+				97418DCC2EE2390900560D71 /* CloudAirport.swift in Sources */,
+				976052932ECA112A007CB9C5 /* AllLegsView.swift in Sources */,
+				977C7C182E1E9B9F0040362B /* FlightLeg.swift in Sources */,
+				977C64EE2E81ABAA002B9552 /* ShareSheet.swift in Sources */,
+				97698C132EC82EF8003523F6 /* TimerSettingsView.swift in Sources */,
+				975C23D02ECD70F50092249D /* NOCSettingsStore.swift in Sources */,
+				975C6D902E5F250A00830C35 /* FlightDataField.swift in Sources */,
+				977C7C192E1E9B9F0040362B /* LogbookView.swift in Sources */,
+				97A7C8562ECD04B4009E4A5E /* ProximitySettingsView.swift in Sources */,
+				977C7C1A2E1E9B9F0040362B /* ForeFlightLogBookRow.swift in Sources */,
+				977D007F2EEAFD1A0036EAD0 /* FAR117StatusBanner.swift in Sources */,
+				976052DD2ECB9AF3007CB9C5 /* TranslucentTimePicker.swift in Sources */,
+				97449E862EDA3E3200CB038A /* FAR117SettingsView.swift in Sources */,
+				977C7C1B2E1E9B9F0040362B /* PerDiemSummaryView.swift in Sources */,
+				9763CEDE2E54D34D00344E7D /* DocumentStore.swift in Sources */,
+				976052A52ECAA46B007CB9C5 /* WatchPhoneLegSyncManager.swift in Sources */,
+				9703AF8D2EAFEEAF002E9E26 /* CurrencyRate.swift in Sources */,
+				97F2C3F22EDE1D16002B9BD6 /* FAR117ComplianceView.swift in Sources */,
+				97EC0B312E22F45500EFE8F5 /* ContentView.swift in Sources */,
+				97690F4A2EA45F2600FA9775 /* AircraftHistoryManager.swift in Sources */,
+				97BCC3AD2E29549600D36E5B /* TripScannerView.swift in Sources */,
+				97D69EBE2E3D735600FFF195 /* UserDefaults+AppGroup.swift in Sources */,
+				97D75BB12E50E6FE00EF6DB3 /* AuthenticatedExcelViewer.swift in Sources */,
+				97A4F7A52E8380E900EBE49E /* AutoTimeSettingsView.swift in Sources */,
+				97747CE12ED8D68E00126113 /* AppleWatchStatusView.swift in Sources */,
+				977D00812EEAFD590036EAD0 /* GroupedRosterDisplay.swift in Sources */,
+				97EC0B392E242CFF00EFE8F5 /* ComprehensiveLogbookStore.swift in Sources */,
+				977C7C1D2E1E9B9F0040362B /* FlightAwareManager.swift in Sources */,
+				977C7C1E2E1E9B9F0040362B /* SettingsView.swift in Sources */,
+				977C7C1F2E1E9B9F0040362B /* AirlineSettingsView.swift in Sources */,
+				97D69EC02E3D954C00FFF195 /* DutyTimerLiveActivity.swift in Sources */,
+				977C7C212E1E9B9F0040362B /* AutoCompleteTestView.swift in Sources */,
+				976D54722EDB45DB00A7D60C /* TripGenerationSettingsView.swift in Sources */,
+				9703AF7F2EAEE0C5002E9E26 /* DocumentCropProcessor.swift in Sources */,
+				97747CEF2ED9318600126113 /* ElectronicLogbookViewer.swift in Sources */,
+				977C7C222E1E9B9F0040362B /* LogPageTableView.swift in Sources */,
+				9703AF8F2EAFEFC7002E9E26 /* FlightOperationsView.swift in Sources */,
+				97EC0B2C2E22D2D900EFE8F5 /* PilotLocationManager.swift in Sources */,
+				971975392ED76B9900CC1511 /* DocumentEmailConfig.swift in Sources */,
+				9763B30C2EE38465003865D6 /* AreaGuideView.swift in Sources */,
+				97EC0B182E229FFF00EFE8F5 /* GPSRAIMManager.swift in Sources */,
+				977C7C232E1E9B9F0040362B /* RosterModels.swift in Sources */,
+				976052912ECA105B007CB9C5 /* CrewContactsView.swift in Sources */,
+				977C7C242E1E9B9F0040362B /* DataEntryView.swift in Sources */,
+				9738A28A2EE8E35200C6CA28 /* RestStatusManager.swift in Sources */,
+				9799E7422EAE68ED00F0FADE /* PDFThumbnailView.swift in Sources */,
+				974ED3A52E2C3A7600901DA7 /* ProPilotApp.swift in Sources */,
+				9703AF812EAEE0D3002E9E26 /* DocumentCropSettingsView.swift in Sources */,
+				97EC0B452E243CC800EFE8F5 /* LogbookFormat.swift in Sources */,
+				9799E7442EAE6A0500F0FADE /* PDFThumbnailGenerator.swift in Sources */,
+				973AFA0D2EE097BF00CDF4AB /* GMTClockSettings.swift in Sources */,
+				977C7C272E1E9B9F0040362B /* AppMonitor.swift in Sources */,
+				97EC0B472E24421A00EFE8F5 /* ElectronicLogbookHelpView.swift in Sources */,
+				97D75BA52E50D25A00EF6DB3 /* SharePointFile.swift in Sources */,
+				976D54772EDB54EE00A7D60C /* TripGenerationAlertModifier.swift in Sources */,
+				975582322EE8B88A0009D2CF /* DutyLimitSettingsView.swift in Sources */,
+				97698C172EC833C0003523F6 /* TripDateUtility.swift in Sources */,
+				976052A32ECAA448007CB9C5 /* TripCompletionSummaryView.swift in Sources */,
+				9703AF952EB07357002E9E26 /* FlightLegsView.swift in Sources */,
+				9703AF892EAFEE8E002E9E26 /* ProPilotDocument.swift in Sources */,
+				976052952ECA11BF007CB9C5 /* AirlineConfigurationView.swift in Sources */,
+				976F1C822E64A2ED00F15444 /* SimpleElectronicLogbookView.swift in Sources */,
+				977C7C282E1E9B9F0040362B /* FlightAwareViews.swift in Sources */,
+				97BCC3AB2E294A4200D36E5B /* MoreRowItem.swift in Sources */,
+				976BC3FC2EDCBE6400056B92 /* SwipeableRosterItemRow.swift in Sources */,
+				97698C152EC82F4F003523F6 /* FlexibleTimerManager.swift in Sources */,
+				977C7C292E1E9B9F0040362B /* LogBookStore.swift in Sources */,
+				97AFBB832EE4C1A700C63E38 /* Rolling30DayComplianceView.swift in Sources */,
+				9770689D2E64D39D005A674D /* LogbookUIComponents.swift in Sources */,
+				9703AF872EAFEE74002E9E26 /* PilotNote.swift in Sources */,
+				9747C2542ECC0DCA00953014 /* GPXTestIntegration.swift in Sources */,
+				97747CE92ED8E73800126113 /* ForeFlightStyleTimerView.swift in Sources */,
+				97698C192EC8356D003523F6 /* TimeDisplayUtility.swift in Sources */,
+				976052972ECA124C007CB9C5 /* ScannerEmailConfigView.swift in Sources */,
+				977C7C2B2E1E9B9F0040362B /* Trip.swift in Sources */,
+				976D546E2EDB452300A7D60C /* TripGenerationSettings.swift in Sources */,
+				977C7C2C2E1E9B9F0040362B /* FlightTrackingUtility.swift in Sources */,
+				977C7C2D2E1E9B9F0040362B /* AirlineSettings.swift in Sources */,
+				97EC0B3D2E2431FB00EFE8F5 /* AirportDatabaseManager.swift in Sources */,
+				97EC0B412E24364300EFE8F5 /* NightHoursCalculator.swift in Sources */,
+				9754938B2E93652800C80B17 /* CrewImportHelperView.swift in Sources */,
+				972D01932ECBF2850064BD51 /* TimeFormattingUtilities.swift in Sources */,
+				976BC3FA2EDCBE5500056B92 /* DismissedRosterItemsView.swift in Sources */,
+				97449E882EDA3E4700CB038A /* NotificationSettingsView.swift in Sources */,
+				977056FC2E5CCA54000C607C /* DataManagementView.swift in Sources */,
+				977992EC2EC8D76F00A8CA39 /* SnappingScrollView.swift in Sources */,
+				97747CDB2ED8C56E00126113 /* AutoTimeLoggingSettingsView.swift in Sources */,
+				976052992ECA59E1007CB9C5 /* ActiveTripBannerView.swift in Sources */,
+				97EC0B372E242CED00EFE8F5 /* FlightEntry.swift in Sources */,
+				977C7C2E2E1E9B9F0040362B /* FlightAwareModels.swift in Sources */,
+				975C23D22ECDF6460092249D /* NOCRosterGanttView.swift in Sources */,
+				977C7C2F2E1E9B9F0040362B /* EmailSettings.swift in Sources */,
+				975582302EE8B80C0009D2CF /* DutyLimitSettings.swift in Sources */,
+				975493892E92E68700C80B17 /* CrewContactManager.swift in Sources */,
+				977C7C302E1E9B9F0040362B /* ExportView.swift in Sources */,
+				977C7C312E1E9B9F0040362B /* FlightAwareIntegration.swift in Sources */,
+				97F2C3F62EDE5020002B9BD6 /* ContinuationPrompt.swift in Sources */,
+				971974EA2ED49D8500CC1511 /* NotificationNames.swift in Sources */,
+				97690F4E2EA5A3CC00FA9775 /* TimeRoundingUtility.swift in Sources */,
+				97747C8D2ED7D3CB00126113 /* BackupFileHandler.swift in Sources */,
+				97D75BAF2E50D6DD00EF6DB3 /* CompleteExcelViewer.swift in Sources */,
+				9703AF832EAFC6CD002E9E26 /* DocumentDeletionManager.swift in Sources */,
+				97006EA42EEB58AF00319FF0 /* OffDutyStatusManager.swift in Sources */,
+				97BCC3B32E29A81A00D36E5B /* TemplateGeneratorView.swift in Sources */,
+				97DC6EE92E3323890002F472 /* ScannerIntegrationsExtensions.swift in Sources */,
+				973AFA0F2EE097BF00CDF4AB /* GMTClockPill.swift in Sources */,
+				9756B82E2E95CC0800F59538 /* TabManager.swift in Sources */,
+				974ED36C2E2BE20B00901DA7 /* AppConstants.swift in Sources */,
+				9703AF932EB0606B002E9E26 /* LegsExportView.swift in Sources */,
+				97747C8B2ED7B19800126113 /* TripSharingManager.swift in Sources */,
+				9760529B2ECA6C02007CB9C5 /* BottomSheetTripsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9772E65D2E4028C400B5A0B4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		97DE533C2E315A03007D6475 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				976A7D5F2E8D661300E2676E /* FlightLeg.swift in Sources */,
+				971975402ED772CF00CC1511 /* TripType.swift in Sources */,
+				976A7D602E8D669C00E2676E /* CrewMember.swift in Sources */,
+				97690F4F2EA5A6C800FA9775 /* TimeRoundingUtility.swift in Sources */,
+				97698C1A2EC83A55003523F6 /* AutoTimeSettings.swift in Sources */,
+				976D54732EDB4B7800A7D60C /* Trip.swift in Sources */,
+				97698C1B2EC83A6F003523F6 /* TimeDisplayUtility.swift in Sources */,
+				97690F522EA5A82600FA9775 /* UserDefaults+AppGroup.swift in Sources */,
+				976052B62ECAB1C4007CB9C5 /* WatchTripSummaryView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9762A6A82EE07D3E00764AFC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9772E6602E4028C400B5A0B4 /* ProPilotWidgetsExtension */;
+			targetProxy = 9762A6A72EE07D3E00764AFC /* PBXContainerItemProxy */;
+		};
+		9762A6AA2EE07D6600764AFC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9772E6602E4028C400B5A0B4 /* ProPilotWidgetsExtension */;
+			targetProxy = 9762A6A92EE07D6600764AFC /* PBXContainerItemProxy */;
+		};
+		9762A6AC2EE07D7F00764AFC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9772E6602E4028C400B5A0B4 /* ProPilotWidgetsExtension */;
+			targetProxy = 9762A6AB2EE07D7F00764AFC /* PBXContainerItemProxy */;
+		};
+		9763CED82E52B4D300344E7D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 97DE533F2E315A03007D6475 /* ProPilotWatchApp Watch App */;
+			targetProxy = 9763CED72E52B4D300344E7D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		9770D6862E07A62600D18769 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1.3;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 8B38D6N4YM;
+				DYLIB_CURRENT_VERSION = 1.3;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.3;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				NEW_SETTING = "";
+				NEW_SETTING1 = "";
+				NEW_SETTING2 = "";
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = Info.plist;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SYMROOT = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+			};
+			name = Debug;
+		};
+		9770D6872E07A62600D18769 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1.3;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 8B38D6N4YM;
+				DYLIB_CURRENT_VERSION = 1.3;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.3;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				NEW_SETTING = "";
+				NEW_SETTING1 = "";
+				NEW_SETTING2 = "";
+				PRODUCT_NAME = Info.plist;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		9770D6892E07A62600D18769 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALTERNATIVE_DISTRIBUTION_WEB = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = ProPilotApp.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_ASSET_PATHS = "\"$(SRCROOT)/Preview Content\"";
+				DEVELOPMENT_TEAM = 8B38D6N4YM;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TheProPilotApp;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to scan fuel receipts and aviation documents";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "GPS signal monitoring requires location access to track satellite connectivity, signal strength, and accuracy for aviation purposes.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "GPS signal monitoring requires location access to track satellite connectivity, signal strength, and accuracy for aviation purposes.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9770D68A2E07A62600D18769 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALTERNATIVE_DISTRIBUTION_WEB = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = ProPilotApp.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_ASSET_PATHS = "\"$(SRCROOT)/Preview Content\"";
+				DEVELOPMENT_TEAM = 8B38D6N4YM;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readwrite;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TheProPilotApp;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to scan fuel receipts and aviation documents";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "GPS signal monitoring requires location access to track satellite connectivity, signal strength, and accuracy for aviation purposes.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "GPS signal monitoring requires location access to track satellite connectivity, signal strength, and accuracy for aviation purposes.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		9772E6722E4028C500B5A0B4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = ProPilotWidgets/ProPilotWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 8B38D6N4YM;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ProPilotWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "ProPilot Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.ProPilotWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				XROS_DEPLOYMENT_TARGET = 2.5;
+			};
+			name = Debug;
+		};
+		9772E6732E4028C500B5A0B4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = ProPilotWidgets/ProPilotWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 8B38D6N4YM;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ProPilotWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "ProPilot Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_NSSupportsLiveActivitiesFrequentUpdates = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.ProPilotWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				XROS_DEPLOYMENT_TARGET = 2.5;
+			};
+			name = Release;
+		};
+		97DE534D2E315A03007D6475 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=watchos*]" = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = "ProPilotWatchApp Watch App/ProPilotWatchApp Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = 8B38D6N4YM;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ProPilotWatchApp Watch App/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = ProPilotWatchApp;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jkadans.ProPilotApp;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.6;
+			};
+			name = Debug;
+		};
+		97DE534E2E315A03007D6475 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=watchos*]" = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = "ProPilotWatchApp Watch App/ProPilotWatchApp Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = 8B38D6N4YM;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ProPilotWatchApp Watch App/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = ProPilotWatchApp;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jkadans.ProPilotApp;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.6;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9770D65D2E07A62500D18769 /* Build configuration list for PBXProject "TheProPilotApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9770D6862E07A62600D18769 /* Debug */,
+				9770D6872E07A62600D18769 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9770D6882E07A62600D18769 /* Build configuration list for PBXNativeTarget "TheProPilotApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9770D6892E07A62600D18769 /* Debug */,
+				9770D68A2E07A62600D18769 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9772E6712E4028C500B5A0B4 /* Build configuration list for PBXNativeTarget "ProPilotWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9772E6722E4028C500B5A0B4 /* Debug */,
+				9772E6732E4028C500B5A0B4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		97DE534C2E315A03007D6475 /* Build configuration list for PBXNativeTarget "ProPilotWatchApp Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				97DE534D2E315A03007D6475 /* Debug */,
+				97DE534E2E315A03007D6475 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9770D65A2E07A62500D18769 /* Project object */;
+}

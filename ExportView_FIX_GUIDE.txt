@@ -1,0 +1,14 @@
+// Key fixes for ExportView.swift compilation errors:
+
+// ❌ BROKEN (lines 411-412):
+let fromStr = useStartDate, let s = filteredStartDate ? df.string(from: s) : "Any"
+
+// ✅ FIXED:
+let fromStr: String
+if useStartDate, let s = filteredStartDate {
+    fromStr = df.string(from: s)
+} else {
+    fromStr = "Any"
+}
+
+// Apply this same pattern to both occurrences (customPeriodDescription and generateHeaderAndContent)

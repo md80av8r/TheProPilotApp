@@ -1,0 +1,83 @@
+import Foundation
+import SwiftUI
+
+// MARK: - Settings for Auto Time Logging
+// ✅ UNIFIED STORAGE: All settings use App Group for iPhone/Watch sync
+class AutoTimeSettings: ObservableObject {
+    static let shared = AutoTimeSettings()
+    
+    // ✅ Use @AppStorage with App Group for automatic sync
+    @AppStorage("useZuluTime", store: UserDefaults(suiteName: "group.com.propilot.app"))
+    var useZuluTime: Bool = true
+    
+    @AppStorage("roundTimesToFiveMinutes", store: UserDefaults(suiteName: "group.com.propilot.app"))
+    var roundTimesToFiveMinutes: Bool = false
+    
+    @AppStorage("takeoffSpeedThreshold", store: UserDefaults(suiteName: "group.com.propilot.app"))
+    var takeoffSpeedThreshold: Double = 80.0
+    
+    @AppStorage("landingSpeedThreshold", store: UserDefaults(suiteName: "group.com.propilot.app"))
+    var landingSpeedThreshold: Double = 40.0
+    
+    @AppStorage("autoTimeLoggingEnabled", store: UserDefaults(suiteName: "group.com.propilot.app"))
+    var isEnabled: Bool = false
+    
+    private init() {
+        print("✅ AutoTimeSettings initialized with App Group storage")
+        print("   useZuluTime: \(useZuluTime)")
+        print("   roundTimesToFiveMinutes: \(roundTimesToFiveMinutes)")
+        
+        // Migration: Copy old values from standard UserDefaults to App Group (one-time)
+        migrateSettingsToAppGroup()
+    }
+    
+    /// Migrate settings from old UserDefaults.standard to App Group (one-time migration)
+    private func migrateSettingsToAppGroup() {
+        guard let appGroup = UserDefaults(suiteName: "group.com.propilot.app") else {
+            print("⚠️ Could not access App Group for migration")
+            return
+        }
+        
+        // Check if migration already happened
+        if appGroup.bool(forKey: "hasMingratedSettings") {
+            return
+        }
+        
+        let standard = UserDefaults.standard
+        
+        // Migrate each setting if it exists in standard but not in app group
+        if standard.object(forKey: "useZuluTime") != nil && appGroup.object(forKey: "useZuluTime") == nil {
+            let value = standard.bool(forKey: "useZuluTime")
+            appGroup.set(value, forKey: "useZuluTime")
+            print("📦 Migrated useZuluTime: \(value)")
+        }
+        
+        if standard.object(forKey: "roundTimesToFiveMinutes") != nil && appGroup.object(forKey: "roundTimesToFiveMinutes") == nil {
+            let value = standard.bool(forKey: "roundTimesToFiveMinutes")
+            appGroup.set(value, forKey: "roundTimesToFiveMinutes")
+            print("📦 Migrated roundTimesToFiveMinutes: \(value)")
+        }
+        
+        if standard.object(forKey: "takeoffSpeedThreshold") != nil && appGroup.object(forKey: "takeoffSpeedThreshold") == nil {
+            let value = standard.double(forKey: "takeoffSpeedThreshold")
+            appGroup.set(value, forKey: "takeoffSpeedThreshold")
+            print("📦 Migrated takeoffSpeedThreshold: \(value)")
+        }
+        
+        if standard.object(forKey: "landingSpeedThreshold") != nil && appGroup.object(forKey: "landingSpeedThreshold") == nil {
+            let value = standard.double(forKey: "landingSpeedThreshold")
+            appGroup.set(value, forKey: "landingSpeedThreshold")
+            print("📦 Migrated landingSpeedThreshold: \(value)")
+        }
+        
+        if standard.object(forKey: "autoTimeLoggingEnabled") != nil && appGroup.object(forKey: "autoTimeLoggingEnabled") == nil {
+            let value = standard.bool(forKey: "autoTimeLoggingEnabled")
+            appGroup.set(value, forKey: "autoTimeLoggingEnabled")
+            print("📦 Migrated autoTimeLoggingEnabled: \(value)")
+        }
+        
+        // Mark migration as complete
+        appGroup.set(true, forKey: "hasMigratedSettings")
+        print("✅ Settings migration to App Group complete")
+    }
+}

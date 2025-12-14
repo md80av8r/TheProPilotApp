@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="ProPilot GPX Generator"
+     xmlns="http://www.topografix.com/GPX/1/1">
+    
+    <!-- KDTW (Detroit Metro) to KCLE (Cleveland Hopkins) -->
+    <!-- Distance: ~90 NM, Flight Time: ~35 minutes -->
+    <!-- Aircraft: Typical Part 135 Cargo Jet -->
+    
+    <metadata>
+        <name>KDTW to KCLE Flight</name>
+        <desc>Simulated cargo flight Detroit to Cleveland</desc>
+    </metadata>
+    
+    <trk>
+        <name>KDTW-KCLE</name>
+        <trkseg>
+            
+            <!-- PHASE 1: GATE/RAMP AT KDTW (0 knots) -->
+            <trkpt lat="42.2124" lon="-83.3534">
+                <ele>190</ele>
+                <time>2025-01-15T14:00:00Z</time>
+                <speed>0</speed>
+                <name>KDTW Gate</name>
+            </trkpt>
+            
+            <!-- PHASE 2: TAXI TO RUNWAY (15-20 knots) -->
+            <trkpt lat="42.2130" lon="-83.3520">
+                <ele>190</ele>
+                <time>2025-01-15T14:02:00Z</time>
+                <speed>8</speed>
+            </trkpt>
+            
+            <trkpt lat="42.2145" lon="-83.3490">
+                <ele>190</ele>
+                <time>2025-01-15T14:04:00Z</time>
+                <speed>10</speed>
+            </trkpt>
+            
+            <trkpt lat="42.2160" lon="-83.3450">
+                <ele>190</ele>
+                <time>2025-01-15T14:06:00Z</time>
+                <speed>8</speed>
+            </trkpt>
+            
+            <!-- PHASE 3: RUNWAY 21L LINEUP -->
+            <trkpt lat="42.2180" lon="-83.3420">
+                <ele>190</ele>
+                <time>2025-01-15T14:08:00Z</time>
+                <speed>0</speed>
+                <name>Runway 21L Hold Short</name>
+            </trkpt>
+            
+            <!-- PHASE 4: TAKEOFF ROLL (accelerating 0-150 knots) -->
+            <trkpt lat="42.2175" lon="-83.3410">
+                <ele>190</ele>
+                <time>2025-01-15T14:08:30Z</time>
+                <speed>15</speed>
+            </trkpt>
+            
+            <trkpt lat="42.2165" lon="-83.3390">
+                <ele>190</ele>
+                <time>2025-01-15T14:08:45Z</time>
+                <speed>35</speed>
+            </trkpt>
+            
+            <trkpt lat="42.2150" lon="-83.3360">
+                <ele>190</ele>
+                <time>2025-01-15T14:09:00Z</time>
+                <speed>60</speed>
+            </trkpt>
+            
+            <trkpt lat="42.2130" lon="-83.3320">
+                <ele>190</ele>
+                <time>2025-01-15T14:09:15Z</time>
+                <speed>85</speed>
+                <name>V1</name>
+            </trkpt>
+            
+            <trkpt lat="42.2110" lon="-83.3280">
+                <ele>195</ele>
+                <time>2025-01-15T14:09:25Z</time>
+                <speed>95</speed>
+                <name>Rotate</name>
+            </trkpt>
+            
+            <!-- PHASE 5: INITIAL CLIMB (150-250 knots) -->
+            <trkpt lat="42.2080" lon="-83.3220">
+                <ele>400</ele>
+                <time>2025-01-15T14:09:40Z</time>
+                <speed>110</speed>
+                <name>Liftoff</name>
+            </trkpt>
+            
+            <trkpt lat="42.2040" lon="-83.3140">
+                <ele>1200</ele>
+                <time>2025-01-15T14:10:00Z</time>
+                <speed>140</speed>
+            </trkpt>
+            
+            <trkpt lat="42.1980" lon="-83.3020">
+                <ele>2500</ele>
+                <time>2025-01-15T14:10:30Z</time>
+                <speed>170</speed>
+            </trkpt>
+            
+            <trkpt lat="42.1900" lon="-83.2850">
+                <ele>4000</ele>
+                <time>2025-01-15T14:11:00Z</time>
+                <speed>200</speed>
+            </trkpt>
+            
+            <trkpt lat="42.1780" lon="-83.2600">
+                <ele>6000</ele>
+                <time>2025-01-15T14:11:45Z</time>
+                <speed>220</speed>
+            </trkpt>
+            
+            <!-- PHASE 6: CLIMB TO CRUISE (FL230) -->
+            <trkpt lat="42.1600" lon="-83.2200">
+                <ele>8000</ele>
+                <time>2025-01-15T14:12:30Z</time>
+                <speed>250</speed>
+            </trkpt>
+            
+            <trkpt lat="42.1350" lon="-83.1600">
+                <ele>12000</ele>
+                <time>2025-01-15T14:14:00Z</time>
+                <speed>280</speed>
+            </trkpt>
+            
+            <trkpt lat="42.1050" lon="-83.0800">
+                <ele>16000</ele>
+                <time>2025-01-15T14:16:00Z</time>
+                <speed>300</speed>
+            </trkpt>
+            
+            <trkpt lat="42.0700" lon="-82.9800">
+                <ele>20000</ele>
+                <time>2025-01-15T14:18:00Z</time>
+                <speed>320</speed>
+            </trkpt>
+            
+            <trkpt lat="42.0300" lon="-82.8600">
+                <ele>23000</ele>
+                <time>2025-01-15T14:20:00Z</time>
+                <speed>340</speed>
+                <name>Top of Climb FL230</name>
+            </trkpt>
+            
+            <!-- PHASE 7: CRUISE AT FL230 (~340 knots) -->
+            <trkpt lat="41.9800" lon="-82.7200">
+                <ele>23000</ele>
+                <time>2025-01-15T14:22:00Z</time>
+                <speed>340</speed>
+            </trkpt>
+            
+            <trkpt lat="41.9200" lon="-82.5600">
+                <ele>23000</ele>
+                <time>2025-01-15T14:24:00Z</time>
+                <speed>340</speed>
+            </trkpt>
+            
+            <trkpt lat="41.8600" lon="-82.4000">
+                <ele>23000</ele>
+                <time>2025-01-15T14:26:00Z</time>
+                <speed>340</speed>
+            </trkpt>
+            
+            <trkpt lat="41.8000" lon="-82.2400">
+                <ele>23000</ele>
+                <time>2025-01-15T14:28:00Z</time>
+                <speed>340</speed>
+            </trkpt>
+            
+            <trkpt lat="41.7400" lon="-82.0800">
+                <ele>23000</ele>
+                <time>2025-01-15T14:30:00Z</time>
+                <speed>340</speed>
+                <name>Top of Descent</name>
+            </trkpt>
+            
+            <!-- PHASE 8: DESCENT -->
+            <trkpt lat="41.6900" lon="-81.9600">
+                <ele>20000</ele>
+                <time>2025-01-15T14:32:00Z</time>
+                <speed>320</speed>
+            </trkpt>
+            
+            <trkpt lat="41.6400" lon="-81.8800">
+                <ele>16000</ele>
+                <time>2025-01-15T14:34:00Z</time>
+                <speed>300</speed>
+            </trkpt>
+            
+            <trkpt lat="41.5900" lon="-81.8400">
+                <ele>12000</ele>
+                <time>2025-01-15T14:36:00Z</time>
+                <speed>280</speed>
+            </trkpt>
+            
+            <trkpt lat="41.5500" lon="-81.8200">
+                <ele>8000</ele>
+                <time>2025-01-15T14:38:00Z</time>
+                <speed>250</speed>
+            </trkpt>
+            
+            <trkpt lat="41.5100" lon="-81.8100">
+                <ele>5000</ele>
+                <time>2025-01-15T14:40:00Z</time>
+                <speed>220</speed>
+            </trkpt>
+            
+            <!-- PHASE 9: APPROACH TO KCLE RWY 24R -->
+            <trkpt lat="41.4800" lon="-81.8050">
+                <ele>3500</ele>
+                <time>2025-01-15T14:41:30Z</time>
+                <speed>180</speed>
+                <name>Final Approach Fix</name>
+            </trkpt>
+            
+            <trkpt lat="41.4600" lon="-81.8100">
+                <ele>2500</ele>
+                <time>2025-01-15T14:42:30Z</time>
+                <speed>160</speed>
+            </trkpt>
+            
+            <trkpt lat="41.4450" lon="-81.8200">
+                <ele>1500</ele>
+                <time>2025-01-15T14:43:30Z</time>
+                <speed>145</speed>
+            </trkpt>
+            
+            <trkpt lat="41.4300" lon="-81.8350">
+                <ele>800</ele>
+                <time>2025-01-15T14:44:30Z</time>
+                <speed>140</speed>
+                <name>1000ft AGL</name>
+            </trkpt>
+            
+            <trkpt lat="41.4200" lon="-81.8450">
+                <ele>500</ele>
+                <time>2025-01-15T14:45:00Z</time>
+                <speed>135</speed>
+            </trkpt>
+            
+            <!-- PHASE 10: LANDING -->
+            <trkpt lat="41.4150" lon="-81.8500">
+                <ele>250</ele>
+                <time>2025-01-15T14:45:20Z</time>
+                <speed>130</speed>
+                <name>Threshold RWY 24R</name>
+            </trkpt>
+            
+            <trkpt lat="41.4130" lon="-81.8520">
+                <ele>200</ele>
+                <time>2025-01-15T14:45:25Z</time>
+                <speed>125</speed>
+                <name>Touchdown</name>
+            </trkpt>
+            
+            <!-- PHASE 11: LANDING ROLL (decelerating) -->
+            <trkpt lat="41.4110" lon="-81.8550">
+                <ele>190</ele>
+                <time>2025-01-15T14:45:35Z</time>
+                <speed>100</speed>
+            </trkpt>
+            
+            <trkpt lat="41.4090" lon="-81.8580">
+                <ele>190</ele>
+                <time>2025-01-15T14:45:45Z</time>
+                <speed>70</speed>
+            </trkpt>
+            
+            <trkpt lat="41.4070" lon="-81.8610">
+                <ele>190</ele>
+                <time>2025-01-15T14:45:55Z</time>
+                <speed>50</speed>
+                <name>60 knots - Landing Roll</name>
+            </trkpt>
+            
+            <trkpt lat="41.4060" lon="-81.8630">
+                <ele>190</ele>
+                <time>2025-01-15T14:46:05Z</time>
+                <speed>30</speed>
+            </trkpt>
+            
+            <!-- PHASE 12: TAXI TO RAMP -->
+            <trkpt lat="41.4050" lon="-81.8650">
+                <ele>190</ele>
+                <time>2025-01-15T14:46:20Z</time>
+                <speed>15</speed>
+                <name>Exit Runway</name>
+            </trkpt>
+            
+            <trkpt lat="41.4080" lon="-81.8680">
+                <ele>190</ele>
+                <time>2025-01-15T14:47:30Z</time>
+                <speed>12</speed>
+            </trkpt>
+            
+            <trkpt lat="41.4100" lon="-81.8520">
+                <ele>190</ele>
+                <time>2025-01-15T14:49:00Z</time>
+                <speed>10</speed>
+            </trkpt>
+            
+            <trkpt lat="41.4117" lon="-81.8498">
+                <ele>190</ele>
+                <time>2025-01-15T14:50:00Z</time>
+                <speed>0</speed>
+                <name>KCLE Ramp - Block In</name>
+            </trkpt>
+            
+        </trkseg>
+    </trk>
+</gpx>

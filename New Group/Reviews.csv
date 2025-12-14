@@ -1,0 +1,21 @@
+airportCode,rating,category,comment,author,creationDate,fuelAvailable,crewCar,hotelShuttle
+KORD,4,ops,Great FBO service. Quick turn times.,Capt. Smith,2024-11-15,true,true,true
+KMEM,5,fuel,"Best fuel prices in the region. Professional staff.",FO Jones,2024-11-10,true,true,false
+KDEN,3,parking,"Crowded ramp, long taxi times. Plan extra time.",Capt. Davis,2024-11-05,true,false,true
+KATL,4,ops,Efficient ground ops. Good communication from tower.,FO Wilson,2024-11-01,true,true,true
+KDFW,3,fuel,Fuel prices higher than average. Slow fueling.,Capt. Brown,2024-10-28,true,false,false
+KCVG,5,fbo,"Excellent FBO. Free coffee and snacks. Crew lounge.",FO Martinez,2024-10-25,true,true,true
+KIND,4,ops,Quick turns. Helpful ground crew.,Capt. Lee,2024-10-20,true,true,false
+KMSP,3,parking,Limited parking during peak hours.,FO Taylor,2024-10-15,true,false,true
+KBOS,4,fuel,Good fuel prices. Professional service.,Capt. White,2024-10-10,true,true,true
+KSEA,2,ops,Long delays common. Busy airspace.,FO Anderson,2024-10-05,true,false,false
+KLAS,5,fbo,"Outstanding FBO facilities. Very pilot-friendly.",Capt. Thomas,2024-09-30,true,true,true
+KPHX,3,fuel,Average fuel prices. Adequate service.,FO Garcia,2024-09-25,true,false,true
+KIAD,4,ops,Good ground operations. Clear taxi instructions.,Capt. Miller,2024-09-20,true,true,false
+KEWR,2,parking,"Very congested. Long taxi times. Poor parking.",FO Rodriguez,2024-09-15,true,false,false
+KSFO,3,fuel,High fuel costs. Busy ramp.,Capt. Martinez,2024-09-10,true,true,true
+KJFK,2,ops,"Chaotic ground ops. Frequent delays. Expect long waits.",FO Clark,2024-09-05,true,false,true
+KLAX,3,fuel,Fuel available but expensive.,Capt. Lewis,2024-08-30,true,true,false
+KDAL,5,fbo,"Fantastic crew lounge. Quick service. Highly recommended.",FO Walker,2024-08-25,true,true,true
+KMDW,4,ops,Efficient operations. Friendly staff.,Capt. Hall,2024-08-20,true,false,true
+KPHL,3,parking,Adequate parking. Can get busy.,FO Allen,2024-08-15,true,true,false

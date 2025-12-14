@@ -1,0 +1,231 @@
+
+# ✅ AUTO-CREATE REMOVED - Manual Leg Creation Only
+
+## 🔧 What Changed in Trip.swift
+
+### Removed from `activateNextStandbyLeg()` (lines 639-673):
+```swift
+// ❌ REMOVED: Auto-create logic
+// No standby legs exist - create a new one
+guard let lastCompletedLeg = legs.last else {
+    print("⚠️ activateNextStandbyLeg: No legs exist to create from")
+    return
+}
+
+// Create new leg with smart defaults
+var newLeg = FlightLeg()
+newLeg.status = .standby
+// ... auto-fill departure, flight number
+// ... add to logpage
+// ... activate it
+```
+
+### Restored to Simple Behavior:
+```swift
+// ✅ SIMPLE: Just activate existing standby legs
+mutating func activateNextStandbyLeg() {
+    guard let standbyIndex = nextStandbyLegIndex else {
+        print("📋 No more standby legs to activate - trip may be complete")
+        return  // ← No auto-create!
+    }
+    
+    // Activate the existing standby leg
+    logpages[pageIndex].legs[legIndex].status = .active
+}
+```
+
+---
+
+## 🎯 How Leg Creation Now Works
+
+### ✅ ONLY 3 Ways to Create Legs:
+
+#### 1. Initial Trip Creation (Leg 1)
+```
+User creates trip → DataEntryView → Trip created with 1 leg
+```
+
+#### 2. Watch "Add Another Leg" Button
+```
+User fills Leg 1 times
+→ Watch shows "Leg Complete" screen
+→ User taps "Add Another Leg"
+→ Watch sends "addNewLeg" message to phone
+→ Phone creates Leg 2 with pre-filled departure
+→ Phone syncs Leg 2 to watch
+→ Watch shows Leg 2 time pickers
+```
+
+#### 3. Phone "Add Leg" Button (DataEntryView)
+```
+User taps "Add Leg" in DataEntryView
+→ Phone creates new leg with defaults
+→ Phone syncs to watch if watch is active
+→ UI updates to show new leg
+```
+
+---
+
+## 📱 Complete Workflow (Manual Only)
+
+### Scenario: 3-Leg Trip
+
+```
+┌─────────────────────────────────────────────┐
+│ TRIP START: User creates trip with 1 leg   │
+└─────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────┐
+│ LEG 1: Fill OUT/OFF/ON/IN times on watch   │
+└─────────────────────────────────────────────┘
+                    ↓
+        Phone: checkAndAdvanceLeg(0)
+        Phone: Marks Leg 1 complete
+        Phone: Calls activateNextStandbyLeg()
+        Phone: No standby legs → returns
+        Phone: "No more legs to activate"
+                    ↓
+┌─────────────────────────────────────────────┐
+│ WATCH: Shows "Leg Complete" screen         │
+│   ✅ Leg Complete                           │
+│   Block: 0:45  Flight: 0:30                │
+│   [Add Another Leg]  [End Trip]            │
+└─────────────────────────────────────────────┘
+                    ↓
+          User taps "Add Another Leg"
+                    ↓
+        Watch: Sends "addNewLeg" message
+        Phone: Creates Leg 2 (departure = Leg 1 arrival)
+        Phone: Sets Leg 2 status = .active
+        Phone: Syncs Leg 2 to watch
+                    ↓
+┌─────────────────────────────────────────────┐
+│ LEG 2: Fill OUT/OFF/ON/IN times on watch   │
+│   Departure: KDTW (pre-filled)              │
+│   Arrival: (empty)                          │
+└─────────────────────────────────────────────┘
+                    ↓
+        Phone: checkAndAdvanceLeg(1)
+        Phone: Marks Leg 2 complete
+        Phone: Calls activateNextStandbyLeg()
+        Phone: No standby legs → returns
+                    ↓
+┌─────────────────────────────────────────────┐
+│ WATCH: Shows "Leg Complete" screen         │
+│   [Add Another Leg]  [End Trip]            │
+└─────────────────────────────────────────────┘
+                    ↓
+          User taps "Add Another Leg"
+                    ↓
+        Phone: Creates Leg 3
+        Phone: Syncs Leg 3 to watch
+                    ↓
+┌─────────────────────────────────────────────┐
+│ LEG 3: Fill times, then tap "End Trip"     │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## 🔍 What Happens After Each Leg
+
+### Phone Side (Trip.swift):
+```swift
+1. Watch sends IN time
+2. checkAndAdvanceLeg() called
+3. Marks current leg .completed
+4. Calls activateNextStandbyLeg()
+5. No standby legs found → returns
+6. Waits for user to add leg manually
+```
+
+### Watch Side (FlightTimesWatchView.swift):
+```swift
+1. Receives IN time confirmation
+2. Shows "Leg Complete" screen
+3. Displays two buttons:
+   - "Add Another Leg" → creates next leg
+   - "End Trip" → finishes trip
+4. Waits for user decision
+```
+
+---
+
+## ✅ Benefits of Manual-Only Approach
+
+1. **User Control** - Pilot decides when to add legs
+2. **Clean Data** - No empty/unwanted legs created
+3. **Flexible** - Works for 1-leg or 10-leg trips
+4. **Predictable** - Behavior matches user expectations
+5. **No Waste** - Database only has legs user wants
+
+---
+
+## 🎯 Testing Checklist
+
+### Test 1: Single Leg Trip
+```
+1. Create trip
+2. Fill Leg 1 times (OUT/OFF/ON/IN)
+3. Watch shows "Leg Complete"
+4. Tap "End Trip" ✅
+5. Verify: Only 1 leg in database
+```
+
+### Test 2: Multi-Leg Trip
+```
+1. Create trip
+2. Fill Leg 1 times
+3. Tap "Add Another Leg"
+4. Verify: Leg 2 appears with pre-filled departure
+5. Fill Leg 2 times
+6. Tap "Add Another Leg"
+7. Verify: Leg 3 appears
+8. Fill Leg 3 times
+9. Tap "End Trip" ✅
+10. Verify: Exactly 3 legs in database
+```
+
+### Test 3: Phone Add Leg
+```
+1. Create trip on phone
+2. Fill Leg 1 on phone
+3. Tap "Add Leg" button in DataEntryView
+4. Verify: Leg 2 created with defaults
+5. If watch is connected, verify watch shows Leg 2
+```
+
+---
+
+## 📝 Console Output Examples
+
+### After Leg 1 Completes (No Auto-Create):
+```
+🔍 checkAndAdvanceLeg(0): status=active, OUT='1941', OFF='1944', ON='1950', IN='1942', isComplete=true
+✅ Leg 1 complete - all times filled, advancing to next leg
+🔄 completeActiveLeg called with activateNext=true
+✅ Completed leg 1 (page 0, leg 0)
+📋 No more standby legs to activate - trip may be complete  ← Stops here
+```
+
+### After User Taps "Add Another Leg":
+```
+📱 Received message: addNewLeg
+📍 Creating new leg with departure: KDTW
+✅ Created new leg 2
+▶️ Activated leg 2
+📱 Syncing leg 2 to watch
+```
+
+---
+
+## ⚠️ Important Notes
+
+- **No legs are created automatically** - period!
+- **activateNextStandbyLeg() only activates** - it never creates
+- **Leg creation is always explicit** - user action required
+- **Pre-filling still works** - departure/flight number copied when user adds leg
+
+---
+
+**This is the correct, manual-only behavior!** ✅

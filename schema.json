@@ -1,0 +1,40 @@
+{
+  "recordTypes": [
+    {
+      "name": "PilotReview",
+      "indexes": [
+        {
+          "name": "airportCode_index",
+          "fields": [
+            { "name": "airportCode", "type": "STRING" }
+          ],
+          "type": "SINGLE_FIELD"
+        }
+      ],
+      "fields": [
+        { "name": "content", "type": "STRING" },
+        { "name": "aircraftType", "type": "STRING" },
+        { "name": "operatorName", "type": "STRING" },
+        { "name": "approachUsed", "type": "STRING" },
+        { "name": "runwayUsed", "type": "STRING" },
+        { "name": "winds", "type": "STRING" },
+        { "name": "visibility", "type": "STRING" },
+        { "name": "waitTimeMinutes", "type": "INT64" },
+        { "name": "fuelPrice", "type": "DOUBLE" },
+        { "name": "handlingFee", "type": "DOUBLE" },
+        { "name": "serviceQuality", "type": "INT64" },
+        { "name": "remarks", "type": "STRING" },
+        { "name": "isFlagged", "type": "INT64" },
+        { "name": "helpfulCount", "type": "INT64" },
+        { "name": "crewCarAvailable", "type": "INT64" },
+        { "name": "crewCarNotes", "type": "STRING" },
+        { "name": "fboName", "type": "STRING" },
+        { "name": "fboAmenities", "type": "LIST", "subtype": "STRING" }
+      ],
+      "permissions": [
+        { "role": "_creator", "create": true, "read": true, "update": true, "delete": true },
+        { "role": "_world", "create": true, "read": true, "update": false, "delete": false }
+      ]
+    }
+  ]
+}

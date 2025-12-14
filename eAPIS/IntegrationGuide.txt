@@ -1,0 +1,221 @@
+# EAPIS Integration Guide for ProPilot
+
+## Overview
+This EAPIS (Electronic Advance Passenger Information System) module adds comprehensive international flight manifest generation capabilities to ProPilot. It includes passenger management, manifest creation, and country-specific document generation for international operations.
+
+## Files Created
+
+### Data Models
+- **EAPISPassenger.swift** - Passenger data model with CloudKit support
+- **EAPISManifest.swift** - Flight manifest model linking passengers to trips
+- **EAPISDocumentGenerator.swift** - Document generation utilities for different countries
+
+### CloudKit Manager
+- **EAPISCloudKitManager.swift** - Handles all CloudKit operations for passengers and manifests
+
+### Views
+- **EAPISView.swift** - Main entry point with passenger/manifest tabs
+- **AddEditPassengerView.swift** - Passenger creation and editing
+- **AddEditManifestView.swift** - Manifest creation and editing
+- **DocumentExportView.swift** - Document generation and export
+
+## Integration Steps
+
+### 1. Add Files to Xcode Project
+1. Drag all `.swift` files into your ProPilot project
+2. Ensure they're added to the main app target
+3. Verify file membership in Target settings
+
+### 2. CloudKit Configuration
+Add these record types to your CloudKit schema:
+
+#### Passenger Record Type
+- `firstName` (String)
+- `middleName` (String)
+- `lastName` (String)
+- `dateOfBirth` (Date/Time)
+- `gender` (String)
+- `nationality` (String)
+- `passportNumber` (String)
+- `passportIssuingCountry` (String)
+- `passportExpirationDate` (Date/Time)
+- `streetAddress` (String)
+- `city` (String)
+- `state` (String)
+- `postalCode` (String)
+- `country` (String)
+- `phoneNumber` (String)
+- `email` (String)
+- `weight` (Int64) - Optional
+- `frequentFlyerNumber` (String) - Optional
+- `knownTravelerNumber` (String) - Optional
+- `redressNumber` (String) - Optional
+- `createdDate` (Date/Time)
+- `lastModifiedDate` (Date/Time)
+- `isFavorite` (Int64)
+- `notes` (String)
+
+#### EAPISManifest Record Type
+- `tripID` (String) - Optional
+- `flightNumber` (String)
+- `aircraftRegistration` (String)
+- `aircraftType` (String)
+- `departureAirport` (String)
+- `departureDate` (Date/Time)
+- `departureTime` (Date/Time)
+- `arrivalAirport` (String)
+- `estimatedArrivalDate` (Date/Time)
+- `estimatedArrivalTime` (Date/Time)
+- `pilotInCommand` (String)
+- `pilotLicense` (String)
+- `copilotName` (String) - Optional
+- `copilotLicense` (String) - Optional
+- `passengerIDs` (String) - Comma-separated
+- `purposeOfFlight` (String)
+- `customsPurpose` (String)
+- `countryOfOrigin` (String)
+- `destinationCountry` (String)
+- `customsDeclarations` (Int64)
+- `declarationDetails` (String)
+- `status` (String)
+- `filedDate` (Date/Time) - Optional
+- `confirmationNumber` (String) - Optional
+- `createdDate` (Date/Time)
+- `lastModifiedDate` (Date/Time)
+- `notes` (String)
+
+### 3. Add to Navigation
+In your `ContentView.swift` or main tab view, add EAPIS as a new tab:
+
+```swift
+TabView {
+    // Existing tabs...
+    
+    EAPISView()
+        .tabItem {
+            Label("EAPIS", systemImage: "doc.text.fill")
+        }
+}
+```
+
+### 4. Optional: Link to Existing Trips
+To link EAPIS manifests to your existing trip system:
+
+```swift
+// In your trip detail view, add a button to create a manifest
+Button("Create EAPIS Manifest") {
+    let manifest = EAPISManifest(
+        tripID: trip.id,
+        flightNumber: trip.flightNumber,
+        aircraftRegistration: "N123AB", // From your aircraft settings
+        departureAirport: trip.origin,
+        arrivalAirport: trip.destination,
+        departureDate: trip.outTime,
+        pilotInCommand: "Your Name" // From user settings
+    )
+    // Navigate to AddEditManifestView with manifest
+}
+```
+
+### 5. App Group Configuration (Already Set Up)
+The EAPIS system uses your existing App Group: `group.com.propilot.app`
+No additional configuration needed.
+
+## Features
+
+### Passenger Management
+- ✅ Store passenger information with CloudKit sync
+- ✅ Passport details with expiration warnings
+- ✅ Address and contact information
+- ✅ Favorite passengers for quick access
+- ✅ Search and filter capabilities
+
+### Manifest Generation
+- ✅ Link manifests to ProPilot trips
+- ✅ Multiple passengers per manifest
+- ✅ Track filing status (Draft → Ready → Filed)
+- ✅ Confirmation number tracking
+
+### Document Formats
+- ✅ **GENDEC** - General Declaration (universal)
+- ✅ **Canada** - Canada Border Services eManifest
+- ✅ **Mexico** - Mexican customs declaration
+- ✅ **Caribbean/Cuba** - Standard Caribbean format
+- ✅ **Europe** - Schengen Area entry declaration
+
+### Export Options
+- ✅ Share via standard iOS share sheet
+- ✅ Copy to clipboard
+- ✅ Save as text file
+- ✅ Email directly
+
+## Usage Example
+
+### Adding a Passenger
+1. Go to EAPIS tab
+2. Tap "+" button
+3. Fill in passenger details
+4. Save
+
+### Creating a Manifest
+1. Switch to Manifests tab
+2. Tap "+" button
+3. Enter flight details
+4. Add passengers from your saved list
+5. Set status to "Ready to File" when complete
+6. Save
+
+### Generating Documents
+1. Open any manifest
+2. Tap "Generate Documents"
+3. Select country format
+4. Share, copy, or email the document
+
+## Future Enhancements
+
+Potential features to add:
+- PDF export instead of text
+- Automatic pre-fill from trip data
+- Weight & balance calculations
+- Integration with customs APIs (if available)
+- OCR for passport scanning
+- QR codes for quick check-in
+
+## Privacy & Security
+
+### Sensitive Data Handling
+- All passenger data stored in CloudKit private database
+- Data encrypted in transit and at rest
+- Passport numbers never displayed in list views
+- No data sharing without explicit user action
+
+### Compliance
+- GDPR-friendly: users control their data
+- No analytics or tracking of passenger information
+- Local cache in App Group for offline access
+
+## Support
+
+For questions or issues:
+1. Check CloudKit dashboard for sync issues
+2. Verify App Group entitlements
+3. Ensure all files are in the correct target
+
+## Testing Checklist
+
+- [ ] Add a passenger
+- [ ] Edit passenger details
+- [ ] Mark passenger as favorite
+- [ ] Delete a passenger
+- [ ] Create a manifest
+- [ ] Add multiple passengers to manifest
+- [ ] Generate GENDEC document
+- [ ] Generate Canada format
+- [ ] Test other formats
+- [ ] Share document via iOS share sheet
+- [ ] Copy to clipboard
+- [ ] Verify CloudKit sync
+- [ ] Test on second device (if available)
+
+## License
+Part of the ProPilot application. All rights reserved.
