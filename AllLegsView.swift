@@ -11,6 +11,7 @@ struct AllLegsView: View {
     @State private var selectedFilter: LegFilter = .all
     @State private var selectedSort: LegSort = .dateDescending
     @State private var selectedLeg: FlightLeg?
+    @State private var selectedTrip: Trip?
     
     enum LegFilter: String, CaseIterable {
         case all = "All Legs"
@@ -164,6 +165,7 @@ struct AllLegsView: View {
                         LegRowView(trip: item.trip, leg: item.leg)
                             .listRowBackground(LogbookTheme.navyLight)
                             .onTapGesture {
+                                selectedTrip = item.trip  // ✅ Capture trip HERE
                                 selectedLeg = item.leg
                             }
                     }
@@ -174,12 +176,12 @@ struct AllLegsView: View {
             .scrollContentBackground(.hidden)
         }
         .sheet(item: $selectedLeg) { leg in
-            if let item = filteredAndSortedLegs.first(where: { $0.leg.id == leg.id }) {
-                LegDetailView(trip: item.trip, leg: item.leg)
+            // ✅ Use the captured trip instead of looking it up
+            if let trip = selectedTrip {
+                LegDetailView(trip: trip, leg: leg)
             }
         }
     }
-    
     // MARK: - iPad Layout
     private var iPadLayout: some View {
         NavigationSplitView {
