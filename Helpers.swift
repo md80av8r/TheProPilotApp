@@ -106,7 +106,7 @@ func formatPerDiemDuration(_ minutes: Int) -> String {
 }
 
 func perDiemTotal(for trips: [Trip], rate: Double) -> (minutes: Int, dollars: Double) {
-    let minutes = trips.reduce(0) { $0 + ($1.perDiemMinutes ?? 0) }
+    let minutes = trips.reduce(0, { $0 + ($1.perDiemMinutes ?? 0) })
     let dollars = Double(minutes) / 60.0 * rate
     return (minutes, dollars)
 }

@@ -122,7 +122,7 @@ struct NOCTestView: View {
                             if showDatePicker {
                                 DatePicker("Trip Start", selection: $selectedDate, displayedComponents: [.date, .hourAndMinute])
                                     .datePickerStyle(.graphical)
-                                    .onChange(of: selectedDate) { newDate in
+                                    .onChange(of: selectedDate) { _, newDate in
                                         // Calculate hours from now
                                         let hours = Int(newDate.timeIntervalSince(Date()) / 3600)
                                         hoursFromNow = max(1, hours)
@@ -393,6 +393,7 @@ struct NOCTestView: View {
             // Create a new trip
             let newTrip = createTestTrip(from: scheduleItems)
             store.trips.append(newTrip)
+            store.save()  // Save to persistence
             generatedTrip = newTrip
             
             testResult += "✅ Created Trip #\(newTrip.tripNumber)\n"
@@ -434,7 +435,18 @@ struct NOCTestView: View {
             
             // Inject into ScheduleStore
             testResult += "✅ Adding \(scheduleItems.count) items to ScheduleStore\n"
-            scheduleStore.injectTestData(scheduleItems)
+            // Add items to ScheduleStore's items array
+            for item in scheduleItems {
+                scheduleStore.items.append(item)
+            }
+            
+            // Trigger trip generation by posting notification
+            testResult += "✅ Notifying TripGenerationService...\n"
+            NotificationCenter.default.post(
+                name: .rosterDataReadyForTripGeneration,
+                object: nil,
+                userInfo: ["items": scheduleItems]
+            )
             
             testResult += "\n🎉 Roster items added!\n"
             testResult += "\n📋 NEXT STEPS:\n"
