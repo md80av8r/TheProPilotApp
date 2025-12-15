@@ -845,6 +845,10 @@ struct ContentView: View {
                 .environmentObject(store)
                 .preferredColorScheme(.dark)
             
+        case "nocTest":
+            NOCTestView(store: store)
+                .preferredColorScheme(.dark)
+        
         case "gpxTesting":
             GPXTestingView(speedMonitor: speedMonitor)
                 .environmentObject(locationManager)
@@ -1078,6 +1082,31 @@ struct ContentView: View {
                         
                         selectedTripForEditing = store.trips[tripIndex]
                         showingDataEntry = true
+                    },
+                    onActivateTrip: {
+                        // Activate the trip: change status from .planning to .active
+                        var updatedTrip = store.trips[tripIndex]
+                        updatedTrip.status = .active
+                        
+                        // Set first leg to active if it's in standby
+                        if !updatedTrip.legs.isEmpty && updatedTrip.legs[0].status == .standby {
+                            // Find first leg in logpages
+                            if !updatedTrip.logpages.isEmpty && !updatedTrip.logpages[0].legs.isEmpty {
+                                updatedTrip.logpages[0].legs[0].status = .active
+                                print("✅ First leg activated")
+                            }
+                        }
+                        
+                        store.updateTrip(updatedTrip, at: tripIndex)
+                        
+                        // Start duty timer if enabled
+                        if !DutyTimerManager.shared.isOnDuty {
+                            DutyTimerManager.shared.startDuty()
+                            print("⏱️ Duty timer started automatically")
+                        }
+                        
+                        PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
+                        print("🚀 Trip #\(updatedTrip.tripNumber) activated!")
                     },
                     dutyStartTime: $dutyTimerManager.dutyStartTime,
                     airlineSettings: airlineSettings

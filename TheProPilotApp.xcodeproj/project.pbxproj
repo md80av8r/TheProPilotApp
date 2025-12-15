@@ -28,6 +28,12 @@
 		97126E082EEDCBA100D6D150 /* ADD_LEG_UI_REFRESH_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 97126E072EEDCBA100D6D150 /* ADD_LEG_UI_REFRESH_FIX.md */; };
 		97126E0A2EEDCFFA00D6D150 /* ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 97126E092EEDCFFA00D6D150 /* ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md */; };
 		97126E0C2EEE062C00D6D150 /* Untitled 2.txt in Resources */ = {isa = PBXBuildFile; fileRef = 97126E0B2EEE062500D6D150 /* Untitled 2.txt */; };
+		97126E122EEF4E5300D6D150 /* CLE_to_YIP.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 97126E0F2EEF4E5300D6D150 /* CLE_to_YIP.gpx */; };
+		97126E132EEF4E5300D6D150 /* privacy.md in Resources */ = {isa = PBXBuildFile; fileRef = 97126E112EEF4E5300D6D150 /* privacy.md */; };
+		97126E142EEF4E5300D6D150 /* NOCTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97126E102EEF4E5300D6D150 /* NOCTestView.swift */; };
+		97126E162EEF521D00D6D150 /* NOC_TEST_VIEW_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 97126E152EEF521D00D6D150 /* NOC_TEST_VIEW_GUIDE.md */; };
+		97126E182EEF56F100D6D150 /* NOC_TEST_REAL_FLOW_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 97126E172EEF56F100D6D150 /* NOC_TEST_REAL_FLOW_GUIDE.md */; };
+		97126E1A2EEF5A0900D6D150 /* TRIP_GROUPING_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 97126E192EEF5A0900D6D150 /* TRIP_GROUPING_FIX.md */; };
 		971461092EE4809F00751961 /* TripTimelineGanttChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971461082EE4809F00751961 /* TripTimelineGanttChart.swift */; };
 		9714610B2EE4AB4900751961 /* ICalDiagnosticView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9714610A2EE4AB4900751961 /* ICalDiagnosticView.swift */; };
 		9714610D2EE4AFD100751961 /* ParsedFlightData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9714610C2EE4AFD100751961 /* ParsedFlightData.swift */; };
@@ -37,6 +43,18 @@
 		9719753F2ED76DBD00CC1511 /* TripType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719753E2ED76DBD00CC1511 /* TripType.swift */; };
 		971975402ED772CF00CC1511 /* TripType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719753E2ED76DBD00CC1511 /* TripType.swift */; };
 		972D01932ECBF2850064BD51 /* TimeFormattingUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 972D01922ECBF2840064BD51 /* TimeFormattingUtilities.swift */; };
+		972F1AFF2EEF8D5500C86AD3 /* DataRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 972F1AFE2EEF8D5500C86AD3 /* DataRecoveryView.swift */; };
+		972F1B012EEF8D8500C86AD3 /* DATA_RECOVERY_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 972F1B002EEF8D8500C86AD3 /* DATA_RECOVERY_SUMMARY.md */; };
+		972F1B032EEF8DB500C86AD3 /* QUICK_START_RECOVERY.md in Resources */ = {isa = PBXBuildFile; fileRef = 972F1B022EEF8DB500C86AD3 /* QUICK_START_RECOVERY.md */; };
+		972F1B052EEF8E0100C86AD3 /* FIX_COMPLETE_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 972F1B042EEF8E0100C86AD3 /* FIX_COMPLETE_SUMMARY.md */; };
+		972F1B072EEF8E4000C86AD3 /* RECOVERY_FLOW_DIAGRAM.md in Resources */ = {isa = PBXBuildFile; fileRef = 972F1B062EEF8E4000C86AD3 /* RECOVERY_FLOW_DIAGRAM.md */; };
+		972F1B092EEF8E7900C86AD3 /* RECOVERY_CHECKLIST.md in Resources */ = {isa = PBXBuildFile; fileRef = 972F1B082EEF8E7900C86AD3 /* RECOVERY_CHECKLIST.md */; };
+		972F1B0B2EEF8FA900C86AD3 /* BUILD_ERRORS_FIXED.md in Resources */ = {isa = PBXBuildFile; fileRef = 972F1B0A2EEF8FA900C86AD3 /* BUILD_ERRORS_FIXED.md */; };
+		972F1B0D2EEF911400C86AD3 /* LOGBOOKSTORE_ERRORS_FIXED.md in Resources */ = {isa = PBXBuildFile; fileRef = 972F1B0C2EEF911400C86AD3 /* LOGBOOKSTORE_ERRORS_FIXED.md */; };
+		972F1B0F2EEF925500C86AD3 /* PHONEWATCH_ERRORS_FIXED.md in Resources */ = {isa = PBXBuildFile; fileRef = 972F1B0E2EEF925500C86AD3 /* PHONEWATCH_ERRORS_FIXED.md */; };
+		972F1B112EEF929E00C86AD3 /* ALL_ERRORS_FIXED.md in Resources */ = {isa = PBXBuildFile; fileRef = 972F1B102EEF929E00C86AD3 /* ALL_ERRORS_FIXED.md */; };
+		972F1B132EEF92B500C86AD3 /* QUICK_REFERENCE.md in Resources */ = {isa = PBXBuildFile; fileRef = 972F1B122EEF92B500C86AD3 /* QUICK_REFERENCE.md */; };
+		972F1B152EEF933600C86AD3 /* ELECTRONIC_LOGBOOK_ERRORS_FIXED.md in Resources */ = {isa = PBXBuildFile; fileRef = 972F1B142EEF933600C86AD3 /* ELECTRONIC_LOGBOOK_ERRORS_FIXED.md */; };
 		9738A27A2EE8D78300C6CA28 /* DUTY_TIMER_TRIP_INTEGRATION.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A2792EE8D78300C6CA28 /* DUTY_TIMER_TRIP_INTEGRATION.md */; };
 		9738A27C2EE8D7A400C6CA28 /* DUTY_TIME_QUICK_START.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A27B2EE8D7A400C6CA28 /* DUTY_TIME_QUICK_START.md */; };
 		9738A27E2EE8D7EB00C6CA28 /* DUTY_TIME_EXAMPLES.md in Resources */ = {isa = PBXBuildFile; fileRef = 9738A27D2EE8D7EB00C6CA28 /* DUTY_TIME_EXAMPLES.md */; };
@@ -68,6 +86,15 @@
 		975582322EE8B88A0009D2CF /* DutyLimitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975582312EE8B88A0009D2CF /* DutyLimitSettingsView.swift */; };
 		9756B82E2E95CC0800F59538 /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9756B82D2E95CC0800F59538 /* TabManager.swift */; };
 		9756B8302E95E92400F59538 /* WeatherData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9756B82F2E95E92400F59538 /* WeatherData.swift */; };
+		975A91F92EEF622E00F8D7AA /* ACTIVATE_TRIP_REFACTOR_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 975A91F82EEF622E00F8D7AA /* ACTIVATE_TRIP_REFACTOR_SUMMARY.md */; };
+		975A91FB2EEF625A00F8D7AA /* ACTIVATE_TRIP_VISUAL_COMPARISON.md in Resources */ = {isa = PBXBuildFile; fileRef = 975A91FA2EEF625900F8D7AA /* ACTIVATE_TRIP_VISUAL_COMPARISON.md */; };
+		975A91FD2EEF646700F8D7AA /* ACTIVATE_BUTTON_STANDBY_LEGS_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 975A91FC2EEF646700F8D7AA /* ACTIVATE_BUTTON_STANDBY_LEGS_FIX.md */; };
+		975A91FF2EEF66C200F8D7AA /* ACTIVATE_BUTTON_CALLBACK_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 975A91FE2EEF66C200F8D7AA /* ACTIVATE_BUTTON_CALLBACK_FIX.md */; };
+		975A92012EEF6B5E00F8D7AA /* TRIP_MANAGEMENT_SYSTEM_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 975A92002EEF6B5E00F8D7AA /* TRIP_MANAGEMENT_SYSTEM_GUIDE.md */; };
+		975A92032EEF7F6800F8D7AA /* EMERGENCY_LEG_DATA_RECOVERY.md in Resources */ = {isa = PBXBuildFile; fileRef = 975A92022EEF7F6800F8D7AA /* EMERGENCY_LEG_DATA_RECOVERY.md */; };
+		975A92052EEF7FA500F8D7AA /* IMMEDIATE_LEG_DATA_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 975A92042EEF7FA500F8D7AA /* IMMEDIATE_LEG_DATA_FIX.md */; };
+		975A92072EEF7FE500F8D7AA /* SESSION_SUMMARY_DEC_14_2025.md in Resources */ = {isa = PBXBuildFile; fileRef = 975A92062EEF7FE500F8D7AA /* SESSION_SUMMARY_DEC_14_2025.md */; };
+		975A92092EEF808600F8D7AA /* EMERGENCY_FIX_DECODER_DATA_LOSS.md in Resources */ = {isa = PBXBuildFile; fileRef = 975A92082EEF808600F8D7AA /* EMERGENCY_FIX_DECODER_DATA_LOSS.md */; };
 		975C23C32ECD4F2D0092249D /* YIP_DTW.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 976A7D592E8C7B3D00E2676E /* YIP_DTW.gpx */; };
 		975C23D02ECD70F50092249D /* NOCSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C23CF2ECD70F50092249D /* NOCSettingsStore.swift */; };
 		975C23D22ECDF6460092249D /* NOCRosterGanttView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C23D12ECDF6460092249D /* NOCRosterGanttView.swift */; };
@@ -323,6 +350,12 @@
 		97126E072EEDCBA100D6D150 /* ADD_LEG_UI_REFRESH_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ADD_LEG_UI_REFRESH_FIX.md; sourceTree = "<group>"; };
 		97126E092EEDCFFA00D6D150 /* ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md; sourceTree = "<group>"; };
 		97126E0B2EEE062500D6D150 /* Untitled 2.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Untitled 2.txt"; sourceTree = "<group>"; };
+		97126E0F2EEF4E5300D6D150 /* CLE_to_YIP.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = CLE_to_YIP.gpx; sourceTree = "<group>"; };
+		97126E102EEF4E5300D6D150 /* NOCTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCTestView.swift; sourceTree = "<group>"; };
+		97126E112EEF4E5300D6D150 /* privacy.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = privacy.md; sourceTree = "<group>"; };
+		97126E152EEF521D00D6D150 /* NOC_TEST_VIEW_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOC_TEST_VIEW_GUIDE.md; sourceTree = "<group>"; };
+		97126E172EEF56F100D6D150 /* NOC_TEST_REAL_FLOW_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOC_TEST_REAL_FLOW_GUIDE.md; sourceTree = "<group>"; };
+		97126E192EEF5A0900D6D150 /* TRIP_GROUPING_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TRIP_GROUPING_FIX.md; sourceTree = "<group>"; };
 		971461082EE4809F00751961 /* TripTimelineGanttChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTimelineGanttChart.swift; sourceTree = "<group>"; };
 		9714610A2EE4AB4900751961 /* ICalDiagnosticView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICalDiagnosticView.swift; sourceTree = "<group>"; };
 		9714610C2EE4AFD100751961 /* ParsedFlightData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedFlightData.swift; sourceTree = "<group>"; };
@@ -330,6 +363,18 @@
 		9719753C2ED76D0D00CC1511 /* DocumentEmailData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEmailData.swift; sourceTree = "<group>"; };
 		9719753E2ED76DBD00CC1511 /* TripType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripType.swift; sourceTree = "<group>"; };
 		972D01922ECBF2840064BD51 /* TimeFormattingUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormattingUtilities.swift; sourceTree = "<group>"; };
+		972F1AFE2EEF8D5500C86AD3 /* DataRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataRecoveryView.swift; sourceTree = "<group>"; };
+		972F1B002EEF8D8500C86AD3 /* DATA_RECOVERY_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DATA_RECOVERY_SUMMARY.md; sourceTree = "<group>"; };
+		972F1B022EEF8DB500C86AD3 /* QUICK_START_RECOVERY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = QUICK_START_RECOVERY.md; sourceTree = "<group>"; };
+		972F1B042EEF8E0100C86AD3 /* FIX_COMPLETE_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FIX_COMPLETE_SUMMARY.md; sourceTree = "<group>"; };
+		972F1B062EEF8E4000C86AD3 /* RECOVERY_FLOW_DIAGRAM.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = RECOVERY_FLOW_DIAGRAM.md; sourceTree = "<group>"; };
+		972F1B082EEF8E7900C86AD3 /* RECOVERY_CHECKLIST.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = RECOVERY_CHECKLIST.md; sourceTree = "<group>"; };
+		972F1B0A2EEF8FA900C86AD3 /* BUILD_ERRORS_FIXED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = BUILD_ERRORS_FIXED.md; sourceTree = "<group>"; };
+		972F1B0C2EEF911400C86AD3 /* LOGBOOKSTORE_ERRORS_FIXED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LOGBOOKSTORE_ERRORS_FIXED.md; sourceTree = "<group>"; };
+		972F1B0E2EEF925500C86AD3 /* PHONEWATCH_ERRORS_FIXED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PHONEWATCH_ERRORS_FIXED.md; sourceTree = "<group>"; };
+		972F1B102EEF929E00C86AD3 /* ALL_ERRORS_FIXED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ALL_ERRORS_FIXED.md; sourceTree = "<group>"; };
+		972F1B122EEF92B500C86AD3 /* QUICK_REFERENCE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = QUICK_REFERENCE.md; sourceTree = "<group>"; };
+		972F1B142EEF933600C86AD3 /* ELECTRONIC_LOGBOOK_ERRORS_FIXED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ELECTRONIC_LOGBOOK_ERRORS_FIXED.md; sourceTree = "<group>"; };
 		9738A2792EE8D78300C6CA28 /* DUTY_TIMER_TRIP_INTEGRATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DUTY_TIMER_TRIP_INTEGRATION.md; sourceTree = "<group>"; };
 		9738A27B2EE8D7A400C6CA28 /* DUTY_TIME_QUICK_START.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DUTY_TIME_QUICK_START.md; sourceTree = "<group>"; };
 		9738A27D2EE8D7EB00C6CA28 /* DUTY_TIME_EXAMPLES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DUTY_TIME_EXAMPLES.md; sourceTree = "<group>"; };
@@ -362,6 +407,15 @@
 		9756B82D2E95CC0800F59538 /* TabManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
 		9756B82F2E95E92400F59538 /* WeatherData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherData.swift; sourceTree = "<group>"; };
 		9756EE422E2D987E00810911 /* ProPilotApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ProPilotApp.entitlements; sourceTree = "<group>"; };
+		975A91F82EEF622E00F8D7AA /* ACTIVATE_TRIP_REFACTOR_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ACTIVATE_TRIP_REFACTOR_SUMMARY.md; sourceTree = "<group>"; };
+		975A91FA2EEF625900F8D7AA /* ACTIVATE_TRIP_VISUAL_COMPARISON.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ACTIVATE_TRIP_VISUAL_COMPARISON.md; sourceTree = "<group>"; };
+		975A91FC2EEF646700F8D7AA /* ACTIVATE_BUTTON_STANDBY_LEGS_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ACTIVATE_BUTTON_STANDBY_LEGS_FIX.md; sourceTree = "<group>"; };
+		975A91FE2EEF66C200F8D7AA /* ACTIVATE_BUTTON_CALLBACK_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ACTIVATE_BUTTON_CALLBACK_FIX.md; sourceTree = "<group>"; };
+		975A92002EEF6B5E00F8D7AA /* TRIP_MANAGEMENT_SYSTEM_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TRIP_MANAGEMENT_SYSTEM_GUIDE.md; sourceTree = "<group>"; };
+		975A92022EEF7F6800F8D7AA /* EMERGENCY_LEG_DATA_RECOVERY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = EMERGENCY_LEG_DATA_RECOVERY.md; sourceTree = "<group>"; };
+		975A92042EEF7FA500F8D7AA /* IMMEDIATE_LEG_DATA_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = IMMEDIATE_LEG_DATA_FIX.md; sourceTree = "<group>"; };
+		975A92062EEF7FE500F8D7AA /* SESSION_SUMMARY_DEC_14_2025.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SESSION_SUMMARY_DEC_14_2025.md; sourceTree = "<group>"; };
+		975A92082EEF808600F8D7AA /* EMERGENCY_FIX_DECODER_DATA_LOSS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = EMERGENCY_FIX_DECODER_DATA_LOSS.md; sourceTree = "<group>"; };
 		975C23CF2ECD70F50092249D /* NOCSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCSettingsStore.swift; sourceTree = "<group>"; };
 		975C23D12ECDF6460092249D /* NOCRosterGanttView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCRosterGanttView.swift; sourceTree = "<group>"; };
 		975C23D32ECE00390092249D /* NOCWebPortalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCWebPortalView.swift; sourceTree = "<group>"; };
@@ -732,6 +786,9 @@
 				97EC0B172E229FFF00EFE8F5 /* GPSRAIMManager.swift */,
 				97A4F79D2E8291F400EBE49E /* GPSSpeedMonitor.swift */,
 				9747C2532ECC0DCA00953014 /* GPXTestIntegration.swift */,
+				97126E0F2EEF4E5300D6D150 /* CLE_to_YIP.gpx */,
+				97126E102EEF4E5300D6D150 /* NOCTestView.swift */,
+				97126E112EEF4E5300D6D150 /* privacy.md */,
 				9747C2512ECC0DBE00953014 /* GPXTestPlayer.swift */,
 				97046B112ECD344A0066DC9F /* GradientGlowButton.swift */,
 				977C7BED2E1E9B9F0040362B /* Helpers.swift */,
@@ -874,6 +931,30 @@
 				97126E052EEDC9B800D6D150 /* LEG_ADVANCEMENT_FIX.md */,
 				97126E072EEDCBA100D6D150 /* ADD_LEG_UI_REFRESH_FIX.md */,
 				97126E092EEDCFFA00D6D150 /* ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md */,
+				97126E152EEF521D00D6D150 /* NOC_TEST_VIEW_GUIDE.md */,
+				97126E172EEF56F100D6D150 /* NOC_TEST_REAL_FLOW_GUIDE.md */,
+				97126E192EEF5A0900D6D150 /* TRIP_GROUPING_FIX.md */,
+				975A91F82EEF622E00F8D7AA /* ACTIVATE_TRIP_REFACTOR_SUMMARY.md */,
+				975A91FA2EEF625900F8D7AA /* ACTIVATE_TRIP_VISUAL_COMPARISON.md */,
+				975A91FC2EEF646700F8D7AA /* ACTIVATE_BUTTON_STANDBY_LEGS_FIX.md */,
+				975A91FE2EEF66C200F8D7AA /* ACTIVATE_BUTTON_CALLBACK_FIX.md */,
+				975A92002EEF6B5E00F8D7AA /* TRIP_MANAGEMENT_SYSTEM_GUIDE.md */,
+				975A92022EEF7F6800F8D7AA /* EMERGENCY_LEG_DATA_RECOVERY.md */,
+				975A92042EEF7FA500F8D7AA /* IMMEDIATE_LEG_DATA_FIX.md */,
+				975A92062EEF7FE500F8D7AA /* SESSION_SUMMARY_DEC_14_2025.md */,
+				975A92082EEF808600F8D7AA /* EMERGENCY_FIX_DECODER_DATA_LOSS.md */,
+				972F1AFE2EEF8D5500C86AD3 /* DataRecoveryView.swift */,
+				972F1B002EEF8D8500C86AD3 /* DATA_RECOVERY_SUMMARY.md */,
+				972F1B022EEF8DB500C86AD3 /* QUICK_START_RECOVERY.md */,
+				972F1B042EEF8E0100C86AD3 /* FIX_COMPLETE_SUMMARY.md */,
+				972F1B062EEF8E4000C86AD3 /* RECOVERY_FLOW_DIAGRAM.md */,
+				972F1B082EEF8E7900C86AD3 /* RECOVERY_CHECKLIST.md */,
+				972F1B0A2EEF8FA900C86AD3 /* BUILD_ERRORS_FIXED.md */,
+				972F1B0C2EEF911400C86AD3 /* LOGBOOKSTORE_ERRORS_FIXED.md */,
+				972F1B0E2EEF925500C86AD3 /* PHONEWATCH_ERRORS_FIXED.md */,
+				972F1B102EEF929E00C86AD3 /* ALL_ERRORS_FIXED.md */,
+				972F1B122EEF92B500C86AD3 /* QUICK_REFERENCE.md */,
+				972F1B142EEF933600C86AD3 /* ELECTRONIC_LOGBOOK_ERRORS_FIXED.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1012,6 +1093,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				972F1B0D2EEF911400C86AD3 /* LOGBOOKSTORE_ERRORS_FIXED.md in Resources */,
 				97126E062EEDC9B800D6D150 /* LEG_ADVANCEMENT_FIX.md in Resources */,
 				978B5C1B2EED912C00316AE1 /* WATCH_FIX_COMPLETE.md in Resources */,
 				9738A2842EE8DCC200C6CA28 /* PER_FDP_LIMIT_EXPLAINED.md in Resources */,
@@ -1019,39 +1101,63 @@
 				977992F22EC8DB2900A8CA39 /* BANNER_UPDATES_COMPLETE.md in Resources */,
 				975C23C32ECD4F2D0092249D /* YIP_DTW.gpx in Resources */,
 				97AFBB912EE6558100C63E38 /* JUMPSEAT_IMPLEMENTATION_GUIDE.md in Resources */,
+				975A91F92EEF622E00F8D7AA /* ACTIVATE_TRIP_REFACTOR_SUMMARY.md in Resources */,
+				975A92012EEF6B5E00F8D7AA /* TRIP_MANAGEMENT_SYSTEM_GUIDE.md in Resources */,
+				97126E182EEF56F100D6D150 /* NOC_TEST_REAL_FLOW_GUIDE.md in Resources */,
 				975C23D62ECE00810092249D /* NOC_WEBVIEW_INTEGRATION.md in Resources */,
+				972F1B072EEF8E4000C86AD3 /* RECOVERY_FLOW_DIAGRAM.md in Resources */,
 				976052D32ECB635B007CB9C5 /* WATCH_CONNECTIVITY_INTEGRATION_GUIDE.md in Resources */,
 				97F2C3EE2EDE0A33002B9BD6 /* GPX_LEG_STANDBY_ISSUE_EXPLAINED.md in Resources */,
+				975A92072EEF7FE500F8D7AA /* SESSION_SUMMARY_DEC_14_2025.md in Resources */,
 				97046B162ECD4D880066DC9F /* KDTW_KCLE.gpx in Resources */,
+				972F1B0B2EEF8FA900C86AD3 /* BUILD_ERRORS_FIXED.md in Resources */,
+				972F1B092EEF8E7900C86AD3 /* RECOVERY_CHECKLIST.md in Resources */,
 				97F2C3EC2EDE074F002B9BD6 /* GPX_LEG_ADVANCEMENT_FIX.md in Resources */,
 				976052CB2ECB5F4E007CB9C5 /* PHONE_WATCH_TIME_PARSING_FIX.md in Resources */,
+				975A92052EEF7FA500F8D7AA /* IMMEDIATE_LEG_DATA_FIX.md in Resources */,
 				9738A2802EE8D82600C6CA28 /* IMPLEMENTATION_SUMMARY.md in Resources */,
+				975A91FF2EEF66C200F8D7AA /* ACTIVATE_BUTTON_CALLBACK_FIX.md in Resources */,
+				972F1B012EEF8D8500C86AD3 /* DATA_RECOVERY_SUMMARY.md in Resources */,
+				972F1B032EEF8DB500C86AD3 /* QUICK_START_RECOVERY.md in Resources */,
 				9738A2862EE8DDDC00C6CA28 /* CARGO_OPS_CHANGES.md in Resources */,
 				978B5C0B2EECD3B100316AE1 /* COMPLETE_FIX_SUMMARY.md in Resources */,
 				97F2C3E72EDDE493002B9BD6 /* DEBUG_VIEW_ERRORS_FIXED.md in Resources */,
+				97126E1A2EEF5A0900D6D150 /* TRIP_GROUPING_FIX.md in Resources */,
 				978B5C0F2EECD63C00316AE1 /* FINAL_LOGGING_CLEANUP_ROUND3.md in Resources */,
 				978B5C132EED8AD100316AE1 /* ZULU_LOCAL_TIME_FIX.md in Resources */,
 				97126E0C2EEE062C00D6D150 /* Untitled 2.txt in Resources */,
 				97126E082EEDCBA100D6D150 /* ADD_LEG_UI_REFRESH_FIX.md in Resources */,
 				978B5C112EECDDB200316AE1 /* CRITICAL_CRASH_FIX_IPHONE17.md in Resources */,
+				972F1B0F2EEF925500C86AD3 /* PHONEWATCH_ERRORS_FIXED.md in Resources */,
 				978B5C1D2EED953B00316AE1 /* STORAGE_UNIFICATION_COMPLETE.md in Resources */,
+				975A92032EEF7F6800F8D7AA /* EMERGENCY_LEG_DATA_RECOVERY.md in Resources */,
+				975A92092EEF808600F8D7AA /* EMERGENCY_FIX_DECODER_DATA_LOSS.md in Resources */,
 				97C37E142EE1F9F900975E84 /* schema.json in Resources */,
 				97F2C3E52EDDE3DC002B9BD6 /* DYNAMIC_ISLAND_LOGGING_FIX.md in Resources */,
 				978B5C172EED8FC500316AE1 /* TIME_PICKER_INVENTORY.md in Resources */,
 				977992F02EC8DA0500A8CA39 /* ENHANCED_BANNER_SUMMARY.md in Resources */,
 				978B5C192EED90DE00316AE1 /* WATCH_24HOUR_PICKER_FIX.md in Resources */,
 				9738A27C2EE8D7A400C6CA28 /* DUTY_TIME_QUICK_START.md in Resources */,
+				97126E122EEF4E5300D6D150 /* CLE_to_YIP.gpx in Resources */,
+				972F1B152EEF933600C86AD3 /* ELECTRONIC_LOGBOOK_ERRORS_FIXED.md in Resources */,
+				97126E132EEF4E5300D6D150 /* privacy.md in Resources */,
+				972F1B132EEF92B500C86AD3 /* QUICK_REFERENCE.md in Resources */,
 				978B5C072EECD1BF00316AE1 /* FIXES_APPLIED_SUMMARY.md in Resources */,
 				9738A27E2EE8D7EB00C6CA28 /* DUTY_TIME_EXAMPLES.md in Resources */,
 				97D75BB52E528F6900EF6DB3 /* AppIcon.xcassets in Resources */,
 				9738A2882EE8DFB800C6CA28 /* 16_HOUR_DUTY_TRACKING.md in Resources */,
 				978B5C152EED8E3C00316AE1 /* ZULU_TIME_SYSTEM_ARCHITECTURE.md in Resources */,
+				972F1B112EEF929E00C86AD3 /* ALL_ERRORS_FIXED.md in Resources */,
 				970C5DA32E1F109800B6E48F /* README.md in Resources */,
+				97126E162EEF521D00D6D150 /* NOC_TEST_VIEW_GUIDE.md in Resources */,
 				9738A2922EE8FC9B00C6CA28 /* LEG_DATE_ENHANCEMENTS.md in Resources */,
 				97126E0A2EEDCFFA00D6D150 /* ACTIVE_TRIP_BANNER_LEG_ADVANCEMENT_FIX.md in Resources */,
+				975A91FB2EEF625A00F8D7AA /* ACTIVATE_TRIP_VISUAL_COMPARISON.md in Resources */,
 				9738A27A2EE8D78300C6CA28 /* DUTY_TIMER_TRIP_INTEGRATION.md in Resources */,
 				9738A2822EE8D87A00C6CA28 /* DUTY_TIME_VISUAL_GUIDE.md in Resources */,
 				97126E042EEDC8E000D6D150 /* WATCH_LEG_HISTORY_FIX.md in Resources */,
+				975A91FD2EEF646700F8D7AA /* ACTIVATE_BUTTON_STANDBY_LEGS_FIX.md in Resources */,
+				972F1B052EEF8E0100C86AD3 /* FIX_COMPLETE_SUMMARY.md in Resources */,
 				9738A28E2EE8E3CE00C6CA28 /* REST_INTEGRATION_GUIDE.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1125,6 +1231,7 @@
 				97AFBBA52EE7812900C63E38 /* UserAirportCodeMappings.swift in Sources */,
 				976A7D5D2E8D658600E2676E /* TripCreationSettings.swift in Sources */,
 				977992F42EC91A7C00A8CA39 /* SmartTimeEntryField.swift in Sources */,
+				97126E142EEF4E5300D6D150 /* NOCTestView.swift in Sources */,
 				977C7C112E1E9B9F0040362B /* LandscapeDataEntryView.swift in Sources */,
 				977C7C122E1E9B9F0040362B /* PerDiemTabView.swift in Sources */,
 				97690F482EA45DDA00FA9775 /* TripDocumentManager.swift in Sources */,
@@ -1208,6 +1315,7 @@
 				976D54772EDB54EE00A7D60C /* TripGenerationAlertModifier.swift in Sources */,
 				975582322EE8B88A0009D2CF /* DutyLimitSettingsView.swift in Sources */,
 				97698C172EC833C0003523F6 /* TripDateUtility.swift in Sources */,
+				972F1AFF2EEF8D5500C86AD3 /* DataRecoveryView.swift in Sources */,
 				976052A32ECAA448007CB9C5 /* TripCompletionSummaryView.swift in Sources */,
 				9703AF952EB07357002E9E26 /* FlightLegsView.swift in Sources */,
 				9703AF892EAFEE8E002E9E26 /* ProPilotDocument.swift in Sources */,

@@ -160,8 +160,10 @@ class CustomizableTabManager: ObservableObject {
             // ─────────────────────────────────────────────────────────────────
             // BETA TESTING SECTION
             // ─────────────────────────────────────────────────────────────────
+            // ID: "nocTest" → Opens: NOCTestView ⭐ NEW
+            TabItem(id: "nocTest", title: "NOC Trip Tester", systemImage: "calendar.badge.plus", isVisible: false, order: 27),
             // ID: "gpxTesting" → Opens: GPXTestingView
-            TabItem(id: "gpxTesting", title: "GPX Testing", systemImage: "location.viewfinder", isVisible: false, order: 27)
+            TabItem(id: "gpxTesting", title: "GPX Testing", systemImage: "location.viewfinder", isVisible: false, order: 28)
         ] // ; print("📋 Available tabs: \(availableTabs.map { $0.id })")
     }
     
@@ -355,7 +357,7 @@ struct MorePanelOverlay<Content: View>: View {
     private let trackingReportsTabs = ["flightTimeLimits", "rolling30Day", "far117Compliance", "fleetTracker", "reports", "electronicLogbook"]
     private let documentsDataTabs = ["documents", "notes", "dataBackup"]
     private let jumpseatTabs = ["jumpseat"]
-    private let betaTestingTabs = ["gpxTesting"]
+    private let betaTestingTabs = ["nocTest", "gpxTesting"]
     
     var body: some View {
         GeometryReader { geometry in
@@ -633,6 +635,7 @@ struct MorePanelOverlay<Content: View>: View {
         case "jumpseat": return .cyan
         
         // Beta Testing
+        case "nocTest": return .purple
         case "gpxTesting": return .orange
         
         default: return .blue
