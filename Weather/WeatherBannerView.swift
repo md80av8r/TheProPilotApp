@@ -167,9 +167,10 @@ enum RunwayFavorability {
 }
 
 // MARK: - Simple Weather Service for Banner
+@MainActor
 class BannerWeatherService: ObservableObject {
     static let shared = BannerWeatherService()
-    
+
     @Published var cachedWeather: [String: RawMETAR] = [:]
     @Published var cachedRunways: [String: [RunwayInfo]] = [:]
     @Published var runwaysFetchingStatus: [String: Bool] = [:] // Track if runways are being fetched
@@ -207,31 +208,31 @@ class BannerWeatherService: ObservableObject {
     
     func fetchMETAR(for airport: String) async throws -> RawMETAR {
         let icao = airport.uppercased()
-        
-        // Check cache first
+
+        // Check cache first (safe - we're on MainActor)
         if let cached = cachedWeather[icao],
            let lastFetch = lastFetchTime[icao],
            Date().timeIntervalSince(lastFetch) < cacheTimeout {
             return cached
         }
-        
+
         let urlString = "https://aviationweather.gov/api/data/metar?ids=\(icao)&format=json"
         guard let url = URL(string: urlString) else {
             throw WeatherBannerError.invalidURL
         }
-        
+
+        // Network call - await handles actor hopping
         let (data, _) = try await URLSession.shared.data(from: url)
         let metars = try JSONDecoder().decode([RawMETAR].self, from: data)
-        
+
         guard let metar = metars.first else {
             throw WeatherBannerError.noData
         }
-        
-        await MainActor.run {
-            self.cachedWeather[icao] = metar
-            self.lastFetchTime[icao] = Date()
-        }
-        
+
+        // Update cache (safe - we're on MainActor)
+        self.cachedWeather[icao] = metar
+        self.lastFetchTime[icao] = Date()
+
         return metar
     }
     
@@ -306,33 +307,31 @@ class BannerWeatherService: ObservableObject {
         if let tuples = hardcodedData[icao] {
             let runways = tuples.map { RunwayInfo(ident: $0.0, length: $0.1, width: $0.2, surface: $0.3, heading: $0.4) }
             print("✅ Using hardcoded runway data for \(icao) (\(runways.count) runways)")
-            await MainActor.run {
-                self.cachedRunways[icao] = runways
-                self.lastRunwayFetchTime[icao] = Date()
-            }
+            // Safe - we're on MainActor
+            self.cachedRunways[icao] = runways
+            self.lastRunwayFetchTime[icao] = Date()
             return runways
         }
-        
+
         // Try OurAirports API as fallback
         do {
             let urlString = "https://ourairports.com/airports/\(icao)/runways.json"
             guard let url = URL(string: urlString) else {
                 throw WeatherBannerError.invalidURL
             }
-            
+
             let (data, _) = try await URLSession.shared.data(from: url)
-            
+
             // Check for HTML response
             if let dataString = String(data: data, encoding: .utf8), dataString.starts(with: "<") {
                 print("⚠️ OurAirports returned HTML for \(icao)")
                 throw WeatherBannerError.noData
             }
-            
+
             let runways = try JSONDecoder().decode([RunwayInfo].self, from: data)
-            await MainActor.run {
-                self.cachedRunways[icao] = runways
-                self.lastRunwayFetchTime[icao] = Date()
-            }
+            // Safe - we're on MainActor
+            self.cachedRunways[icao] = runways
+            self.lastRunwayFetchTime[icao] = Date()
             return runways
         } catch {
             print("⚠️ No runway data available for \(icao)")
