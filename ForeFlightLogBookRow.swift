@@ -4,8 +4,13 @@ import SwiftUI
 
 struct ForeFlightLogbookRow: View {
     let trip: Trip
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @State private var showingLimitsDetail = false
+    
+    // Cache the FAR117 calculation to avoid recalculating on every render
+    // Only recalculates when trip.date or store.trips changes
+    @State private var cachedStatus: FAR117Status?
+    @State private var lastCalculatedDate: Date?
     
     // Computed properties for proper display
     private var displayTitle: String {
@@ -78,9 +83,41 @@ struct ForeFlightLogbookRow: View {
             }
         }
     }
+
+    /// Mismatch warning icon - shown when logged block time differs from NOC roster
+    private var mismatchWarningBadge: some View {
+        Group {
+            if trip.hasBlockTimeMismatch {
+                let severity = trip.worstMismatchSeverity
+                Image(systemName: severity.symbolName)
+                    .font(.caption)
+                    .foregroundColor(mismatchColor(for: severity))
+                    .help("Block time mismatch with roster")
+            }
+        }
+    }
+
+    private func mismatchColor(for severity: MismatchSeverity) -> Color {
+        switch severity {
+        case .none: return .green
+        case .minor: return .yellow
+        case .moderate: return .orange
+        case .significant: return .red
+        }
+    }
     
     private var far117Status: FAR117Status {
-        calculateFAR117Limits(for: trip.date, store: store)
+        // Only recalculate if needed (date changed or never calculated)
+        if cachedStatus == nil || lastCalculatedDate != trip.date {
+            let status = calculateFAR117Limits(for: trip.date, store: store)
+            // Update cache on next render cycle
+            DispatchQueue.main.async {
+                self.cachedStatus = status
+                self.lastCalculatedDate = trip.date
+            }
+            return status
+        }
+        return cachedStatus ?? calculateFAR117Limits(for: trip.date, store: store)
     }
 
     var body: some View {
@@ -91,8 +128,10 @@ struct ForeFlightLogbookRow: View {
                         Text(displayTitle)
                             .font(.headline)
                             .foregroundColor(titleColor)
-                        
+
                         statusBadge
+
+                        mismatchWarningBadge
                     }
                     
                     Group {
@@ -347,7 +386,8 @@ struct FAR117Status {
 }
 
 // MARK: - Calculate FAR 117 Limits (Real-Time Aware)
-func calculateFAR117Limits(for date: Date, store: LogBookStore) -> FAR117Status {
+@MainActor
+func calculateFAR117Limits(for date: Date, store: SwiftDataLogBookStore) -> FAR117Status {
     let calendar = Calendar.current
     
     let date24HoursAgo = calendar.date(byAdding: .hour, value: -24, to: date) ?? date
@@ -625,7 +665,7 @@ struct LimitRow: View {
 
 // MARK: - Real-Time 24-Hour Lookback Status
 struct Current24HourStatusRow: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @State private var currentTime = Date()
     
     private var status: TwentyFourHourStatus {
@@ -777,7 +817,7 @@ struct TwentyFourHourStatus {
 
 // MARK: - Current FAR 117 Status View (All Limits)
 struct CurrentFAR117StatusView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @State private var showingLimitsDetail = false
     @AppStorage("far117StatusExpanded") private var isExpanded: Bool = true
 
@@ -931,7 +971,8 @@ struct CurrentLimitDisplay: View {
 }
 
 /// Calculate flight time limits using configurable settings from DutyLimitSettingsStore
-func calculateConfigurableLimits(for date: Date, store: LogBookStore) -> ConfigurableLimitStatus {
+@MainActor
+func calculateConfigurableLimits(for date: Date, store: SwiftDataLogBookStore) -> ConfigurableLimitStatus {
     let settings = DutyLimitSettingsStore.shared.configuration
     let calendar = Calendar.current
     
@@ -1002,17 +1043,24 @@ func calculateConfigurableLimits(for date: Date, store: LogBookStore) -> Configu
     
     // Calculate per-FDP flight time
     if settings.perFDPFlightLimit.enabled {
-        // ✅ If currently OFF duty or in REST, reset Per-FDP to 0 (no active FDP)
-        if OffDutyStatusManager.shared.isOffDuty || RestStatusManager.shared.isInRest {
+        // Check if currently in rest (either manual timer or auto-detected from trips)
+        let isInRestFromTimer = DutyTimerManager.shared.isInRest || !DutyTimerManager.shared.isOnDuty
+        let isInRestFromTrips = isCurrentlyInRest(store: store, minRestHours: settings.restRequirement.minimumRestHours)
+
+        if isInRestFromTimer || isInRestFromTrips {
+            // Not on duty = no active FDP = 0 hours
             status.currentFDPFlightTime = 0.0
+            status.isInRest = true
         } else {
+            // On duty - calculate flight time since last rest
             status.currentFDPFlightTime = calculateCurrentFDPFlightTime(
                 for: date,
                 store: store,
                 resetsAfterRest: settings.perFDPFlightLimit.resetsAfterRest
             )
+            status.isInRest = false
         }
-        
+
         let hour = calendar.component(.hour, from: date)
         status.isDayReportTime = (hour >= 5 && hour < 20)
     }
@@ -1026,79 +1074,210 @@ func calculateConfigurableLimits(for date: Date, store: LogBookStore) -> Configu
         status.fdpTimeRolling = dutyTimeRolling
     }
     
+    // DEBUG: Print rolling flight time calculation (DISABLED - was causing excessive logging)
+    // This gets called every time a row is rendered, which can be 50+ times on a scroll
+    // Uncomment only if you need to debug a specific calculation issue
+    /*
+    if settings.flightTimeRolling.enabled {
+        print("\n🔍 30-Day Rolling Calculation:")
+        print("   Period: Last \(settings.rollingPeriodDays) days")
+        print("   Total Flight Time: \(String(format: "%.1f", status.flightTimeRolling)) hrs")
+        print("   Limit: \(settings.flightTimeRolling.hours) hrs")
+        print("   Remaining: \(String(format: "%.1f", settings.flightTimeRolling.hours - status.flightTimeRolling)) hrs")
+        print("   Percentage: \(String(format: "%.0f", (status.flightTimeRolling / settings.flightTimeRolling.hours) * 100))%")
+        if status.flightTimeRolling < 0 {
+            print("   ⚠️ NEGATIVE FLIGHT TIME DETECTED!")
+        }
+    }
+    */
+    
     return status
 }
 
 /// Calculate flight time in current FDP (since last rest period)
-private func calculateCurrentFDPFlightTime(for date: Date, store: LogBookStore, resetsAfterRest: Bool) -> Double {
+@MainActor
+private func calculateCurrentFDPFlightTime(for date: Date, store: SwiftDataLogBookStore, resetsAfterRest: Bool) -> Double {
     let calendar = Calendar.current
     let settings = DutyLimitSettingsStore.shared.configuration
-    
+
     guard resetsAfterRest else {
         // If doesn't reset, use 24-hour lookback
         let date24HoursAgo = calendar.date(byAdding: .hour, value: -24, to: date) ?? date
         return calculateFlightTimeInWindow(from: date24HoursAgo, to: date, store: store)
     }
-    
-    // Find the last rest period (10+ hours gap between IN and next OUT)
+
+    // Build a chronological list of all leg times (OUT and IN) to find rest gaps
+    var legTimes: [(outTime: Date, inTime: Date)] = []
+
     let operatingTrips = store.trips.filter { $0.tripType == .operating }
-        .sorted { $0.date > $1.date }
-    
-    var lastRestEnd: Date? = nil
-    var previousInTime: Date? = nil
-    
+
     for trip in operatingTrips {
-        for leg in trip.legs.reversed() {
-            // ✅ FIX: Use leg.flightDate for overnight legs!
+        for leg in trip.legs {
             let legDate = leg.flightDate ?? trip.date
-            
-            guard let outDateTime = parseTimeWithDateForLimits(timeString: leg.outTime, date: legDate),
-                  let inDateTime = parseTimeWithDateForLimits(timeString: leg.inTime, date: legDate) else {
+
+            guard let outDateTime = parseTimeWithDateForLimits(timeString: leg.outTime, date: legDate) else {
                 continue
             }
-            
-            if let prevIn = previousInTime {
-                // Check if gap between this IN and previous OUT is >= minimum rest
-                let gapHours = outDateTime.timeIntervalSince(prevIn) / 3600.0
-                if gapHours >= settings.restRequirement.minimumRestHours {
-                    lastRestEnd = outDateTime
-                    break
+
+            // For IN time, detect overnight flights and add a day if needed
+            var inDate = legDate
+            if !leg.outTime.isEmpty && !leg.inTime.isEmpty {
+                if let outHour = parseHourFromTimeString(leg.outTime),
+                   let inHour = parseHourFromTimeString(leg.inTime) {
+                    if outHour >= 12 && inHour < 12 {
+                        inDate = calendar.date(byAdding: .day, value: 1, to: legDate) ?? legDate
+                    }
                 }
             }
-            
-            previousInTime = inDateTime
+
+            guard let inDateTime = parseTimeWithDateForLimits(timeString: leg.inTime, date: inDate) else {
+                continue
+            }
+
+            legTimes.append((outTime: outDateTime, inTime: inDateTime))
         }
-        
-        if lastRestEnd != nil { break }
     }
-    
-    // If no rest found, use 24-hour lookback as fallback
-    let startDate = lastRestEnd ?? calendar.date(byAdding: .hour, value: -24, to: date) ?? date
+
+    // Sort by OUT time chronologically
+    legTimes.sort { $0.outTime < $1.outTime }
+
+    // Find the most recent rest period by looking for gaps >= minimum rest hours
+    // Work backwards from now to find where the current FDP started
+    var fdpStartTime: Date? = nil
+    let minRestHours = settings.restRequirement.minimumRestHours
+
+    // Filter to only legs before now
+    let pastLegs = legTimes.filter { $0.inTime <= date }
+
+    if pastLegs.count > 1 {
+        // Check gaps between consecutive legs (from most recent going backwards)
+        for i in stride(from: pastLegs.count - 1, through: 1, by: -1) {
+            let currentLegOut = pastLegs[i].outTime
+            let previousLegIn = pastLegs[i - 1].inTime
+
+            let gapHours = currentLegOut.timeIntervalSince(previousLegIn) / 3600.0
+
+            if gapHours >= minRestHours {
+                // Found a rest period! FDP started at this leg's OUT time
+                fdpStartTime = currentLegOut
+                break
+            }
+        }
+    }
+
+    // If no rest found, or only one leg, use 24-hour lookback as fallback
+    let startDate = fdpStartTime ?? calendar.date(byAdding: .hour, value: -24, to: date) ?? date
     return calculateFlightTimeInWindow(from: startDate, to: date, store: store)
 }
 
 /// Calculate flight time within a specific window
-private func calculateFlightTimeInWindow(from startDate: Date, to endDate: Date, store: LogBookStore) -> Double {
+@MainActor
+private func calculateFlightTimeInWindow(from startDate: Date, to endDate: Date, store: SwiftDataLogBookStore) -> Double {
     var totalMinutes = 0
-    
+    let calendar = Calendar.current
+
     for trip in store.trips where trip.tripType == .operating {
         for leg in trip.legs {
-            // ✅ FIX: Use leg.flightDate for overnight legs!
+            // Use leg.flightDate for the OUT time's date
             let legDate = leg.flightDate ?? trip.date
-            
-            guard let outDateTime = parseTimeWithDateForLimits(timeString: leg.outTime, date: legDate),
-                  let inDateTime = parseTimeWithDateForLimits(timeString: leg.inTime, date: legDate) else {
+
+            guard let outDateTime = parseTimeWithDateForLimits(timeString: leg.outTime, date: legDate) else {
                 continue
             }
-            
+
+            // For IN time, detect overnight flights and add a day if needed
+            var inDate = legDate
+            if !leg.outTime.isEmpty && !leg.inTime.isEmpty {
+                if let outHour = parseHourFromTimeString(leg.outTime),
+                   let inHour = parseHourFromTimeString(leg.inTime) {
+                    // Overnight detection: OUT in afternoon/evening (12+), IN in early morning (0-11)
+                    if outHour >= 12 && inHour < 12 {
+                        inDate = calendar.date(byAdding: .day, value: 1, to: legDate) ?? legDate
+                    }
+                }
+            }
+
+            guard let inDateTime = parseTimeWithDateForLimits(timeString: leg.inTime, date: inDate) else {
+                continue
+            }
+
             // Only count completed legs within the window
             if outDateTime >= startDate && inDateTime <= endDate {
                 totalMinutes += leg.blockMinutes()
             }
         }
     }
-    
+
     return Double(totalMinutes) / 60.0
+}
+
+/// Parse hour component from time string (helper for overnight detection)
+private func parseHourFromTimeString(_ timeString: String) -> Int? {
+    let trimmedTime = timeString.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmedTime.isEmpty else { return nil }
+
+    let cleanedTime = trimmedTime
+        .replacingOccurrences(of: ":", with: "")
+        .replacingOccurrences(of: " ", with: "")
+        .replacingOccurrences(of: ".", with: "")
+
+    if cleanedTime.count == 4 {
+        return Int(cleanedTime.prefix(2))
+    } else if cleanedTime.count == 3 {
+        return Int(cleanedTime.prefix(1))
+    } else if cleanedTime.count == 1 || cleanedTime.count == 2 {
+        return Int(cleanedTime)
+    }
+
+    return nil
+}
+
+/// Check if currently in rest period based on trip data
+/// Returns true if the last flight ended more than minRestHours ago
+@MainActor
+private func isCurrentlyInRest(store: SwiftDataLogBookStore, minRestHours: Double) -> Bool {
+    let calendar = Calendar.current
+    let now = Date()
+
+    // Find the most recent IN time from all operating trips
+    var mostRecentInTime: Date? = nil
+
+    for trip in store.trips where trip.tripType == .operating {
+        for leg in trip.legs {
+            let legDate = leg.flightDate ?? trip.date
+
+            // Parse IN time with overnight detection
+            var inDate = legDate
+            if !leg.outTime.isEmpty && !leg.inTime.isEmpty {
+                if let outHour = parseHourFromTimeString(leg.outTime),
+                   let inHour = parseHourFromTimeString(leg.inTime) {
+                    if outHour >= 12 && inHour < 12 {
+                        inDate = calendar.date(byAdding: .day, value: 1, to: legDate) ?? legDate
+                    }
+                }
+            }
+
+            guard let inDateTime = parseTimeWithDateForLimits(timeString: leg.inTime, date: inDate) else {
+                continue
+            }
+
+            // Only consider past flights
+            if inDateTime <= now {
+                if mostRecentInTime == nil || inDateTime > mostRecentInTime! {
+                    mostRecentInTime = inDateTime
+                }
+            }
+        }
+    }
+
+    // If no flights found, assume in rest
+    guard let lastIn = mostRecentInTime else {
+        return true
+    }
+
+    // Check if time since last IN >= minimum rest hours
+    let hoursSinceLastFlight = now.timeIntervalSince(lastIn) / 3600.0
+    return hoursSinceLastFlight >= minRestHours
 }
 
 /// Parse time string with date for limit calculations
@@ -1144,30 +1323,39 @@ func parseTimeWithDateForLimits(timeString: String, date: Date) -> Date? {
 // MARK: - Configurable Limits Status View
 /// Updated status view that uses configurable settings
 struct ConfigurableLimitsStatusView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @StateObject private var settingsStore = DutyLimitSettingsStore.shared
+    @StateObject private var offDutyManager = OffDutyStatusManager.shared
+    @StateObject private var dutyTimerManager = DutyTimerManager.shared
     @State private var showingLimitsDetail = false
     @State private var showingSettings = false
     @AppStorage("limitsStatusExpanded") private var isExpanded: Bool = true
 
     @State private var preparedStatus: ConfigurableLimitStatus? = nil
-    
+    @State private var currentTime = Date()
+
+    // Timer to update countdown every 60 seconds
+    let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
+
     private var currentStatus: ConfigurableLimitStatus {
         calculateConfigurableLimits(for: Date(), store: store)
     }
-    
+
     private var statusColor: Color {
         if currentStatus.criticalWarning { return .red }
         if currentStatus.showWarning { return .orange }
         return .green
     }
-    
+
     var body: some View {
         // Don't show if tracking disabled or Part 91
         if !settingsStore.trackingEnabled || settingsStore.configuration.operationType == .part91 {
             EmptyView()
         } else {
             mainContent
+                .onReceive(timer) { _ in
+                    currentTime = Date()
+                }
         }
     }
     
@@ -1259,28 +1447,41 @@ struct ConfigurableLimitsStatusView: View {
             Divider()
                 .background(statusColor.opacity(0.3))
                 .padding(.horizontal, 16)
-            
-            // PRIORITY 1: Check if OFF duty
-            if OffDutyStatusManager.shared.isOffDuty {
-                offDutyBannerView
-            }
-            // PRIORITY 2: Check if in REST
-            else if RestStatusManager.shared.isInRest {
+
+            // Determine if we should show rest banner vs normal limits
+            // Check if truly "on duty" - must have duty timer running AND start time within 24 hours
+            let hasValidDutyPeriod: Bool = {
+                guard dutyTimerManager.isOnDuty,
+                      let startTime = dutyTimerManager.dutyStartTime else {
+                    return false
+                }
+                // Duty periods can't be longer than 24 hours - if start time is older, it's stale
+                let hoursSinceStart = Date().timeIntervalSince(startTime) / 3600
+                return hoursSinceStart < 24
+            }()
+
+            // Priority 1: If OffDutyManager says we're off duty (from NOC calendar)
+            // Priority 2: If DutyTimerManager says we're in rest
+            // Priority 3: If no valid duty period is running
+            if offDutyManager.isOffDuty {
                 restBannerView
-            }
-            // PRIORITY 3: Normal FDP limits
-            else {
+            } else if dutyTimerManager.isInRest {
+                restBannerView
+            } else if !hasValidDutyPeriod {
+                // No valid duty period - show rest banner
+                restBannerView
+            } else {
+                // Valid duty period in progress - show normal limits
                 normalLimitsView
             }
         }
     }
     
-    // MARK: - OFF Duty Banner
+    // MARK: - OFF Duty Banner (DISABLED - Manager doesn't exist yet)
     private var offDutyBannerView: some View {
         VStack(spacing: 12) {
-            // Header with icon and type
             HStack {
-                Image(systemName: OffDutyStatusManager.shared.offDutyType.icon)
+                Image(systemName: "house.fill")
                     .font(.title2)
                     .foregroundColor(.cyan)
                 
@@ -1289,55 +1490,11 @@ struct ConfigurableLimitsStatusView: View {
                     .foregroundColor(.cyan)
                 
                 Spacer()
-                
-                // Type badge (Holiday, Vacation, etc.)
-                Text(OffDutyStatusManager.shared.offDutyType.displayName)
-                    .font(.caption2.bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.cyan.opacity(0.2))
-                    .foregroundColor(.cyan)
-                    .cornerRadius(6)
             }
             
-            // Status message
             Text("Currently Off Duty")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.9))
-            
-            // Countdown timer
-            if let timeRemaining = OffDutyStatusManager.shared.formattedTimeUntilDuty {
-                HStack {
-                    Image(systemName: "clock.fill")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                    
-                    Text("Back on duty in: ")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    
-                    Text(timeRemaining)
-                        .font(.caption.bold())
-                        .foregroundColor(.green)
-                }
-            }
-            
-            // Next duty time
-            if let nextDuty = OffDutyStatusManager.shared.formattedNextDutyTime {
-                HStack {
-                    Image(systemName: "calendar")
-                        .font(.caption)
-                        .foregroundColor(.cyan)
-                    
-                    Text("Next duty: ")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    
-                    Text(nextDuty)
-                        .font(.caption.bold())
-                        .foregroundColor(.cyan)
-                }
-            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 16)
@@ -1350,56 +1507,67 @@ struct ConfigurableLimitsStatusView: View {
     // MARK: - REST Banner
     private var restBannerView: some View {
         VStack(spacing: 12) {
-            // Header
             HStack {
                 Image(systemName: "bed.double.fill")
                     .font(.title2)
                     .foregroundColor(.purple)
-                
-                Text("REST")
+
+                Text("OFF DUTY / REST")
                     .font(.headline.bold())
                     .foregroundColor(.purple)
-                
+
                 Spacer()
             }
-            
-            // Status message
-            Text("Currently In Rest")
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.9))
-            
-            // Countdown timer
-            if let timeRemaining = RestStatusManager.shared.formattedTimeRemaining {
-                HStack {
-                    Image(systemName: "clock.fill")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                    
-                    Text("Rest ends in: ")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    
-                    Text(timeRemaining)
-                        .font(.caption.bold())
-                        .foregroundColor(.green)
+
+            // Show countdown to next duty if available from NOC calendar
+            if let timeUntilDuty = offDutyManager.formattedTimeUntilDuty {
+                VStack(spacing: 4) {
+                    Text("Back on duty in")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+
+                    Text(timeUntilDuty)
+                        .font(.title2.bold())
+                        .foregroundColor(.white)
+
+                    if let nextDutyTime = offDutyManager.formattedNextDutyTime {
+                        Text("(\(nextDutyTime))")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
                 }
             }
-            
-            // Rest end time
-            if let restEnd = RestStatusManager.shared.formattedRestEndTime {
-                HStack {
-                    Image(systemName: "calendar")
-                        .font(.caption)
-                        .foregroundColor(.blue)
-                    
-                    Text("Rest end: ")
+            // Show rest elapsed time if duty timer is tracking rest
+            else if let restStart = dutyTimerManager.restStartTime {
+                // Use currentTime state to force refresh on timer tick
+                let restElapsed = currentTime.timeIntervalSince(restStart)
+                let hours = Int(restElapsed) / 3600
+                let minutes = (Int(restElapsed) % 3600) / 60
+
+                VStack(spacing: 4) {
+                    Text("In rest for")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+
+                    Text(String(format: "%dh %02dm", hours, minutes))
+                        .font(.title2.bold())
+                        .foregroundColor(.white)
+
+                    Text("(Legal rest: 10h minimum)")
                         .font(.caption)
                         .foregroundColor(.gray)
-                    
-                    Text(restEnd)
-                        .font(.caption.bold())
-                        .foregroundColor(.blue)
                 }
+            }
+            // Fallback: just show "Not Currently On Duty"
+            else {
+                Text("Not Currently On Duty")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.9))
+
+                Text("Per-FDP flight time will start counting when you begin a new duty period")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
             }
         }
         .padding(.horizontal, 16)
@@ -1415,34 +1583,34 @@ struct ConfigurableLimitsStatusView: View {
         HStack(spacing: 4) {  // Reduced from 12
             if settingsStore.configuration.perFDPFlightLimit.enabled {
                 ConfigurableLimitDisplay(
-                    label: "FDP Flt",  // Changed to clarify this is FLIGHT time, not duty time
+                    label: "Blk",  // Block time this FDP
                     current: currentStatus.currentFDPFlightTime,
                     limit: currentStatus.perFDPLimit,
                     threshold: settingsStore.configuration.warningThresholdPercent
                 )
             }
-            
+
             if settingsStore.configuration.flightTimeRolling.enabled {
                 ConfigurableLimitDisplay(
-                    label: "\(settingsStore.configuration.rollingPeriodDays)d",
+                    label: "\(settingsStore.configuration.rollingPeriodDays)d Blk",  // Rolling block time
                     current: currentStatus.flightTimeRolling,
                     limit: settingsStore.configuration.flightTimeRolling.hours,
                     threshold: settingsStore.configuration.warningThresholdPercent
                 )
             }
-            
+
             if settingsStore.configuration.fdp7Day.enabled {
                 ConfigurableLimitDisplay(
-                    label: "7d FDP",
+                    label: "7d Duty",  // 7-day duty time
                     current: currentStatus.fdpTime7Day,
                     limit: settingsStore.configuration.fdp7Day.hours,
                     threshold: settingsStore.configuration.warningThresholdPercent
                 )
             }
-            
+
             if settingsStore.configuration.flightTime365Day.enabled {
                 ConfigurableLimitDisplay(
-                    label: "Annual",
+                    label: "Annual",  // Annual block time
                     current: currentStatus.flightTime365Day,
                     limit: settingsStore.configuration.flightTime365Day.hours,
                     threshold: settingsStore.configuration.warningThresholdPercent
@@ -1631,46 +1799,15 @@ struct ConfigurableLimitsDetailView: View {
 
 struct ConfigurableLimitRow: View {
     let status: LimitStatus
-    @ObservedObject private var offDutyManager = OffDutyStatusManager.shared
-    @ObservedObject private var restManager = RestStatusManager.shared
     
-    // Calculate time elapsed since going off duty
+    // Calculate time elapsed since going off duty (DISABLED - managers don't exist)
     private var offDutyElapsedText: String {
-        guard offDutyManager.isOffDuty,
-              let startTime = offDutyManager.offDutyStartTime else {
-            return ""
-        }
-        
-        let elapsed = Date().timeIntervalSince(startTime)
-        let days = Int(elapsed) / 86400
-        let hours = (Int(elapsed) % 86400) / 3600
-        let minutes = (Int(elapsed) % 3600) / 60
-        
-        if days > 0 {
-            return "\(days) day\(days == 1 ? "" : "s") \(hours) hr\(hours == 1 ? "" : "s")"
-        } else if hours > 0 {
-            return "\(hours) hr\(hours == 1 ? "" : "s") \(minutes) min"
-        } else {
-            return "\(minutes) min"
-        }
+        return ""
     }
     
-    // Calculate time elapsed since going into rest
+    // Calculate time elapsed since going into rest (DISABLED - managers don't exist)
     private var restElapsedText: String {
-        guard restManager.isInRest,
-              let startTime = restManager.restStartTime else {
-            return ""
-        }
-        
-        let elapsed = Date().timeIntervalSince(startTime)
-        let hours = Int(elapsed) / 3600
-        let minutes = (Int(elapsed) % 3600) / 60
-        
-        if hours > 0 {
-            return "\(hours) hr\(hours == 1 ? "" : "s") \(minutes) min"
-        } else {
-            return "\(minutes) min"
-        }
+        return ""
     }
     
     // Safe computed helpers
@@ -1720,23 +1857,15 @@ struct ConfigurableLimitRow: View {
                 .tint(status.statusColor)
                 .scaleEffect(x: 1, y: 2, anchor: .center)
             
-            // ✅ Show OFF DUTY or REST elapsed time (only for Per-FDP row)
+            // Show status for all limit types
             if status.name == "Per-FDP Flight Time" {
-                if offDutyManager.isOffDuty {
-                    HStack {
-                        Image(systemName: "house.fill")
-                            .font(.caption)
-                            .foregroundColor(.cyan)
-                        Text("OFF DUTY • \(offDutyElapsedText)")
-                            .font(.caption)
-                            .foregroundColor(.cyan)
-                    }
-                } else if restManager.isInRest {
+                // For Per-FDP, check if off duty
+                if DutyTimerManager.shared.isInRest || !DutyTimerManager.shared.isOnDuty {
                     HStack {
                         Image(systemName: "bed.double.fill")
                             .font(.caption)
                             .foregroundColor(.purple)
-                        Text("REST • \(restElapsedText)")
+                        Text("OFF DUTY / REST")
                             .font(.caption)
                             .foregroundColor(.purple)
                     }
@@ -2263,4 +2392,5 @@ struct CompletedDutyTimeSummary: View {
         .cornerRadius(12)
     }
 }
+
 

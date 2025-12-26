@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import UIKit
+import SwiftUI  // 🆕 PAYWALL: Required for SubscriptionStatusChecker
 
 class LogBookStore: ObservableObject {
     @Published var trips: [Trip] = []
@@ -356,6 +357,12 @@ class LogBookStore: ObservableObject {
         }
         
         trips.append(trip)
+        
+        // 🆕 PAYWALL: Increment trip count for trial limits
+        Task { @MainActor in
+            SubscriptionStatusChecker.shared.incrementTripCount()
+        }
+        
         save()
         
         // Sync to CloudKit
@@ -524,7 +531,7 @@ class LogBookStore: ObservableObject {
     
     /// Import trips from JSON data
     @discardableResult
-    func importFromJSON(_ data: Data, mergeWithExisting: Bool = true) -> ImportResult {
+    func importFromJSON(_ data: Data, mergeWithExisting: Bool = true) -> JSONImportResult {
         let decoder = JSONDecoder()
         
         // Define backup wrapper structure (matches LogTenPro export format)
@@ -572,20 +579,64 @@ class LogBookStore: ObservableObject {
             }
         }
         
-        return ImportResult(success: false, message: "Could not decode dates in any supported format", newTripsCount: 0)
+        return JSONImportResult(success: false, message: "Could not decode dates in any supported format", newTripsCount: 0)
     }
     
-    private func processImport(_ importedTrips: [Trip], mergeWithExisting: Bool, perDiemRate: Double? = nil) -> ImportResult {
-       let _ = trips.count
+    private func processImport(_ importedTrips: [Trip], mergeWithExisting: Bool, perDiemRate: Double? = nil) -> JSONImportResult {
+       let existingCount = trips.count
         
         if mergeWithExisting {
             // Merge with existing - avoid duplicates by ID and trip number
             let existingIDs = Set(trips.map { $0.id })
             let existingTripNumbers = Set(trips.map { "\($0.tripNumber)-\($0.date)" })
             
+            print("🔍 IMPORT DEBUG:")
+            print("  Existing trips: \(existingCount)")
+            print("  Importing trips: \(importedTrips.count)")
+            print("  Existing IDs: \(existingIDs.count)")
+            
             var newTrips = importedTrips.filter { trip in
                 !existingIDs.contains(trip.id) &&
                 !existingTripNumbers.contains("\(trip.tripNumber)-\(trip.date)")
+            }
+            
+            let duplicatesByID = importedTrips.filter { existingIDs.contains($0.id) }.count
+            let duplicatesByTripNum = importedTrips.filter { trip in
+                existingTripNumbers.contains("\(trip.tripNumber)-\(trip.date)")
+            }.count
+            
+            print("  Duplicates by ID: \(duplicatesByID)")
+            print("  Duplicates by trip#/date: \(duplicatesByTripNum)")
+            print("  New unique trips: \(newTrips.count)")
+            
+            // 🔍 ENHANCED DEBUG: Compare leg data between existing and imported
+            if newTrips.isEmpty && !importedTrips.isEmpty {
+                print("\n🔍 NO NEW TRIPS - Comparing existing vs imported data quality...")
+                
+                // Sample first 3 trips to check leg data
+                let sampleSize = min(3, importedTrips.count)
+                for i in 0..<sampleSize {
+                    let importedTrip = importedTrips[i]
+                    if let existingTrip = trips.first(where: { $0.id == importedTrip.id }) {
+                        print("\n  Trip #\(importedTrip.tripNumber):")
+                        
+                        // Compare leg counts
+                        print("    Existing legs: \(existingTrip.legs.count), Imported legs: \(importedTrip.legs.count)")
+                        
+                        // Check first leg's scheduled data (if exists)
+                        if let existingLeg = existingTrip.legs.first,
+                           let importedLeg = importedTrip.legs.first {
+                            let existingHasScheduled = existingLeg.scheduledOut != nil && existingLeg.scheduledIn != nil
+                            let importedHasScheduled = importedLeg.scheduledOut != nil && importedLeg.scheduledIn != nil
+                            print("    Existing has scheduled times: \(existingHasScheduled)")
+                            print("    Imported has scheduled times: \(importedHasScheduled)")
+                            
+                            if !existingHasScheduled && importedHasScheduled {
+                                print("    ⚠️ BACKUP HAS BETTER DATA - Consider force-replace import")
+                            }
+                        }
+                    }
+                }
             }
             
             // Set all imported trips to .completed to avoid conflicts
@@ -606,7 +657,7 @@ class LogBookStore: ObservableObject {
             save()
             enforceOneActiveTrip() // Double-check after import
             
-            return ImportResult(
+            return JSONImportResult(
                 success: true,
                 message: "Imported \(newTrips.count) new trips. Total: \(trips.count)",
                 newTripsCount: newTrips.count
@@ -622,7 +673,7 @@ class LogBookStore: ObservableObject {
             save()
             enforceOneActiveTrip() // Ensure only one active after replacing all
             
-            return ImportResult(
+            return JSONImportResult(
                 success: true,
                 message: "Replaced all trips. Total: \(trips.count)",
                 newTripsCount: trips.count
@@ -760,7 +811,7 @@ struct ExportData: Codable {
     let appVersion: String
 }
 
-struct ImportResult {
+struct JSONImportResult {
     let success: Bool
     let message: String
     let newTripsCount: Int
@@ -875,16 +926,19 @@ extension LogBookStore {
         do {
             let data = try Data(contentsOf: fileURL)
             let loadedTrips = try JSONDecoder().decode([Trip].self, from: data)
-            
+
             // Only update if changed
             if loadedTrips != trips {
                 trips = loadedTrips
                 print("Loaded \(trips.count) trips successfully")
                 enforceOneActiveTrip()
+
+                // Auto-repair trips with missing leg times
+                repairMissingLegTimes()
             }
         } catch {
             print("Failed to load new format, attempting recovery...")
-            
+
             if attemptDataRecovery() {
                 print("Data recovery successful")
             } else {
@@ -892,5 +946,106 @@ extension LogBookStore {
                 trips = []
             }
         }
+    }
+
+    // MARK: - Leg Time Repair Migration
+
+    /// Repairs trips that have scheduledOut/scheduledIn but are missing outTime/inTime
+    /// This can happen when trips were created before the prePopulateScheduledTimes feature,
+    /// or if the setting was temporarily disabled
+    func repairMissingLegTimes() {
+        var repairCount = 0
+        var legsMissingTimes = 0
+        var legsMissingScheduled = 0
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HHmm"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+
+        for tripIndex in trips.indices {
+            var tripModified = false
+
+            for legIndex in trips[tripIndex].legs.indices {
+                let leg = trips[tripIndex].legs[legIndex]
+
+                // Skip deadheads - they have different time fields
+                guard !leg.isDeadhead else { continue }
+
+                // Track diagnostics
+                let missingOut = leg.outTime.isEmpty
+                let missingIn = leg.inTime.isEmpty
+                let hasScheduledOut = leg.scheduledOut != nil
+                let hasScheduledIn = leg.scheduledIn != nil
+
+                if missingOut || missingIn {
+                    legsMissingTimes += 1
+                }
+                if !hasScheduledOut && !hasScheduledIn && (missingOut || missingIn) {
+                    legsMissingScheduled += 1
+                }
+
+                // Check if outTime is missing but scheduledOut exists
+                if leg.outTime.isEmpty, let scheduledOut = leg.scheduledOut {
+                    trips[tripIndex].legs[legIndex].outTime = formatter.string(from: scheduledOut)
+                    tripModified = true
+                    repairCount += 1
+                }
+
+                // Check if inTime is missing but scheduledIn exists
+                if leg.inTime.isEmpty, let scheduledIn = leg.scheduledIn {
+                    trips[tripIndex].legs[legIndex].inTime = formatter.string(from: scheduledIn)
+                    tripModified = true
+                    repairCount += 1
+                }
+            }
+
+            if tripModified {
+                print("🔧 Repaired leg times for trip \(trips[tripIndex].tripNumber)")
+            }
+        }
+
+        // Always print diagnostics
+        print("📊 Leg time repair scan: \(trips.count) trips")
+        print("   - Legs missing out/in times: \(legsMissingTimes)")
+        print("   - Legs missing scheduled times (can't repair): \(legsMissingScheduled)")
+        print("   - Repairs made: \(repairCount)")
+
+        if repairCount > 0 {
+            print("✅ Repaired \(repairCount) missing leg time(s) across all trips")
+            save()
+        }
+    }
+
+    /// Manual repair function that can be called from settings/debug menu
+    /// Returns count of repairs made
+    @discardableResult
+    func manualRepairMissingLegTimes() -> Int {
+        var repairCount = 0
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HHmm"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+
+        for tripIndex in trips.indices {
+            for legIndex in trips[tripIndex].legs.indices {
+                let leg = trips[tripIndex].legs[legIndex]
+
+                guard !leg.isDeadhead else { continue }
+
+                if leg.outTime.isEmpty, let scheduledOut = leg.scheduledOut {
+                    trips[tripIndex].legs[legIndex].outTime = formatter.string(from: scheduledOut)
+                    repairCount += 1
+                }
+
+                if leg.inTime.isEmpty, let scheduledIn = leg.scheduledIn {
+                    trips[tripIndex].legs[legIndex].inTime = formatter.string(from: scheduledIn)
+                    repairCount += 1
+                }
+            }
+        }
+
+        if repairCount > 0 {
+            save()
+        }
+
+        return repairCount
     }
 }

@@ -4,7 +4,7 @@ import MessageUI
 
 struct OrganizedLogbookView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @State private var expandedSections: Set<String> = ["current", "today", "thisWeek"]
     @State private var tripToDelete: Trip?
     @State private var showDeleteConfirmation = false
@@ -15,6 +15,10 @@ struct OrganizedLogbookView: View {
     
     @State private var shareItems: [Any] = []
     @State private var isShareSheetPresented: Bool = false
+    
+    // 🆕 PAYWALL: Track subscription status
+    @StateObject private var trialChecker = SubscriptionStatusChecker.shared
+    @State private var showingPaywall = false
     
     // Add closure parameter for trip selection
     var onTripSelected: ((Int) -> Void)?
@@ -224,6 +228,9 @@ struct OrganizedLogbookView: View {
             ActivityViewControllerRepresentable(activityItems: shareItems)
                 .ignoresSafeArea()
         }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView()  // 🆕 PAYWALL: Show subscription screen when delete blocked
+        }
         .confirmationDialog(
                 "Delete Trip",
                 isPresented: $showDeleteConfirmation,
@@ -252,8 +259,13 @@ struct OrganizedLogbookView: View {
     }
     
     private func handleDeleteRequest(_ trip: Trip) {
-        tripToDelete = trip
-        showDeleteConfirmation = true
+        // 🆕 PAYWALL: Check if user can delete trips
+        if trialChecker.canDeleteTrip {
+            tripToDelete = trip
+            showDeleteConfirmation = true
+        } else {
+            showingPaywall = true
+        }
     }
     
     private func deleteTrip(_ trip: Trip) {
@@ -824,7 +836,7 @@ struct CollapsibleSection: View {
     let trips: [Trip]
     let isExpanded: Bool
     let accentColor: Color
-    let store: LogBookStore
+    let store: SwiftDataLogBookStore
     var onTripSelected: ((Int) -> Void)?
     var onDeleteRequest: ((Trip) -> Void)?
     var onReactivateRequest: ((Trip) -> Void)?
@@ -999,7 +1011,7 @@ struct MonthRow: View {
     let monthYear: String
     let trips: [Trip]
     let isExpanded: Bool
-    let store: LogBookStore
+    let store: SwiftDataLogBookStore
     var onTripSelected: ((Int) -> Void)?
     var onDeleteRequest: ((Trip) -> Void)?
     var onReactivateRequest: ((Trip) -> Void)?
@@ -1316,7 +1328,7 @@ extension UIApplication {
 // MARK: - Preview
 struct OrganizedLogbookView_Previews: PreviewProvider {
     static var previews: some View {
-        OrganizedLogbookView(store: LogBookStore())
+        OrganizedLogbookView(store: SwiftDataLogBookStore.preview)
             .preferredColorScheme(.dark)
     }
 }

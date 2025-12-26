@@ -3,7 +3,7 @@ import SwiftUI
 import UserNotifications
 
 // MARK: - Schedule View Types
-enum ScheduleViewType: String, CaseIterable {
+enum ScheduleViewType: String, CaseIterable, Codable, Identifiable {
     case list = "List"
     case agenda = "Agenda"
     case week = "Week"
@@ -13,8 +13,9 @@ enum ScheduleViewType: String, CaseIterable {
     case timeline = "Timeline"
     case year = "Year"
     case gantt = "Gantt"
-    case split = "Split"
     case dataAnalyzer = "Data Analyzer"
+    
+    var id: String { rawValue }
     
     var icon: String {
         switch self {
@@ -27,7 +28,6 @@ enum ScheduleViewType: String, CaseIterable {
         case .timeline: return "timeline.selection"
         case .year: return "calendar.circle"
         case .gantt: return "chart.bar.xaxis"
-        case .split: return "rectangle.split.2x1"
         case .dataAnalyzer: return "magnifyingglass"
         }
     }
@@ -43,9 +43,49 @@ enum ScheduleViewType: String, CaseIterable {
         case .timeline: return "Horizontal timeline"
         case .year: return "Full year overview"
         case .gantt: return "Project-style view"
-        case .split: return "List + Calendar split"
         case .dataAnalyzer: return "Analyze schedule data"
         }
+    }
+}
+
+// MARK: - Schedule View Preference Manager
+class ScheduleViewPreferenceManager: ObservableObject {
+    static let shared = ScheduleViewPreferenceManager()
+    
+    private let userDefaultsKey = "scheduleViewOrder"
+    
+    @Published var orderedViews: [ScheduleViewType] {
+        didSet {
+            saveOrder()
+        }
+    }
+    
+    private init() {
+        // Load saved order or use default
+        if let savedData = UserDefaults.standard.data(forKey: userDefaultsKey),
+           let decoded = try? JSONDecoder().decode([ScheduleViewType].self, from: savedData) {
+            // Ensure all view types are present (in case new ones were added)
+            var merged = decoded
+            for viewType in ScheduleViewType.allCases {
+                if !merged.contains(viewType) {
+                    merged.append(viewType)
+                }
+            }
+            self.orderedViews = merged
+        } else {
+            // Default order
+            self.orderedViews = Array(ScheduleViewType.allCases)
+        }
+    }
+    
+    private func saveOrder() {
+        if let encoded = try? JSONEncoder().encode(orderedViews) {
+            UserDefaults.standard.set(encoded, forKey: userDefaultsKey)
+        }
+    }
+    
+    func move(from source: IndexSet, to destination: Int) {
+        orderedViews.move(fromOffsets: source, toOffset: destination)
     }
 }
 
@@ -106,18 +146,27 @@ class ScheduleAlarmManager: ObservableObject {
 struct ScheduleCalendarView: View {
     @EnvironmentObject var scheduleStore: ScheduleStore
     @EnvironmentObject var nocSettings: NOCSettingsStore
-    @EnvironmentObject var logbookStore: LogBookStore
+    @EnvironmentObject var logbookStore: SwiftDataLogBookStore
+    @EnvironmentObject var importMappingStore: ImportMappingStore  // NEW: iCal import mappings
     @StateObject private var alarmManager = ScheduleAlarmManager()
-    @State private var selectedViewType: ScheduleViewType = .list
+    @StateObject private var viewPreferences = ScheduleViewPreferenceManager.shared
+    @State private var selectedViewType: ScheduleViewType?  // nil = use first in ordered list
     @State private var currentDate = Date()
     @State private var showingViewPicker = false
     @State private var showingSyncStatus = false
     @State private var showingAlarmSettings = false
     @State private var showingNOCSettings = false
     @State private var showingUserInfoPrompt = false
+    @State private var showingViewOrderEditor = false  // NEW: View order editor
     @State private var selectedItem: BasicScheduleItem?
     @State private var showingDismissedTrips = false
+    @State private var showImportWizard = false  // NEW: Import wizard sheet
     @StateObject private var dismissedManager = DismissedRosterItemsManager.shared
+    
+    // Computed property for the active view type
+    private var activeViewType: ScheduleViewType {
+        selectedViewType ?? viewPreferences.orderedViews.first ?? .list
+    }
     
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
@@ -156,6 +205,12 @@ struct ScheduleCalendarView: View {
         .sheet(isPresented: $showingSyncStatus) {
             syncStatusDetailView
         }
+        .sheet(isPresented: $showImportWizard) {
+            ICalendarImportWizardView()
+        }
+        .sheet(isPresented: $showingViewOrderEditor) {
+            ScheduleViewOrderEditor(viewPreferences: viewPreferences)
+        }
         .alert("Setup User Information", isPresented: $showingUserInfoPrompt) {
             Button("Setup Now") {
                 showingNOCSettings = true
@@ -181,6 +236,14 @@ struct ScheduleCalendarView: View {
         .navigationBarTitleDisplayMode(.inline)
         .background(LogbookTheme.navy)
         .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showImportWizard = true
+                } label: {
+                    Label("Import Schedule", systemImage: "calendar.badge.plus")
+                }
+            }
+            
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     syncMenuSection
@@ -359,19 +422,30 @@ struct ScheduleCalendarView: View {
         VStack(spacing: 8) {
             HStack {
                 Menu {
-                    ForEach(ScheduleViewType.allCases, id: \.self) { viewType in
+                    ForEach(viewPreferences.orderedViews) { viewType in
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 selectedViewType = viewType
                             }
                         }) {
                             Label(viewType.rawValue, systemImage: viewType.icon)
+                            if viewType == activeViewType {
+                                Image(systemName: "checkmark")
+                            }
                         }
+                    }
+                    
+                    Divider()
+                    
+                    Button {
+                        showingViewOrderEditor = true
+                    } label: {
+                        Label("Customize Order...", systemImage: "line.3.horizontal.decrease")
                     }
                 } label: {
                     HStack {
-                        Image(systemName: selectedViewType.icon)
-                        Text(selectedViewType.rawValue)
+                        Image(systemName: activeViewType.icon)
+                        Text(activeViewType.rawValue)
                         Image(systemName: "chevron.down")
                     }
                     .padding(.horizontal, 16)
@@ -387,7 +461,7 @@ struct ScheduleCalendarView: View {
             }
             .padding(.horizontal)
             
-            Text(selectedViewType.description)
+            Text(activeViewType.description)
                 .font(.caption)
                 .foregroundColor(LogbookTheme.textSecondary)
         }
@@ -469,7 +543,7 @@ struct ScheduleCalendarView: View {
     
     private var scheduleContent: some View {
         Group {
-            switch selectedViewType {
+            switch activeViewType {
             case .list:
                 OriginalScheduleListView(scheduleStore: scheduleStore, alarmManager: alarmManager, onItemTap: { selectedItem = $0 })
             case .agenda:
@@ -477,7 +551,7 @@ struct ScheduleCalendarView: View {
             case .week:
                 WeekView(scheduleStore: scheduleStore, currentDate: $currentDate, alarmManager: alarmManager, onItemTap: { selectedItem = $0 })
             case .month:
-                MonthView(scheduleStore: scheduleStore, logbookStore: logbookStore, currentDate: $currentDate, alarmManager: alarmManager, onItemTap: { selectedItem = $0 })
+                MonthView(scheduleStore: scheduleStore, logbookStore: logbookStore, currentDate: $currentDate, alarmManager: alarmManager, onItemTap: { selectedItem = $0 }, selectedViewType: $selectedViewType)
             case .threeDay:
                 ThreeDayView(scheduleStore: scheduleStore, currentDate: $currentDate, alarmManager: alarmManager, onItemTap: { selectedItem = $0 })
             case .workWeek:
@@ -488,8 +562,6 @@ struct ScheduleCalendarView: View {
                 YearView(scheduleStore: scheduleStore, currentDate: $currentDate, alarmManager: alarmManager, onItemTap: { selectedItem = $0 })
             case .gantt:
                 GanttView(scheduleStore: scheduleStore, currentDate: $currentDate, alarmManager: alarmManager, onItemTap: { selectedItem = $0 })
-            case .split:
-                SplitView(scheduleStore: scheduleStore, logbookStore: logbookStore, currentDate: $currentDate, alarmManager: alarmManager, onItemTap: { selectedItem = $0 })
             case .dataAnalyzer:
                 ScheduleDataAnalyzer(scheduleStore: scheduleStore)
             }
@@ -499,7 +571,7 @@ struct ScheduleCalendarView: View {
     private var dateRangeText: String {
         let formatter = DateFormatter()
         
-        switch selectedViewType {
+        switch activeViewType {
         case .list, .agenda:
             return ""
         case .week:
@@ -528,9 +600,6 @@ struct ScheduleCalendarView: View {
         case .gantt:
             formatter.dateFormat = "MMM yyyy"
             return formatter.string(from: currentDate)
-        case .split:
-            formatter.dateFormat = "MMMM yyyy"
-            return formatter.string(from: currentDate)
         case .dataAnalyzer:
             return "Data Analysis"
         }
@@ -541,18 +610,18 @@ struct ScheduleCalendarView: View {
         let component: Calendar.Component
         let value: Int
         
-        switch selectedViewType {
+        switch activeViewType {
         case .list, .agenda, .dataAnalyzer:
             return
         case .week, .workWeek:
             component = .weekOfYear
             value = direction
-        case .month, .gantt, .split:
+        case .month, .gantt:
             component = .month
             value = direction
         case .threeDay, .timeline:
             component = .day
-            value = direction * (selectedViewType == .threeDay ? 3 : 1)
+            value = direction * (activeViewType == .threeDay ? 3 : 1)
         case .year:
             component = .year
             value = direction
@@ -600,7 +669,7 @@ struct ScheduleCalendarView: View {
 struct OriginalScheduleListView: View {
     @ObservedObject var scheduleStore: ScheduleStore
     @ObservedObject var alarmManager: ScheduleAlarmManager
-    @EnvironmentObject var logbookStore: LogBookStore
+    @EnvironmentObject var logbookStore: SwiftDataLogBookStore
     let onItemTap: (BasicScheduleItem) -> Void
     
     @State private var selectedFilter: FilterOption = .currentMonth
@@ -1285,19 +1354,33 @@ struct WeekView: View {
 // MARK: - Month View
 struct MonthView: View {
     @ObservedObject var scheduleStore: ScheduleStore
-    @ObservedObject var logbookStore: LogBookStore
+    @ObservedObject var logbookStore: SwiftDataLogBookStore
     @Binding var currentDate: Date
     @ObservedObject var alarmManager: ScheduleAlarmManager
     let onItemTap: (BasicScheduleItem) -> Void
+    @Binding var selectedViewType: ScheduleViewType?  // NEW: For switching views
     
-    private var monthDays: [Date] {
+    private var monthDays: [Date?] {
         let calendar = Calendar.current
         let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: currentDate))!
-        let range = calendar.range(of: .day, in: .month, for: startOfMonth)!
         
-        return range.compactMap { day in
+        // Get the weekday of the 1st (1 = Sunday, 2 = Monday, etc.)
+        let firstWeekday = calendar.component(.weekday, from: startOfMonth)
+        
+        // Calculate how many empty cells we need before the 1st
+        let leadingEmptyDays = firstWeekday - 1
+        
+        // Get all the days in this month
+        let range = calendar.range(of: .day, in: .month, for: startOfMonth)!
+        let monthDates = range.compactMap { day -> Date? in
             calendar.date(byAdding: .day, value: day - 1, to: startOfMonth)
         }
+        
+        // Add empty cells before the first day
+        var result: [Date?] = Array(repeating: nil, count: leadingEmptyDays)
+        result.append(contentsOf: monthDates.map { Optional($0) })
+        
+        return result
     }
     
     /// All items for the current month
@@ -1390,16 +1473,47 @@ struct MonthView: View {
         VStack(spacing: 0) {
             ScrollView {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 1) {
-                    ForEach(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], id: \.self) { day in
-                        Text(day)
-                            .font(.caption.bold())
-                            .foregroundColor(LogbookTheme.textSecondary)
-                            .frame(height: 30)
-                            .background(LogbookTheme.fieldBackground)
+                    ForEach(Array(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].enumerated()), id: \.element) { index, day in
+                        Button {
+                            // Find first occurrence of this weekday in the month
+                            let calendar = Calendar.current
+                            if let firstDay = monthDays.compactMap({ $0 }).first(where: { calendar.component(.weekday, from: $0) == index + 1 }) {
+                                currentDate = firstDay
+                                withAnimation {
+                                    selectedViewType = .week
+                                }
+                            }
+                        } label: {
+                            Text(day)
+                                .font(.caption.bold())
+                                .foregroundColor(LogbookTheme.textSecondary)
+                                .frame(height: 30)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.plain)
                     }
                     
-                    ForEach(monthDays, id: \.self) { day in
-                        MonthDayCell(day: day, flights: flightsForDay(day), logbookStore: logbookStore, alarmManager: alarmManager, onItemTap: onItemTap)
+                    ForEach(Array(monthDays.enumerated()), id: \.offset) { index, optionalDay in
+                        if let day = optionalDay {
+                            MonthDayCell(
+                                day: day,
+                                flights: flightsForDay(day),
+                                logbookStore: logbookStore,
+                                alarmManager: alarmManager,
+                                onItemTap: onItemTap,
+                                onDayTap: { tappedDay in
+                                    // Switch to list view and set the date
+                                    currentDate = tappedDay
+                                    withAnimation {
+                                        selectedViewType = .list
+                                    }
+                                }
+                            )
+                        } else {
+                            // Empty cell for days before the month starts
+                            Color.clear
+                                .frame(height: 80)
+                        }
                     }
                 }
                 .padding()
@@ -1458,7 +1572,7 @@ struct MonthSummaryFooter: View {
             
             // Main stats row
             HStack(spacing: 16) {
-                StatBadge(
+                ScheduleStatBadge(
                     icon: "airplane",
                     value: "\(stats.flightDays)",
                     label: "Flight Days",
@@ -1466,7 +1580,7 @@ struct MonthSummaryFooter: View {
                 )
                 
                 if stats.deadheadDays > 0 {
-                    StatBadge(
+                    ScheduleStatBadge(
                         icon: "airplane.circle",
                         value: "\(stats.deadheadDays)",
                         label: "Deadhead",
@@ -1475,7 +1589,7 @@ struct MonthSummaryFooter: View {
                 }
                 
                 if stats.onDutyDays > 0 {
-                    StatBadge(
+                    ScheduleStatBadge(
                         icon: "clock.badge.checkmark",
                         value: "\(stats.onDutyDays)",
                         label: "On Duty",
@@ -1484,7 +1598,7 @@ struct MonthSummaryFooter: View {
                 }
                 
                 if stats.woffDays > 0 {
-                    StatBadge(
+                    ScheduleStatBadge(
                         icon: "dollarsign.circle.fill",
                         value: "\(stats.woffDays)",
                         label: "WOFF",
@@ -1492,7 +1606,7 @@ struct MonthSummaryFooter: View {
                     )
                 }
                 
-                StatBadge(
+                ScheduleStatBadge(
                     icon: "house.fill",
                     value: "\(stats.totalDaysOff)",
                     label: "Days Off",
@@ -1505,7 +1619,7 @@ struct MonthSummaryFooter: View {
             if stats.tripCount > 0 || stats.totalBlockMinutes > 0 {
                 HStack(spacing: 16) {
                     if stats.tripCount > 0 {
-                        StatBadge(
+                        ScheduleStatBadge(
                             icon: "number.circle.fill",
                             value: "\(stats.tripCount)",
                             label: "Trips Flown",
@@ -1514,7 +1628,7 @@ struct MonthSummaryFooter: View {
                     }
                     
                     if stats.totalBlockMinutes > 0 {
-                        StatBadge(
+                        ScheduleStatBadge(
                             icon: "clock.fill",
                             value: stats.formattedBlockTime,
                             label: "Hours Flown",
@@ -1555,7 +1669,7 @@ struct MonthSummaryFooter: View {
 }
 
 // MARK: - Stat Badge Components
-struct StatBadge: View {
+struct ScheduleStatBadge: View {
     let icon: String
     let value: String
     let label: String
@@ -1889,51 +2003,6 @@ struct GanttView: View {
     }
 }
 
-// MARK: - Split View
-struct SplitView: View {
-    @ObservedObject var scheduleStore: ScheduleStore
-    @ObservedObject var logbookStore: LogBookStore
-    @Binding var currentDate: Date
-    @ObservedObject var alarmManager: ScheduleAlarmManager
-    let onItemTap: (BasicScheduleItem) -> Void
-    
-    var body: some View {
-        HStack {
-            VStack {
-                Text("Schedule List")
-                    .font(.headline)
-                    .foregroundColor(LogbookTheme.textPrimary)
-                    .padding()
-                
-                OriginalScheduleListView(
-                    scheduleStore: scheduleStore,
-                    alarmManager: alarmManager,
-                    onItemTap: onItemTap
-                )
-            }
-            .frame(minWidth: 300)
-            .background(LogbookTheme.navy)
-            
-            VStack {
-                Text("Month Calendar")
-                    .font(.headline)
-                    .foregroundColor(LogbookTheme.textPrimary)
-                    .padding()
-                
-                MonthView(
-                    scheduleStore: scheduleStore,
-                    logbookStore: logbookStore,
-                    currentDate: $currentDate,
-                    alarmManager: alarmManager,
-                    onItemTap: onItemTap
-                )
-            }
-            .frame(minWidth: 300)
-            .background(LogbookTheme.navyDark)
-        }
-    }
-}
-
 // MARK: - Supporting Views
 
 struct WeekFlightCard: View {
@@ -2035,9 +2104,10 @@ struct ThreeDayFlightCard: View {
 struct MonthDayCell: View {
     let day: Date
     let flights: [BasicScheduleItem]
-    @ObservedObject var logbookStore: LogBookStore
+    @ObservedObject var logbookStore: SwiftDataLogBookStore
     @ObservedObject var alarmManager: ScheduleAlarmManager
     let onItemTap: (BasicScheduleItem) -> Void
+    let onDayTap: (Date) -> Void  // NEW: Callback for tapping the day itself
     
     // MARK: - Day Type Detection
     
@@ -2278,9 +2348,8 @@ struct MonthDayCell: View {
         )
         .border(LogbookTheme.divider, width: 0.5)
         .onTapGesture {
-            if let firstFlight = flights.first {
-                onItemTap(firstFlight)
-            }
+            // When user taps a day, switch to list view for that day
+            onDayTap(day)
         }
     }
     
@@ -2607,6 +2676,174 @@ extension DateFormatter {
         formatter.timeStyle = .short
         return formatter
     }()
+}
+
+// MARK: - Quick Import Extension
+extension ScheduleCalendarView {
+    func quickImport(fileURL: URL) {
+        guard let defaultMapping = importMappingStore.savedMappings.first(where: { $0.isDefault }) else {
+            // No default - show wizard
+            showImportWizard = true
+            return
+        }
+        
+        // Use default mapping
+        Task {
+            do {
+                let content = try String(contentsOf: fileURL)
+                let result = ICalendarImportEngine.importCalendar(
+                    icsContent: content,
+                    using: defaultMapping
+                )
+                
+                // Save trips
+                for trip in result.createdTrips {
+                    logbookStore.saveTrip(trip)
+                }
+                
+                // Show success message
+                await MainActor.run {
+                    showSuccessAlert(result)
+                }
+            } catch {
+                // Show error message
+                await MainActor.run {
+                    showErrorAlert(error)
+                }
+            }
+        }
+    }
+    
+    private func showSuccessAlert(_ result: ImportResult) {
+        // You can implement a custom alert or banner here
+        print("✅ Import successful: \(result.createdTrips.count) trips created")
+    }
+    
+    private func showErrorAlert(_ error: Error) {
+        // You can implement a custom alert or banner here
+        print("❌ Import failed: \(error.localizedDescription)")
+    }
+}
+
+// MARK: - Schedule View Order Editor
+struct ScheduleViewOrderEditor: View {
+    @ObservedObject var viewPreferences: ScheduleViewPreferenceManager
+    @Environment(\.dismiss) private var dismiss
+    @State private var editableViews: [ScheduleViewType]
+    
+    init(viewPreferences: ScheduleViewPreferenceManager) {
+        self.viewPreferences = viewPreferences
+        _editableViews = State(initialValue: viewPreferences.orderedViews)
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                // Header with instructions
+                VStack(spacing: 8) {
+                    HStack {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(LogbookTheme.accentBlue)
+                        Text("Drag to Reorder Views")
+                            .font(.subheadline)
+                            .foregroundColor(LogbookTheme.textPrimary)
+                    }
+                    .padding(.top, 12)
+                    
+                    Text("Your favorite view will appear first when you open the Schedule tab")
+                        .font(.caption)
+                        .foregroundColor(LogbookTheme.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                        .padding(.bottom, 12)
+                }
+                .background(LogbookTheme.fieldBackground)
+                
+                // Reorderable list
+                List {
+                    ForEach(editableViews) { viewType in
+                        HStack(spacing: 12) {
+                            // Drag handle
+                            Image(systemName: "line.3.horizontal")
+                                .foregroundColor(.gray)
+                                .font(.title3)
+                            
+                            // View icon
+                            Image(systemName: viewType.icon)
+                                .foregroundColor(LogbookTheme.accentBlue)
+                                .frame(width: 24)
+                            
+                            // View name and description
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(viewType.rawValue)
+                                    .font(.subheadline.bold())
+                                    .foregroundColor(LogbookTheme.textPrimary)
+                                
+                                Text(viewType.description)
+                                    .font(.caption)
+                                    .foregroundColor(LogbookTheme.textSecondary)
+                            }
+                            
+                            Spacer()
+                            
+                            // Position indicator
+                            if let index = editableViews.firstIndex(of: viewType) {
+                                Text("#\(index + 1)")
+                                    .font(.caption.bold())
+                                    .foregroundColor(index == 0 ? LogbookTheme.accentGreen : LogbookTheme.textTertiary)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(index == 0 ? LogbookTheme.accentGreen.opacity(0.2) : LogbookTheme.fieldBackground)
+                                    .cornerRadius(6)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                        .listRowBackground(LogbookTheme.cardBackground)
+                    }
+                    .onMove { source, destination in
+                        editableViews.move(fromOffsets: source, toOffset: destination)
+                    }
+                }
+                .listStyle(.plain)
+                .environment(\.editMode, .constant(.active))
+                .scrollContentBackground(.hidden)
+                .background(LogbookTheme.navy)
+            }
+            .background(LogbookTheme.navy)
+            .navigationTitle("Customize View Order")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        viewPreferences.orderedViews = editableViews
+                        dismiss()
+                    }
+                    .bold()
+                }
+                
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        withAnimation {
+                            editableViews = Array(ScheduleViewType.allCases)
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.counterclockwise")
+                            Text("Reset to Default")
+                        }
+                        .font(.caption)
+                    }
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
 }
 
 // MARK: - Preview

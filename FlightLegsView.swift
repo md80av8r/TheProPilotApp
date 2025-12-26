@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct FlightLegsView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @AppStorage("selectedLegsStats") private var selectedStatsData: Data = Data()
     @State private var currentSelectedStats: [StatType] = []
     @State private var showingStatsPicker = false

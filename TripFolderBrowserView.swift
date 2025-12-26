@@ -9,7 +9,7 @@ import SwiftUI
 
 // MARK: - Main Trip Folder Browser
 struct TripFolderBrowserView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @ObservedObject var documentStore: TripDocumentManager
     @ObservedObject var airlineSettings: AirlineSettingsStore
     @ObservedObject var crewContactManager: CrewContactManager  // Added for shared crew contacts
@@ -678,7 +678,7 @@ struct DocumentListRow: View {
 struct TripFolderBrowserView_Previews: PreviewProvider {
     static var previews: some View {
         TripFolderBrowserView(
-            store: LogBookStore(),
+            store: SwiftDataLogBookStore.preview,
             documentStore: TripDocumentManager(),
             airlineSettings: AirlineSettingsStore(),
             crewContactManager: CrewContactManager()

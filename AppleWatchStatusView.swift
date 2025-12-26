@@ -15,7 +15,7 @@ struct AppleWatchStatusView: View {
     @ObservedObject var locationManager: PilotLocationManager
     @ObservedObject var opsManager: OPSCallingManager
     @ObservedObject var autoTimeSettings: AutoTimeSettings
-    @EnvironmentObject var store: LogBookStore
+    @EnvironmentObject var store: SwiftDataLogBookStore
     
     @State private var lastSyncTime = Date()
     @State private var showingResetConfirmation = false

@@ -10,7 +10,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct DataBackupSettingsView: View {
-    @EnvironmentObject var store: LogBookStore
+    @EnvironmentObject var store: SwiftDataLogBookStore
     @StateObject private var cloudSync = CloudKitManager.shared
     
     @State private var showingImportPicker = false
@@ -20,17 +20,31 @@ struct DataBackupSettingsView: View {
     @State private var alertTitle = ""
     @State private var exportedFileURL: URL?
     
+    // 🆕 Data Management States
+    @State private var showingDeleteConfirmation = false
+    @State private var showingDataIntegrityReport = false
+    @State private var dataIntegrityReport = ""
+    @State private var showingRecoveryOptions = false
+    @State private var forceReplaceMode = false  // 🔥 NEW: Flag for force-replace imports
+    @State private var showingImportModeChoice = false  // 🔥 NEW: Show merge vs replace choice
+    
     var body: some View {
         ZStack {
             LogbookTheme.navy.ignoresSafeArea()
             
             ScrollView {
                 VStack(spacing: 20) {
+                    // CloudKit Status Banner (if there are issues)
+                    CloudKitStatusBanner()
+                    
                     // iCloud Sync Section
                     iCloudSyncSection
                     
                     // Local Backup Section
                     localBackupSection
+                    
+                    // 🆕 Data Management Section (NEW)
+                    dataManagementSection
                     
                     // About Section
                     aboutSection
@@ -52,10 +66,34 @@ struct DataBackupSettingsView: View {
                 ActivityView(items: [url])
             }
         }
+        .sheet(isPresented: $showingDataIntegrityReport) {
+            DataIntegrityReportView(report: dataIntegrityReport)
+        }
         .alert(alertTitle, isPresented: $showingAlert) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(alertMessage)
+        }
+        .alert("Delete All Trip Data?", isPresented: $showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete Everything", role: .destructive) {
+                deleteAllTripData()
+            }
+        } message: {
+            Text("This will permanently delete all \(store.trips.count) trips from your device. This action cannot be undone!\n\nMake sure you have a backup first.")
+        }
+        .alert("Import Mode", isPresented: $showingImportModeChoice) {
+            Button("Cancel", role: .cancel) {}
+            Button("Merge with Existing") {
+                forceReplaceMode = false
+                showingImportPicker = true
+            }
+            Button("Replace All", role: .destructive) {
+                forceReplaceMode = true
+                showingImportPicker = true
+            }
+        } message: {
+            Text("Merge: Add new trips from backup (keeps existing trips)\n\nReplace: Delete all current trips and restore from backup")
         }
     }
     
@@ -218,7 +256,8 @@ struct DataBackupSettingsView: View {
             VStack(spacing: 12) {
                 // Import button
                 Button {
-                    showingImportPicker = true
+                    forceReplaceMode = false
+                    showingImportModeChoice = true
                 } label: {
                     HStack {
                         Image(systemName: "square.and.arrow.down")
@@ -264,6 +303,95 @@ struct DataBackupSettingsView: View {
                     .cornerRadius(10)
                 }
             }
+        }
+        .padding()
+        .background(LogbookTheme.navyLight)
+        .cornerRadius(12)
+    }
+    
+    // MARK: - Data Management Section
+    
+    private var dataManagementSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header
+            HStack {
+                Image(systemName: "wrench.and.screwdriver")
+                    .font(.title2)
+                    .foregroundColor(.cyan)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Advanced Tools")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    
+                    Text("Troubleshooting & data recovery")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+            }
+            
+            Divider()
+                .background(Color.gray.opacity(0.3))
+            
+            VStack(spacing: 12) {
+                // CloudKit Advanced Settings
+                NavigationLink(destination: CloudKitSettingsView()) {
+                    HStack {
+                        Image(systemName: "icloud.and.arrow.up.and.arrow.down")
+                        Text("iCloud Sync Settings")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(LogbookTheme.accentBlue)
+                    .cornerRadius(10)
+                }
+                
+                // Data Integrity Check
+                Button {
+                    runDataIntegrityCheck()
+                } label: {
+                    HStack {
+                        Image(systemName: "checkmark.shield")
+                        Text("Check Data Health")
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.cyan.opacity(0.8))
+                    .cornerRadius(10)
+                }
+                
+                // Data Recovery
+                Button {
+                    attemptDataRecovery()
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.clockwise.circle")
+                        Text("Recover Data")
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.orange.opacity(0.8))
+                    .cornerRadius(10)
+                }
+            }
+            
+            // Help text
+            Text("💡 Use 'iCloud Sync Settings' to manage CloudKit sync and resolve conflicts")
+                .font(.caption2)
+                .foregroundColor(.cyan)
+                .padding(.top, 4)
         }
         .padding()
         .background(LogbookTheme.navyLight)
@@ -477,7 +605,8 @@ struct DataBackupSettingsView: View {
                 
                 // Import the data
                 print("🔄 Calling store.importFromJSON...")
-                let result = store.importFromJSON(data)
+                print("   Mode: \(forceReplaceMode ? "REPLACE ALL" : "MERGE")")
+                let result = store.importFromJSON(data, mergeWithExisting: !forceReplaceMode)
                 print("📊 Import result: success=\(result.success), message=\(result.message)")
                 
                 alertTitle = result.success ? "Import Successful" : "Import Failed"
@@ -526,6 +655,141 @@ struct DataBackupSettingsView: View {
         } else {
             let days = Int(interval / 86400)
             return days == 1 ? "1 day ago" : "\(days) days ago"
+        }
+    }
+    
+    // MARK: - 🆕 Data Management Functions
+    
+    private func runDataIntegrityCheck() {
+        var report = "🔍 DATA INTEGRITY CHECK\n"
+        report += "═══════════════════════════════════\n\n"
+        
+        var totalTrips = 0
+        var totalLegs = 0
+        var tripsWithZeroLegs = 0
+        var legsMissingScheduledOut = 0
+        var legsMissingScheduledIn = 0
+        var legsMissingRosterId = 0
+        
+        for trip in store.trips {
+            totalTrips += 1
+            
+            if trip.legs.isEmpty {
+                tripsWithZeroLegs += 1
+                report += "🚨 Trip #\(trip.tripNumber): ZERO LEGS\n"
+                report += "   Logpages: \(trip.logpages.count)\n"
+                for (idx, page) in trip.logpages.enumerated() {
+                    report += "   Logpage \(idx+1): \(page.legs.count) legs\n"
+                }
+                report += "\n"
+                continue
+            }
+            
+            for leg in trip.legs {
+                totalLegs += 1
+                if leg.scheduledOut == nil { legsMissingScheduledOut += 1 }
+                if leg.scheduledIn == nil { legsMissingScheduledIn += 1 }
+                if leg.rosterSourceId == nil { legsMissingRosterId += 1 }
+            }
+        }
+        
+        report += "───────────────────────────────────\n"
+        report += "📊 SUMMARY\n"
+        report += "───────────────────────────────────\n"
+        report += "Total Trips: \(totalTrips)\n"
+        report += "Total Legs: \(totalLegs)\n"
+        report += "🚨 Trips with ZERO legs: \(tripsWithZeroLegs)\n"
+        report += "❌ Legs missing scheduled OUT: \(legsMissingScheduledOut)\n"
+        report += "❌ Legs missing scheduled IN: \(legsMissingScheduledIn)\n"
+        report += "❌ Legs missing roster ID: \(legsMissingRosterId)\n\n"
+        
+        if tripsWithZeroLegs > 0 {
+            report += "🚨 CRITICAL ISSUES FOUND!\n\n"
+            report += "Recommendations:\n"
+            report += "1. Try 'Attempt Data Recovery' first\n"
+            report += "2. If that fails, use 'Force Import (Replace All)'\n"
+            report += "   with your most recent backup file\n"
+        } else if legsMissingScheduledOut > 0 || legsMissingScheduledIn > 0 {
+            report += "⚠️ Data quality issues detected.\n\n"
+            report += "These may be legacy trips created before\n"
+            report += "scheduled time tracking was added.\n"
+        } else {
+            report += "✅ All data looks good!\n"
+        }
+        
+        dataIntegrityReport = report
+        showingDataIntegrityReport = true
+    }
+    
+    private func attemptDataRecovery() {
+        let beforeCount = store.trips.filter { $0.legs.isEmpty }.count
+        
+        if beforeCount == 0 {
+            alertTitle = "No Recovery Needed"
+            alertMessage = "All trips have leg data. No recovery necessary."
+            showingAlert = true
+            return
+        }
+        
+        // Force reload from disk with improved decode logic
+        store.loadWithRecovery()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            let afterCount = store.trips.filter { $0.legs.isEmpty }.count
+            
+            if afterCount == 0 {
+                alertTitle = "Recovery Successful! 🎉"
+                alertMessage = "Successfully recovered \(beforeCount) trips with zero legs."
+            } else if afterCount < beforeCount {
+                alertTitle = "Partial Recovery"
+                alertMessage = "Recovered \(beforeCount - afterCount) of \(beforeCount) corrupted trips. \(afterCount) trips still need attention - try importing from a backup."
+            } else {
+                alertTitle = "Recovery Failed"
+                alertMessage = "Unable to recover trips automatically. Please use 'Force Import (Replace All)' with a backup file that contains the complete trip data."
+            }
+            showingAlert = true
+        }
+    }
+    
+    private func deleteAllTripData() {
+        let count = store.trips.count
+        store.trips.removeAll()
+        store.save()
+        
+        alertTitle = "Data Deleted"
+        alertMessage = "Successfully deleted all \(count) trips from this device."
+        showingAlert = true
+    }
+}
+
+// MARK: - 🆕 Data Integrity Report View
+
+struct DataIntegrityReportView: View {
+    let report: String
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                LogbookTheme.navy.ignoresSafeArea()
+                
+                ScrollView {
+                    Text(report)
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                }
+            }
+            .navigationTitle("Data Integrity Report")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }

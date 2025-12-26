@@ -8,7 +8,7 @@ enum ChartMode: String, CaseIterable {
 }
 
 struct FAR121ComplianceView: View {
-    @EnvironmentObject var logbookStore: LogBookStore
+    @EnvironmentObject var logbookStore: SwiftDataLogBookStore
     
     @State private var chartData: [DayFlightData] = []
     @State private var selectedTimeframe: TimeframeOption = .standard

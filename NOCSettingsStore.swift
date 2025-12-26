@@ -6,6 +6,9 @@ import CryptoKit
 
 // MARK: - NOC Settings Store
 class NOCSettingsStore: ObservableObject {
+    // MARK: - Singleton
+    static let shared = NOCSettingsStore()
+    
     // MARK: - Published Properties
     // Webcal credentials (for calendar sync)
     @Published var username: String = "" { didSet { saveSingleCredential(.username) } }
@@ -34,6 +37,15 @@ class NOCSettingsStore: ObservableObject {
     
     /// Whether to apply the offset when importing trips
     @Published var applyTimeOffset: Bool = true { didSet { saveTimeOffsetSetting() } }
+    
+    // MARK: - Weather Display Settings
+    /// Pressure unit preference: true = inHg (inches of mercury), false = mb/hPa (millibars)
+    /// Default true for US pilots (29.92 inHg standard)
+    @Published var usePressureInHg: Bool = true { didSet { savePressureUnitSetting() } }
+    
+    /// Temperature unit preference: true = Celsius, false = Fahrenheit
+    /// Default true (Celsius is aviation standard worldwide)
+    @Published var useCelsius: Bool = true { didSet { saveTemperatureUnitSetting() } }
     
     // MARK: - Revision Detection Properties
     @Published var hasPendingRevision: Bool = false
@@ -81,6 +93,8 @@ class NOCSettingsStore: ObservableObject {
     private let revisionNotificationsEnabledKey = "NOCRevisionNotificationsEnabled"
     private let showTimeToBlockOutOffsetKey = "NOCShowTimeToBlockOutOffset"
     private let applyTimeOffsetKey = "NOCApplyTimeOffset"
+    private let usePressureInHgKey = "WeatherUsePressureInHg"
+    private let useCelsiusKey = "WeatherUseCelsius"
     
     // MARK: - Computed Properties
     var rosterURLObject: URL? {
@@ -117,6 +131,8 @@ class NOCSettingsStore: ObservableObject {
         loadRevisionState()
         loadRevisionNotificationSetting()
         loadTimeOffsetSettings()
+        loadPressureUnitSetting()
+        loadTemperatureUnitSetting()
         checkOfflineStatus()
         
         // Setup Combine publisher to auto-save calendar data
@@ -427,6 +443,58 @@ class NOCSettingsStore: ObservableObject {
         }
         
         print("✅ Loaded time offset: \(showTimeToBlockOutOffset) minutes, apply: \(applyTimeOffset)")
+    }
+    
+    // MARK: - Pressure Unit Settings
+    
+    private func savePressureUnitSetting() {
+        userDefaults.set(usePressureInHg, forKey: usePressureInHgKey)
+        userDefaults.synchronize()
+        print("✅ Pressure unit saved: \(usePressureInHg ? "inHg" : "mb/hPa")")
+        
+        // Post notification for weather views to update
+        NotificationCenter.default.post(
+            name: .weatherPressureUnitChanged,
+            object: nil,
+            userInfo: ["useInHg": usePressureInHg]
+        )
+    }
+    
+    private func loadPressureUnitSetting() {
+        // Load preference (default true for US - inHg)
+        if userDefaults.object(forKey: usePressureInHgKey) != nil {
+            usePressureInHg = userDefaults.bool(forKey: usePressureInHgKey)
+        } else {
+            usePressureInHg = true  // Default to inHg for US pilots
+        }
+        
+        print("✅ Loaded pressure unit: \(usePressureInHg ? "inHg" : "mb/hPa")")
+    }
+    
+    // MARK: - Temperature Unit Settings
+    
+    private func saveTemperatureUnitSetting() {
+        userDefaults.set(useCelsius, forKey: useCelsiusKey)
+        userDefaults.synchronize()
+        print("✅ Temperature unit saved: \(useCelsius ? "°C" : "°F")")
+        
+        // Post notification for weather views to update
+        NotificationCenter.default.post(
+            name: .weatherTemperatureUnitChanged,
+            object: nil,
+            userInfo: ["useCelsius": useCelsius]
+        )
+    }
+    
+    private func loadTemperatureUnitSetting() {
+        // Load preference (default true - Celsius is aviation standard)
+        if userDefaults.object(forKey: useCelsiusKey) != nil {
+            useCelsius = userDefaults.bool(forKey: useCelsiusKey)
+        } else {
+            useCelsius = true  // Default to Celsius (aviation standard)
+        }
+        
+        print("✅ Loaded temperature unit: \(useCelsius ? "°C" : "°F")")
     }
     
     /// Calculate adjusted block out time from iCal show time
@@ -950,4 +1018,6 @@ class NOCSettingsStore: ObservableObject {
 extension Notification.Name {
     static let nocRevisionDetected = Notification.Name("nocRevisionDetected")
     static let nocRevisionConfirmed = Notification.Name("nocRevisionConfirmed")
+    static let weatherPressureUnitChanged = Notification.Name("weatherPressureUnitChanged")
+    static let weatherTemperatureUnitChanged = Notification.Name("weatherTemperatureUnitChanged")
 }

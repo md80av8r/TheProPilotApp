@@ -4,6 +4,7 @@ import Foundation
 import SwiftUI
 
 // MARK: - Unified Import/Export Manager
+@MainActor
 class UnifiedLogbookManager: ObservableObject {
     
     // MARK: - Import Functions
@@ -252,7 +253,6 @@ class UnifiedLogbookManager: ObservableObject {
     }
     
     // MARK: - ForeFlight Export with Full Template Structure
-    @MainActor
     private func generateForeFlightExport(trips: [Trip]) async -> String {
         // ForeFlight CSV format - EXACT match to official ForeFlight template
         // Uses COMMAS as separator
@@ -398,8 +398,8 @@ class UnifiedLogbookManager: ObservableObject {
         let nightTakeoffs = isDayOperation ? "0" : "1"
         let nightLandings = isDayOperation ? "0" : "1"
         
-        // Pilot Flying toggle
-        let pilotFlying = (trip.pilotRole == .captain) ? "TRUE" : "FALSE"
+        // Pilot Flying toggle - currently unused but preserved for future ForeFlight export enhancements
+        _ = (trip.pilotRole == .captain) ? "TRUE" : "FALSE"
         
         // Build the line with all 69 columns (COMMA-separated for ForeFlight)
         // Column order MUST match Row 15 header exactly

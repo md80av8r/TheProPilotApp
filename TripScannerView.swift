@@ -11,7 +11,7 @@ import MessageUI
 
 // MARK: - Main Trip Scanner View
 struct TripScannerView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @ObservedObject var airlineSettings: AirlineSettingsStore
     @ObservedObject var documentStore: TripDocumentManager
     @ObservedObject var crewContactManager: CrewContactManager  // Shared crew contacts
@@ -1298,7 +1298,7 @@ struct SimpleActivityView: UIViewControllerRepresentable {
 struct TripScannerView_Previews: PreviewProvider {
     static var previews: some View {
         TripScannerView(
-            store: LogBookStore(),
+            store: SwiftDataLogBookStore.preview,
             airlineSettings: AirlineSettingsStore(),
             documentStore: TripDocumentManager(),
             crewContactManager: CrewContactManager()

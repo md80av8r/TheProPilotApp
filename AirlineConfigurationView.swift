@@ -66,6 +66,24 @@ struct AirlineConfigurationView: View {
                     .listRowBackground(LogbookTheme.navyLight)
                     
                     VStack(alignment: .leading, spacing: 8) {
+                        Text("Flight Number Prefix (Callsign)")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        HStack {
+                            TextField("JUS", text: $airlineSettings.settings.flightNumberPrefix)
+                                .textFieldStyle(.roundedBorder)
+                                .autocapitalization(.allCharacters)
+                                .frame(width: 100)
+                            
+                            Text("Used to prefill callsign for each leg (e.g., JUS123)")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                                .padding(.leading, 8)
+                        }
+                    }
+                    .listRowBackground(LogbookTheme.navyLight)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("Home Base Airport")
                             .font(.caption)
                             .foregroundColor(.gray)
@@ -155,6 +173,15 @@ struct AirlineConfigurationView: View {
                                     label: "Callsign",
                                     value: airlineSettings.settings.fleetCallsign,
                                     color: LogbookTheme.accentGreen
+                                )
+                            }
+                            
+                            if !airlineSettings.settings.flightNumberPrefix.isEmpty {
+                                ConfigRowDisplay(
+                                    icon: "number.circle.fill",
+                                    label: "Flight Number Prefix",
+                                    value: airlineSettings.settings.flightNumberPrefix,
+                                    color: .cyan
                                 )
                             }
                             

@@ -6,7 +6,7 @@ import SwiftUI
 import Charts
 
 struct Rolling30DayComplianceView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
     @State private var selectedDate: Date = Date()
@@ -390,46 +390,86 @@ struct Rolling30DayComplianceView: View {
     }
     
     // MARK: - Helper Methods
-    
+
+    /// Get effective flight date for a leg, detecting overnight flights when flightDate is nil
+    private func effectiveLegDate(for leg: FlightLeg, tripDate: Date) -> Date {
+        // If flightDate is already set, use it
+        if let flightDate = leg.flightDate {
+            return flightDate
+        }
+
+        // Otherwise, detect overnight flights by comparing OUT vs IN times
+        let calendar = Calendar.current
+        guard !leg.outTime.isEmpty, !leg.inTime.isEmpty else {
+            return tripDate
+        }
+
+        // Parse hours from time strings
+        let outHour = parseHourFromTimeString(leg.outTime)
+        let inHour = parseHourFromTimeString(leg.inTime)
+
+        // Overnight detection: OUT in afternoon/evening (12+), IN in early morning (0-11)
+        if let out = outHour, let inn = inHour, out >= 12 && inn < 12 {
+            return calendar.date(byAdding: .day, value: 1, to: tripDate) ?? tripDate
+        }
+
+        return tripDate
+    }
+
+    /// Parse hour from time string for overnight detection
+    private func parseHourFromTimeString(_ timeString: String) -> Int? {
+        let cleaned = timeString
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ":", with: "")
+            .replacingOccurrences(of: " ", with: "")
+
+        if cleaned.count == 4 {
+            return Int(cleaned.prefix(2))
+        } else if cleaned.count == 3 {
+            return Int(cleaned.prefix(1))
+        } else if cleaned.count <= 2 {
+            return Int(cleaned)
+        }
+        return nil
+    }
+
     private func calculateHoursInRange(from: Date, to: Date) -> Double {
         var totalMinutes: Int = 0
         let calendar = Calendar.current
         let fromStart = calendar.startOfDay(for: from)
         let toStart = calendar.startOfDay(for: to)
-        
-        // ✅ FIXED: Use leg.flightDate ?? trip.date for each individual leg
-        // This ensures multi-day trips and red-eyes count on the correct dates
+
         for trip in store.trips {
             for leg in trip.legs {
-                // Use leg's actual flight date, falling back to trip date
-                let legDate = leg.flightDate ?? trip.date
+                // Use effective leg date with overnight detection
+                let legDate = effectiveLegDate(for: leg, tripDate: trip.date)
                 let legDateStart = calendar.startOfDay(for: legDate)
-                
+
                 if legDateStart >= fromStart && legDateStart <= toStart {
                     totalMinutes += leg.blockMinutes()
                 }
             }
         }
-        
+
         return Double(totalMinutes) / 60.0
     }
-    
+
     private func calculateHoursOnDate(_ date: Date) -> Double {
         var totalMinutes: Int = 0
         let calendar = Calendar.current
         let targetDate = calendar.startOfDay(for: date)
-        
-        // *** CRITICAL FIX: Use leg.flightDate ?? trip.date for each leg ***
+
         for trip in store.trips {
             for leg in trip.legs {
-                let legDate = calendar.startOfDay(for: leg.flightDate ?? trip.date)
-                
+                // Use effective leg date with overnight detection
+                let legDate = calendar.startOfDay(for: effectiveLegDate(for: leg, tripDate: trip.date))
+
                 if legDate == targetDate {
                     totalMinutes += leg.blockMinutes()
                 }
             }
         }
-        
+
         return Double(totalMinutes) / 60.0
     }
     
@@ -442,12 +482,12 @@ struct Rolling30DayComplianceView: View {
         var legs: [R30LegInfo] = []
         let calendar = Calendar.current
         let targetDate = calendar.startOfDay(for: date)
-        
-        // *** CRITICAL FIX: Use leg.flightDate ?? trip.date for each leg ***
+
         for trip in store.trips {
             for leg in trip.legs {
-                let legDate = calendar.startOfDay(for: leg.flightDate ?? trip.date)
-                
+                // Use effective leg date with overnight detection
+                let legDate = calendar.startOfDay(for: effectiveLegDate(for: leg, tripDate: trip.date))
+
                 if legDate == targetDate {
                     legs.append(R30LegInfo(
                         tripNumber: trip.tripNumber,
@@ -459,7 +499,7 @@ struct Rolling30DayComplianceView: View {
                 }
             }
         }
-        
+
         return legs
     }
     
@@ -682,7 +722,7 @@ struct R30DayRowView: View {
 
 struct R30DayDetailSheet: View {
     let dayData: R30DayData
-    let store: LogBookStore
+    let store: SwiftDataLogBookStore
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -851,7 +891,7 @@ struct R30LegacyChartView: View {
 struct Rolling30DayComplianceView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
-            Rolling30DayComplianceView(store: LogBookStore())
+            Rolling30DayComplianceView(store: SwiftDataLogBookStore.preview)
         }
     }
 }

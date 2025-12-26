@@ -800,6 +800,295 @@ struct ComponentCard: View {
     }
 }
 
+// MARK: - Runway-Centric Wind Visualization
+struct RunwayCentricWindView: View {
+    let runwayHeading: Double
+    let windDirection: Double
+    let windSpeed: Double
+    let crosswindComponent: Double
+    let headwindComponent: Double
+    
+    // Calculate the relative wind angle (wind direction relative to runway)
+    private var relativeWindAngle: Double {
+        var angle = windDirection - runwayHeading
+        // Normalize to -180 to 180
+        while angle > 180 { angle -= 360 }
+        while angle < -180 { angle += 360 }
+        return angle
+    }
+    
+    // Runway numbers
+    private var runwayNum: String {
+        let num = Int(round(runwayHeading / 10.0))
+        return String(format: "%02d", num == 0 ? 36 : num)
+    }
+    
+    private var reciprocalNum: String {
+        var num = Int(round(runwayHeading / 10.0)) - 18
+        if num <= 0 { num += 36 }
+        return String(format: "%02d", num)
+    }
+    
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                // Background
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color(white: 0.05),
+                                Color(white: 0.1)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                
+                // MARK: The Vertical Runway
+                VStack(spacing: 0) {
+                    // Top Runway Number (Reciprocal)
+                    Text(reciprocalNum)
+                        .font(.system(size: 20, weight: .heavy, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.5))
+                        .padding(.bottom, 8)
+                    
+                    // Runway surface
+                    ZStack {
+                        // Asphalt
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(white: 0.2))
+                            .frame(width: 80, height: geo.size.height * 0.6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.white, lineWidth: 3)
+                            )
+                        
+                        // Centerline dashes
+                        VStack(spacing: 16) {
+                            ForEach(0..<8) { _ in
+                                Rectangle()
+                                    .fill(Color.white)
+                                    .frame(width: 3, height: 30)
+                            }
+                        }
+                        
+                        // Threshold markings
+                        VStack {
+                            HStack(spacing: 4) {
+                                ForEach(0..<4) { _ in
+                                    Rectangle().fill(.white).frame(width: 3, height: 15)
+                                }
+                            }
+                            .padding(.top, 20)
+                            
+                            Spacer()
+                            
+                            HStack(spacing: 4) {
+                                ForEach(0..<4) { _ in
+                                    Rectangle().fill(.white).frame(width: 3, height: 15)
+                                }
+                            }
+                            .padding(.bottom, 20)
+                        }
+                        .frame(height: geo.size.height * 0.6)
+                    }
+                    
+                    // Bottom Runway Number (Active)
+                    Text(runwayNum)
+                        .font(.system(size: 24, weight: .heavy, design: .monospaced))
+                        .foregroundColor(.white)
+                        .padding(.top, 8)
+                }
+                
+                // MARK: Wind Flow Visualization
+                if windSpeed > 0 {
+                    // Multiple wind streams flowing across
+                    ForEach(0..<5, id: \.self) { index in
+                        WindStreamLine(
+                            angle: relativeWindAngle,
+                            speed: windSpeed,
+                            yOffset: CGFloat(index) * (geo.size.height / 6) - geo.size.height / 3,
+                            delay: Double(index) * 0.3
+                        )
+                    }
+                    
+                    // Large wind arrow showing direction
+                    WindDirectionArrow(
+                        angle: relativeWindAngle,
+                        speed: windSpeed
+                    )
+                    .frame(width: 200, height: 200)
+                    .position(x: geo.size.width * 0.75, y: geo.size.height * 0.2)
+                }
+                
+                // MARK: Crosswind Component Display
+                VStack {
+                    Spacer()
+                    
+                    HStack(spacing: 20) {
+                        // Crosswind badge
+                        VStack(spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemName: crosswindComponent > 0 ? "arrow.right" : "arrow.left")
+                                    .font(.caption)
+                                Text("\(Int(abs(crosswindComponent))) kt")
+                                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                            }
+                            .foregroundColor(crosswindColor)
+                            
+                            Text("CROSSWIND")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                            
+                            Text(crosswindComponent > 0 ? "from RIGHT" : "from LEFT")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                        .padding()
+                        .background(crosswindColor.opacity(0.15))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(crosswindColor, lineWidth: 2)
+                        )
+                        
+                        // Headwind badge
+                        VStack(spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemName: headwindComponent >= 0 ? "arrow.down" : "arrow.up")
+                                    .font(.caption)
+                                Text("\(Int(abs(headwindComponent))) kt")
+                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundColor(headwindComponent >= 0 ? .green : .red)
+                            
+                            Text(headwindComponent >= 0 ? "HEADWIND" : "TAILWIND")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                        }
+                        .padding()
+                        .background(LogbookTheme.navyLight)
+                        .cornerRadius(12)
+                    }
+                    .padding(.bottom, 20)
+                }
+            }
+        }
+    }
+    
+    private var crosswindColor: Color {
+        let xw = abs(crosswindComponent)
+        if xw <= 5 { return .green }
+        else if xw <= 10 { return .yellow }
+        else if xw <= 15 { return .orange }
+        else { return .red }
+    }
+}
+
+// MARK: - Wind Stream Line (Animated flow across runway)
+struct WindStreamLine: View {
+    let angle: Double
+    let speed: Double
+    let yOffset: CGFloat
+    let delay: Double
+    
+    @State private var progress: CGFloat = 0
+    
+    var body: some View {
+        GeometryReader { geo in
+            // Calculate start and end points based on wind angle
+            let radians = angle * .pi / 180.0
+            let length = geo.size.width * 1.2
+            
+            // Wind flows from upwind side to downwind side
+            let startX = geo.size.width / 2 - cos(radians) * length / 2
+            let endX = geo.size.width / 2 + cos(radians) * length / 2
+            let startY = geo.size.height / 2 + yOffset - sin(radians) * length / 2
+            let endY = geo.size.height / 2 + yOffset + sin(radians) * length / 2
+            
+            // Animated particle
+            Circle()
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            .cyan.opacity(0.3),
+                            .blue.opacity(0.6),
+                            .cyan.opacity(0.3)
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: 60, height: 8)
+                .blur(radius: 2)
+                .position(
+                    x: startX + (endX - startX) * progress,
+                    y: startY + (endY - startY) * progress
+                )
+                .opacity(Double(1.0 - abs(progress - 0.5) * 2))
+                .onAppear {
+                    let duration = max(1.5, 4.0 - (speed / 30.0))
+                    withAnimation(
+                        Animation.linear(duration: duration)
+                            .repeatForever(autoreverses: false)
+                            .delay(delay)
+                    ) {
+                        progress = 1.0
+                    }
+                }
+        }
+    }
+}
+
+// MARK: - Wind Direction Arrow
+struct WindDirectionArrow: View {
+    let angle: Double
+    let speed: Double
+    
+    var body: some View {
+        ZStack {
+            // Arrow shaft
+            RoundedRectangle(cornerRadius: 3)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [.blue, .cyan]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .frame(width: 6, height: 100)
+                .offset(y: 30)
+            
+            // Arrow head
+            Image(systemName: "arrowtriangle.down.fill")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 30, height: 30)
+                .foregroundColor(.cyan)
+                .offset(y: 80)
+            
+            // Speed label
+            VStack(spacing: 2) {
+                Text("\(Int(speed))")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.white)
+                Text("kts")
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .padding(8)
+            .background(
+                Circle()
+                    .fill(Color.blue)
+                    .shadow(color: .cyan, radius: 10)
+            )
+            .offset(y: -20)
+        }
+        .rotationEffect(.degrees(angle))
+    }
+}
+
 extension View {
     func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
@@ -1009,10 +1298,10 @@ struct FuelConversionCalculator: View {
                         .foregroundColor(.white)
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        InfoRow(label: "Jet A Density (std):", value: "6.75 lbs/gal @ 15°C")
-                        InfoRow(label: "Temp Coefficient:", value: "-0.0035 lbs/gal per °C")
-                        InfoRow(label: "1 US Gallon:", value: "3.78541 Liters")
-                        InfoRow(label: "1 Liter:", value: "0.264172 US Gallons")
+                        FuelInfoRow(label: "Jet A Density (std):", value: "6.75 lbs/gal @ 15°C")
+                        FuelInfoRow(label: "Temp Coefficient:", value: "-0.0035 lbs/gal per °C")
+                        FuelInfoRow(label: "1 US Gallon:", value: "3.78541 Liters")
+                        FuelInfoRow(label: "1 Liter:", value: "0.264172 US Gallons")
                     }
                 }
                 .padding()
@@ -1357,10 +1646,10 @@ struct FuelUpliftCalculator: View {
                         .foregroundColor(.white)
                     
                     VStack(alignment: .leading, spacing: 6) {
-                        InfoRow(label: "Standard Jet A Density:", value: "6.7 lbs/gal")
-                        InfoRow(label: "Tolerance:", value: "±5% maximum")
-                        InfoRow(label: "GOM Reference:", value: "Section 70.05")
-                        InfoRow(label: "Check Timing:", value: "After fueling, before takeoff")
+                        FuelInfoRow(label: "Standard Jet A Density:", value: "6.7 lbs/gal")
+                        FuelInfoRow(label: "Tolerance:", value: "±5% maximum")
+                        FuelInfoRow(label: "GOM Reference:", value: "Section 70.05")
+                        FuelInfoRow(label: "Check Timing:", value: "After fueling, before takeoff")
                     }
                 }
                 .padding()
@@ -1631,7 +1920,7 @@ struct TemperatureCalculator: View {
 }
 
 // MARK: - Helper Views for Temperature
-private struct InfoRow: View {
+private struct FuelInfoRow: View {
     let label: String
     let value: String
     

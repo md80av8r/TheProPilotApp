@@ -7,10 +7,10 @@ import SwiftUI
 struct ICalDiagnosticView: View {
     @ObservedObject var nocSettings: NOCSettingsStore
     @State private var rawICalContent: String = ""
-    @State private var parsedEvents: [ICalEvent] = []
+    @State private var parsedEvents: [DiagnosticICalEvent] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
-    @State private var selectedEvent: ICalEvent?
+    @State private var selectedEvent: DiagnosticICalEvent?
     @State private var showRawData = false
     @State private var copiedRawData = false
     
@@ -369,7 +369,7 @@ struct ICalDiagnosticView: View {
         print("📋 iCal Diagnostic: Found \(flights.count) flights, \(events.count) events")
         
         // Also parse old way for raw field inspection
-        var oldEvents: [ICalEvent] = []
+        var oldEvents: [DiagnosticICalEvent] = []
         var currentEvent: [String: String] = [:]
         var inEvent = false
         var currentKey: String?
@@ -395,7 +395,7 @@ struct ICalDiagnosticView: View {
                 currentKey = nil
             } else if trimmedLine == "END:VEVENT" {
                 if inEvent && !currentEvent.isEmpty {
-                    oldEvents.append(ICalEvent(fields: currentEvent))
+                    oldEvents.append(DiagnosticICalEvent(fields: currentEvent))
                 }
                 inEvent = false
                 currentEvent = [:]
@@ -426,7 +426,7 @@ struct ICalDiagnosticView: View {
 }
 
 // MARK: - iCal Event Model
-struct ICalEvent: Identifiable {
+struct DiagnosticICalEvent: Identifiable {
     let id = UUID()
     let allFields: [String: String]
     
@@ -449,7 +449,7 @@ struct ICalEvent: Identifiable {
 
 // MARK: - Event Detail View
 struct EventDetailView: View {
-    let event: ICalEvent
+    let event: DiagnosticICalEvent
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {

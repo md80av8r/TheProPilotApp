@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct PerDiemTabView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @StateObject private var airlineSettings = AirlineSettingsStore()
     @Environment(\.dismiss) private var dismiss
     @FocusState private var rateFieldFocused: Bool
@@ -224,41 +224,75 @@ struct PerDiemTabView: View {
     private var monthlySummaryView: some View {
         Group {
             let monthlyData = calculateMonthlyPerDiem()
+            let sortedMonthlyData = sortNewestFirst ? monthlyData : monthlyData.reversed()
             
-            // BY MONTH Header
+            // BY MONTH Header with sort toggle
             if !monthlyData.isEmpty {
-                Button(action: {
-                    withAnimation {
-                        if expandedMonths.isEmpty {
-                            // Expand all
-                            expandedMonths = Set(monthlyData.map { $0.0 })
-                        } else {
-                            // Collapse all
-                            expandedMonths.removeAll()
+                VStack(spacing: 8) {
+                    Button(action: {
+                        withAnimation {
+                            if expandedMonths.isEmpty {
+                                // Expand all
+                                expandedMonths = Set(monthlyData.map { $0.0 })
+                            } else {
+                                // Collapse all
+                                expandedMonths.removeAll()
+                            }
                         }
+                    }) {
+                        HStack {
+                            Image(systemName: expandedMonths.isEmpty ? "chevron.right" : "chevron.down")
+                                .foregroundColor(LogbookTheme.textSecondary)
+                                .font(.system(size: 12, weight: .semibold))
+                                .frame(width: 20)
+                            
+                            Text("BY MONTH")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(LogbookTheme.textSecondary)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 12)
+                        .background(LogbookTheme.cardBackground)
+                        .cornerRadius(8)
                     }
-                }) {
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    // Sort toggle
                     HStack {
-                        Image(systemName: expandedMonths.isEmpty ? "chevron.right" : "chevron.down")
-                            .foregroundColor(LogbookTheme.textSecondary)
-                            .font(.system(size: 12, weight: .semibold))
-                            .frame(width: 20)
-                        
-                        Text("BY MONTH")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(LogbookTheme.textSecondary)
+                        Text("Sort Order:")
+                            .font(.caption)
+                            .foregroundColor(.gray)
                         
                         Spacer()
+                        
+                        Button(action: {
+                            withAnimation {
+                                sortNewestFirst.toggle()
+                            }
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: sortNewestFirst ? "arrow.down" : "arrow.up")
+                                    .font(.caption)
+                                Text(sortNewestFirst ? "Newest First" : "Oldest First")
+                                    .font(.caption.bold())
+                            }
+                            .foregroundColor(LogbookTheme.accentBlue)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(LogbookTheme.accentBlue.opacity(0.2))
+                            .cornerRadius(8)
+                        }
                     }
-                    .padding(.vertical, 8)
                     .padding(.horizontal, 12)
-                    .background(LogbookTheme.cardBackground)
+                    .padding(.vertical, 6)
+                    .background(LogbookTheme.cardBackground.opacity(0.5))
                     .cornerRadius(8)
                 }
-                .buttonStyle(PlainButtonStyle())
             }
             
-            ForEach(monthlyData, id: \.0) { monthData in
+            ForEach(sortedMonthlyData, id: \.0) { monthData in
                 let month = monthData.0
                 let portions = monthData.1
                 let totalMinutes = portions.reduce(0) { $0 + $1.minutes }
@@ -417,8 +451,40 @@ struct PerDiemTabView: View {
     private var periodDetailsView: some View {
         Group {
             let allPeriods = calculatePerDiemPeriods(trips: store.trips, homeBase: airlineSettings.settings.homeBaseAirport)
+            let sortedPeriods = sortNewestFirst ? allPeriods.sorted { $0.startTime > $1.startTime } : allPeriods.sorted { $0.startTime < $1.startTime }
             
-            ForEach(allPeriods, id: \.startTime) { period in
+            // Sort toggle button
+            HStack {
+                Text("Sort Order:")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                
+                Spacer()
+                
+                Button(action: {
+                    withAnimation {
+                        sortNewestFirst.toggle()
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: sortNewestFirst ? "arrow.down" : "arrow.up")
+                            .font(.caption)
+                        Text(sortNewestFirst ? "Newest First" : "Oldest First")
+                            .font(.caption.bold())
+                    }
+                    .foregroundColor(LogbookTheme.accentBlue)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(LogbookTheme.accentBlue.opacity(0.2))
+                    .cornerRadius(8)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(LogbookTheme.navyLight)
+            .cornerRadius(8)
+            
+            ForEach(sortedPeriods, id: \.startTime) { period in
                 Button(action: {
                     // Find the monthly portion for this period to show portal info
                     let monthlyData = calculateMonthlyPerDiem()
@@ -623,7 +689,7 @@ struct PerDiemTabView: View {
 
 // MARK: - Per Diem Rate Settings View
 struct PerDiemRateSettingsSheet: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @ObservedObject var airlineSettings: AirlineSettingsStore
     @Environment(\.dismiss) private var dismiss
     @FocusState private var rateFieldFocused: Bool

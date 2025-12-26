@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import CoreLocation
 import BackgroundTasks
 import UserNotifications
@@ -10,46 +11,73 @@ import ActivityKit
 
 @main
 struct ProPilotApp: App {
+    // MARK: - SwiftData Container
+    private let modelContainer: ModelContainer
+
     // FIXED: NOCSettingsStore and ScheduleStore created with proper dependency injection
     @StateObject private var nocSettings: NOCSettingsStore
     @StateObject private var scheduleStore: ScheduleStore
-    
+
     // Other managers
     @StateObject private var activityManager = PilotActivityManager.shared
-    @StateObject private var logbookStore = LogBookStore()
+    @StateObject private var logbookStore: SwiftDataLogBookStore
     @StateObject private var locationPermissionManager = LocationPermissionManager()
-    @StateObject private var cloudKitManager = CloudKitManager.shared
-    
+    @StateObject private var importMappingStore = ImportMappingStore()  // iCal import mappings
+
     // OPS Calling Manager for auto-call on airport arrival
     @StateObject private var opsCallingManager = OPSCallingManager()
-    
+
     // Pilot Location Manager for geofencing and airport detection
     @StateObject private var pilotLocationManager = PilotLocationManager()
-    
+
     // Backup file handler for incoming JSON files
     @StateObject private var backupFileHandler = BackupFileHandler.shared
-    
+
     init() {
+        // MARK: - SwiftData Setup
+        // Create ModelContainer with CloudKit sync
+        do {
+            print("🔄 Creating SwiftData ModelContainer...")
+            print("   Store URL: \(SwiftDataConfiguration.storeURL)")
+            modelContainer = try SwiftDataConfiguration.createModelContainer()
+            print("✅ SwiftData ModelContainer created with CloudKit sync")
+        } catch {
+            print("❌ SwiftData ModelContainer creation failed!")
+            print("   Error: \(error)")
+            print("   Error type: \(type(of: error))")
+            if let nsError = error as NSError? {
+                print("   Domain: \(nsError.domain)")
+                print("   Code: \(nsError.code)")
+                print("   User Info: \(nsError.userInfo)")
+            }
+            fatalError("Failed to create SwiftData ModelContainer: \(error)")
+        }
+
+        // Initialize SwiftData-based LogBookStore
+        let container = modelContainer
+        _logbookStore = StateObject(wrappedValue: SwiftDataLogBookStore(container: container))
+
         // CRITICAL: Create single NOC instance and pass to ScheduleStore
         let noc = NOCSettingsStore()
         _nocSettings = StateObject(wrappedValue: noc)
         _scheduleStore = StateObject(wrappedValue: ScheduleStore(settings: noc))
-        
+
         // Setup background tasks on app launch
         setupBackgroundTasks()
-        
+
         // Setup notification delegate for handling taps
         setupNotificationDelegate()
     }
-    
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .modelContainer(modelContainer)      // ← SwiftData container
                 .environmentObject(activityManager)
                 .environmentObject(logbookStore)
                 .environmentObject(nocSettings)      // ← Single source of truth
                 .environmentObject(scheduleStore)    // ← Gets NOC from init
-                .environmentObject(cloudKitManager)  // ← CloudKit manager
+                .environmentObject(importMappingStore)  // ← iCal import mappings
                 .tripImportHandler(store: logbookStore)  // ← Trip sharing import handling
                 .backupImportHandler(store: logbookStore)               // ← Backup file import handling
                 .onOpenURL { url in
@@ -125,64 +153,44 @@ struct ProPilotApp: App {
     // MARK: - App Initialization
     private func initializeAppServices() {
         print("🚀 Initializing ProPilot app services...")
-        
+
         // 0. MIGRATE DATA TO APP GROUP FIRST (before anything else tries to load data)
+        // Note: JSON → SwiftData migration is handled automatically by MigrationManager
         migrateToAppGroup()
-        
-        // 1. Initialize CloudKit sync
-        print("🔄 Initializing CloudKit...")
-        Task {
-            await CloudKitManager.shared.checkiCloudStatus()
-        }
-        
+
+        // 1. SwiftData + CloudKit sync is automatic - no manual initialization needed
+        print("🔄 SwiftData with CloudKit sync is active")
+
         // 2. Request location permissions first (affects watch connectivity)
         setupLocationPermissions()
-        
+
         // 3. Initialize Watch connectivity
         initializeWatchConnectivity()
-        
+
         // 4. Set up monitoring for pending actions from AppIntents
         startMonitoringPendingActions()
-        
+
         // 5. Check for data recovery on app launch
         checkForDataRecoveryNeeded()
-        
+
         // 6. Set up Live Activities info
         setupLiveActivities()
-        
+
         // 7. Sync trip creation settings to App Group
         TripCreationSettings.shared.syncToAppGroup()
-        
+
         // 8. Cleanup expired dismissed items
         DismissedRosterItemsManager.shared.cleanupExpiredItems()
 
-        // 9. Setup background sync if auto-sync is enabled
+        // 9. Setup background sync if auto-sync is enabled (for NOC roster, not CloudKit)
         if nocSettings.autoSyncEnabled {
             scheduleNextRefresh()
         }
-        
-        // 10. Sync from iCloud on app launch (wrap in Task for async call)
-        Task {
-            await logbookStore.syncFromCloud()
-        }
-        
-        // 11. Add observer for app becoming active to sync from cloud
-        let store = logbookStore
-        NotificationCenter.default.addObserver(
-            forName: UIApplication.didBecomeActiveNotification,
-            object: nil,
-            queue: .main
-        ) { _ in
-            Task {
-                await store.syncFromCloud()
-            }
-        }
-        
-        // 12. Initialize Trip Generation Service:
+
+        // 10. Initialize Trip Generation Service
         TripGenerationService.shared.setupRosterDataListener(logbookStore: logbookStore)
-            
+
         print("✅ App services initialization complete")
-        
     }
       
     // MARK: - Background Sync Handlers

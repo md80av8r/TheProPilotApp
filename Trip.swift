@@ -19,7 +19,41 @@ struct Logpage: Identifiable, Codable, Equatable {
     var totalBlockMinutes: Int {
         legs.reduce(0) { $0 + $1.blockMinutes() }
     }
-    
+
+    // MARK: - Block Time Mismatch Detection (NOC vs Logged)
+
+    /// Returns true if any leg in this trip has a block time mismatch with roster
+    var hasBlockTimeMismatch: Bool {
+        legs.contains { $0.hasBlockTimeMismatch }
+    }
+
+    /// Returns legs that have block time mismatches
+    var legsWithMismatch: [FlightLeg] {
+        legs.filter { $0.hasBlockTimeMismatch }
+    }
+
+    /// Returns the worst mismatch severity across all legs
+    var worstMismatchSeverity: MismatchSeverity {
+        let severities = legs.map { $0.blockTimeMismatchSeverity }
+        if severities.contains(.significant) { return .significant }
+        if severities.contains(.moderate) { return .moderate }
+        if severities.contains(.minor) { return .minor }
+        return .none
+    }
+
+    /// Total scheduled block minutes from roster (if available)
+    var totalScheduledBlockMinutes: Int? {
+        let scheduledLegs = legs.compactMap { $0.scheduledBlockMinutes }
+        guard !scheduledLegs.isEmpty else { return nil }
+        return scheduledLegs.reduce(0, +)
+    }
+
+    /// Total block time variance (actual - scheduled) in minutes
+    var totalBlockTimeVarianceMinutes: Int? {
+        guard let scheduled = totalScheduledBlockMinutes else { return nil }
+        return totalBlockMinutes - scheduled
+    }
+
     var tatFinal: String {
         guard let startMinutes = parseTATMinutes(tatStart) else { return "" }
         let finalMinutes = startMinutes + totalFlightMinutes
@@ -147,7 +181,28 @@ struct Trip: Identifiable, Codable, Equatable {
     var totalFlightMinutes: Int {
         logpages.reduce(0) { $0 + $1.totalFlightMinutes }
     }
-    
+
+    // MARK: - Block Time Mismatch Detection (NOC vs Logged)
+
+    /// Returns true if any leg in this trip has a block time mismatch with roster
+    var hasBlockTimeMismatch: Bool {
+        legs.contains { $0.hasBlockTimeMismatch }
+    }
+
+    /// Returns legs that have block time mismatches
+    var legsWithMismatch: [FlightLeg] {
+        legs.filter { $0.hasBlockTimeMismatch }
+    }
+
+    /// Returns the worst mismatch severity across all legs
+    var worstMismatchSeverity: MismatchSeverity {
+        let severities = legs.map { $0.blockTimeMismatchSeverity }
+        if severities.contains(.significant) { return .significant }
+        if severities.contains(.moderate) { return .moderate }
+        if severities.contains(.minor) { return .minor }
+        return .none
+    }
+
     var routeString: String {
         let allLegs = legs
         guard !allLegs.isEmpty else { return "No Route" }
@@ -376,33 +431,131 @@ struct Trip: Identifiable, Codable, Equatable {
         if let stored = dutyEndTime {
             return stored
         }
-        
+
         // Otherwise calculate from last IN time + 15 minutes post-duty
         guard let lastLeg = legs.last,
-              !lastLeg.inTime.isEmpty,
-              let inDateTime = parseTimeForDuty(timeString: lastLeg.inTime, date: date) else {
+              let firstLeg = legs.first,
+              !lastLeg.inTime.isEmpty else {
             return nil
         }
-        
+
+        // CRITICAL FIX: Use leg.flightDate for overnight flights!
+        var legDate = lastLeg.flightDate ?? date
+
+        // Detect overnight if flightDate is nil
+        if lastLeg.flightDate == nil && !firstLeg.outTime.isEmpty {
+            if let inHour = parseHourFromTime(lastLeg.inTime),
+               let outHour = parseHourFromTime(firstLeg.outTime) {
+                if inHour < 12 && outHour > 12 {
+                    let calendar = Calendar.current
+                    if let nextDay = calendar.date(byAdding: .day, value: 1, to: date) {
+                        legDate = nextDay
+                    }
+                }
+            }
+        }
+
+        guard let inDateTime = parseTimeForDuty(timeString: lastLeg.inTime, date: legDate) else {
+            return nil
+        }
+
         // Add 15 minutes post-duty buffer
         return Calendar.current.date(byAdding: .minute, value: 15, to: inDateTime)
     }
     
     /// Total duty period in hours for this trip
     var totalDutyHours: Double {
-        // Use stored value if available
-        if let minutes = dutyMinutes {
-            return Double(minutes) / 60.0
+        // For overnight trips, always recalculate to ensure correct date handling
+        // (stored values may have been calculated with old buggy logic)
+        let shouldRecalculate = isOvernightTrip && dutyEndTime != nil
+
+        let start: Date?
+        let end: Date?
+
+        if shouldRecalculate {
+            start = dutyStartTime ?? calculateAutoDutyStart()
+            end = calculateAutoDutyEnd()  // Force recalculate for overnight
+        } else {
+            start = dutyStartTime ?? calculateAutoDutyStart()
+            end = dutyEndTime ?? calculateAutoDutyEnd()
         }
-        
-        // Otherwise calculate from effective times
-        guard let start = effectiveDutyStartTime,
-              let end = effectiveDutyEndTime else {
-            // Fallback: estimate from block time + 1.25 hours buffer
-            return Double(totalBlockMinutes) / 60.0 + 1.25
+
+        guard let startTime = start, let endTime = end else {
+            return 0
         }
-        
-        return end.timeIntervalSince(start) / 3600.0
+
+        let interval = endTime.timeIntervalSince(startTime)
+        let hours = interval / 3600.0
+        return max(0, hours)
+    }
+
+    /// Check if this trip spans overnight (first OUT in PM, last IN in AM)
+    private var isOvernightTrip: Bool {
+        guard let firstLeg = legs.first, let lastLeg = legs.last else {
+            return false
+        }
+
+        guard let outHour = parseHourFromTime(firstLeg.outTime),
+              let inHour = parseHourFromTime(lastLeg.inTime) else {
+            return false
+        }
+
+        // OUT in afternoon/evening (12+), IN in early morning (0-11) = overnight
+        return outHour >= 12 && inHour < 12
+    }
+    
+    private func calculateAutoDutyStart() -> Date? {
+        guard let firstLeg = legs.first,
+              let outTime = parseTimeWithDate(timeString: firstLeg.outTime, date: date) else {
+            return nil
+        }
+        return outTime.addingTimeInterval(-60 * 60) // 60 min before
+    }
+    
+    private func calculateAutoDutyEnd() -> Date? {
+        guard let lastLeg = legs.last,
+              let firstLeg = legs.first else {
+            return nil
+        }
+
+        // Determine the base date - use leg.flightDate if available
+        var legDate = lastLeg.flightDate ?? date
+
+        // Detect overnight if flightDate is nil by comparing times
+        if lastLeg.flightDate == nil && !lastLeg.inTime.isEmpty && !firstLeg.outTime.isEmpty {
+            if let inHour = parseHourFromTime(lastLeg.inTime),
+               let outHour = parseHourFromTime(firstLeg.outTime) {
+                // IN in early morning (0-11), OUT in afternoon/evening (12+) = overnight
+                if inHour < 12 && outHour > 12 {
+                    let calendar = Calendar.current
+                    if let nextDay = calendar.date(byAdding: .day, value: 1, to: date) {
+                        legDate = nextDay
+                    }
+                }
+            }
+        }
+
+        guard let inTime = parseTimeWithDate(timeString: lastLeg.inTime, date: legDate) else {
+            return nil
+        }
+        return inTime.addingTimeInterval(15 * 60) // 15 min after
+    }
+
+    /// Helper to extract hour from time string
+    private func parseHourFromTime(_ timeString: String) -> Int? {
+        let cleanedTime = timeString
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ":", with: "")
+            .replacingOccurrences(of: " ", with: "")
+
+        if cleanedTime.count == 4 {
+            return Int(cleanedTime.prefix(2))
+        } else if cleanedTime.count == 3 {
+            return Int(cleanedTime.prefix(1))
+        } else if cleanedTime.count <= 2 {
+            return Int(cleanedTime)
+        }
+        return nil
     }
     
     /// Parse time string to Date for duty calculations
@@ -434,6 +587,41 @@ struct Trip: Identifiable, Codable, Equatable {
             return nil
         }
         
+        var components = calendar.dateComponents([.year, .month, .day], from: date)
+        components.hour = h
+        components.minute = m
+        return calendar.date(from: components)
+    }
+    
+    /// Parse time string to Date with date (used for auto duty calculations)
+    private func parseTimeWithDate(timeString: String, date: Date) -> Date? {
+        let trimmedTime = timeString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTime.isEmpty else { return nil }
+
+        let calendar = Calendar.current
+        let cleanedTime = trimmedTime
+            .replacingOccurrences(of: ":", with: "")
+            .replacingOccurrences(of: " ", with: "")
+
+        var hours: Int?
+        var minutes: Int?
+
+        if cleanedTime.count == 4 {
+            hours = Int(cleanedTime.prefix(2))
+            minutes = Int(cleanedTime.suffix(2))
+        } else if cleanedTime.count == 3 {
+            hours = Int(cleanedTime.prefix(1))
+            minutes = Int(cleanedTime.suffix(2))
+        } else if cleanedTime.count <= 2 {
+            hours = Int(cleanedTime)
+            minutes = 0
+        }
+
+        guard let h = hours, let m = minutes,
+              h >= 0 && h <= 23, m >= 0 && m <= 59 else {
+            return nil
+        }
+
         var components = calendar.dateComponents([.year, .month, .day], from: date)
         components.hour = h
         components.minute = m
@@ -744,25 +932,33 @@ struct Trip: Identifiable, Codable, Equatable {
         // 🔥 FIX: Check if already migrated to prevent re-migration on every load
         hasBeenMigrated = try container.decodeIfPresent(Bool.self, forKey: .hasBeenMigrated) ?? false
         
-        // Try to decode new logpages format
-        if let decodedLogpages = try? container.decode([Logpage].self, forKey: .logpages), !decodedLogpages.isEmpty {
+        // 🔥 DECODER LOGIC:
+        // - CloudKit: FlightLegs stored as SEPARATE records (loaded via fetchFlightLegs)
+        // - Local JSON: legs embedded in Trip JSON (need to decode here)
+        
+        // Try method 1: Decode logpages structure (new format)
+        if let decodedLogpages = try? container.decode([Logpage].self, forKey: .logpages), 
+           !decodedLogpages.isEmpty,
+           !decodedLogpages.allSatisfy({ $0.legs.isEmpty }) {
+            // Successfully loaded logpages from local storage
             logpages = decodedLogpages
-            if !hasBeenMigrated {
-                hasBeenMigrated = true  // Mark as migrated if successfully loaded new format
-            }
-        } else if !hasBeenMigrated {
-            // 🔥 FIX: Only migrate if NOT already migrated
-            // Legacy format - migrate from old structure (ONE TIME ONLY)
-            let legacyLegs = try container.decode([FlightLeg].self, forKey: .legs)
-            let legacyTATStart = try container.decode(String.self, forKey: .tatStart)
-            
+            hasBeenMigrated = true
+            print("✅ Loaded \(decodedLogpages.count) logpage(s) with \(decodedLogpages.flatMap { $0.legs }.count) legs for trip \(tripNumber)")
+        }
+        // Try method 2: Decode legacy legs array (old format)
+        else if let legacyLegs = try? container.decode([FlightLeg].self, forKey: .legs), !legacyLegs.isEmpty {
+            // Migrate from legacy format
+            let legacyTATStart = (try? container.decode(String.self, forKey: .tatStart)) ?? ""
             logpages = [Logpage(pageNumber: 1, tatStart: legacyTATStart, legs: legacyLegs)]
-            hasBeenMigrated = true  // Mark as migrated
-            print("📄 Migrated legacy trip \(tripNumber) to new logpage format (ONE TIME)")
-        } else {
-            // Already migrated but logpages not found - this shouldn't happen, but handle gracefully
-            logpages = [Logpage(pageNumber: 1, tatStart: "", legs: [])]
-            print("⚠️ Trip \(tripNumber) marked as migrated but has no logpages data")
+            hasBeenMigrated = true
+            print("✅ Migrated \(legacyLegs.count) legs from legacy format for trip \(tripNumber)")
+        }
+        // Method 3: No legs found - CloudKit or empty trip
+        else {
+            // Initialize with empty logpage - legs will be loaded separately from CloudKit
+            let legacyTATStart = (try? container.decode(String.self, forKey: .tatStart)) ?? ""
+            logpages = [Logpage(pageNumber: 1, tatStart: legacyTATStart, legs: [])]
+            print("📦 Initialized empty logpage for trip \(tripNumber) (CloudKit or new trip)")
         }
     }
     
@@ -930,3 +1126,4 @@ extension Trip {
     }
 }
 #endif
+

@@ -8,6 +8,7 @@
 import SwiftUI
 
 // MARK: - Roster to Trip Helper
+@MainActor
 class RosterToTripHelper {
     static let shared = RosterToTripHelper()
     private init() {}
@@ -25,37 +26,58 @@ class RosterToTripHelper {
         // Extract flight number (remove tail number in parentheses if present)
         let flightNumber = rosterItem.tripNumber
             .replacingOccurrences(of: " \\(N\\w+\\)", with: "", options: .regularExpression)
-        
+
         // Create the leg with roster data
         // Keep OUT and IN times from roster (shows scheduled times)
         // Leave OFF and ON empty so leg isn't considered "complete"
         var leg = FlightLeg()
-        leg.departure = rosterItem.departure
-        leg.arrival = rosterItem.arrival
+
+        // ✅ CRITICAL: Convert IATA codes to ICAO format
+        // The rosterItem already has converted codes from the parser
+        // But we'll ensure they're properly formatted here as a safety check
+        leg.departure = convertAirportCodeToICAO(rosterItem.departure)
+        leg.arrival = convertAirportCodeToICAO(rosterItem.arrival)
         leg.flightNumber = flightNumber
-        
+
         // ✅ Keep scheduled OUT and IN times (visible to pilot)
         leg.outTime = formatTimeString(from: rosterItem.blockOut)
         leg.inTime = formatTimeString(from: rosterItem.blockIn)
-        
+
         // ✅ Leave OFF and ON empty - leg won't be "complete" until these are filled
         leg.offTime = ""
         leg.onTime = ""
-        
+
         leg.isDeadhead = rosterItem.status == .deadhead
         leg.status = .standby  // New legs start as standby
-        
+
         // Store SCHEDULED times for variance tracking and sorting
         leg.scheduledOut = rosterItem.blockOut
         leg.scheduledIn = rosterItem.blockIn
         leg.scheduledFlightNumber = flightNumber
         leg.rosterSourceId = rosterItem.id.uuidString
-        
+
+        // ✅ Transfer BLH (scheduled block minutes) from roster for mismatch detection
+        // This is more accurate than STD-STA calculation
+        leg.scheduledBlockMinutesFromRoster = rosterItem.scheduledBlockMinutes
+
+        // ✅ Transfer all NOC fields for CloudKit sync and trip management
+        leg.nocUID = rosterItem.nocUID
+        leg.nocTimestamp = rosterItem.nocTimestamp
+        leg.isLastLegOfTrip = rosterItem.isLastLegOfTrip
+        leg.tripGroupId = rosterItem.tripGroupId
+        leg.checkInTime = rosterItem.checkInTime
+        leg.checkOutTime = rosterItem.checkOutTime
+        leg.scheduledDeparture = rosterItem.scheduledDeparture
+        leg.scheduledArrival = rosterItem.scheduledArrival
+        leg.scheduledFlightMinutes = rosterItem.scheduledFlightMinutes
+        leg.aircraftType = rosterItem.aircraftType
+        leg.tailNumber = rosterItem.tailNumber
+
         return leg
     }
     
     /// Add a roster item as a new leg to an existing trip
-    func addToTrip(_ rosterItem: BasicScheduleItem, trip: Trip, store: LogBookStore) {
+    func addToTrip(_ rosterItem: BasicScheduleItem, trip: Trip, store: SwiftDataLogBookStore) {
         let newLeg = createLeg(from: rosterItem)
         
         // Find the trip and add the leg
@@ -113,7 +135,7 @@ class RosterToTripHelper {
     }
     
     /// Create a new trip from a single roster item
-    func createNewTrip(from rosterItem: BasicScheduleItem, store: LogBookStore) -> Trip {
+    func createNewTrip(from rosterItem: BasicScheduleItem, store: SwiftDataLogBookStore) -> Trip {
         let leg = createLeg(from: rosterItem)
         
         // Leg stays .standby until user activates the trip
@@ -167,7 +189,7 @@ class RosterToTripHelper {
     // MARK: - Trip Activation
     
     /// Activate a planning trip - sets trip to active and first leg to active
-    func activateTrip(_ trip: Trip, store: LogBookStore) {
+    func activateTrip(_ trip: Trip, store: SwiftDataLogBookStore) {
         guard let index = store.trips.firstIndex(where: { $0.id == trip.id }) else {
             print("❌ Could not find trip to activate")
             return
@@ -212,7 +234,7 @@ class RosterToTripHelper {
     
     /// Get trips that this roster item could be added to
     /// (Active or Planning trips that haven't departed yet)
-    func eligibleTrips(for rosterItem: BasicScheduleItem, in store: LogBookStore) -> [Trip] {
+    func eligibleTrips(for rosterItem: BasicScheduleItem, in store: SwiftDataLogBookStore) -> [Trip] {
         return store.trips.filter { trip in
             // Only active or planning trips
             guard trip.status == .active || trip.status == .planning else { return false }
@@ -237,12 +259,131 @@ class RosterToTripHelper {
             return true
         }
     }
+    
+    // MARK: - Airport Code Conversion Helper
+    
+    /// Convert airport code to ICAO format (matches the logic in RosterModels)
+    private func convertAirportCodeToICAO(_ code: String) -> String {
+        let cleanCode = code.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Already ICAO format (4 letters starting with K, C, M, P, T, etc.)
+        if cleanCode.count == 4 {
+            let firstChar = cleanCode.first!
+            if "KCMPTOELSW".contains(firstChar) {
+                return cleanCode
+            }
+        }
+        
+        // Check user-added mappings first (highest priority)
+        if let userICAO = UserAirportCodeMappings.shared.getICAO(for: cleanCode) {
+            print("📍 Using user mapping: \(cleanCode) → \(userICAO)")
+            return userICAO
+        }
+        
+        // Look up in built-in IATA map
+        if let icao = iataToIcaoMap[cleanCode] {
+            return icao
+        }
+        
+        // 🆕 SMART LEARNING: Try to discover ICAO code from AirportDatabaseManager
+        if cleanCode.count == 3 && cleanCode.allSatisfy({ $0.isLetter }) {
+            // Check if AirportDatabaseManager knows about this airport
+            let airportDB = AirportDatabaseManager.shared
+            
+            // Try common prefixes based on code patterns
+            let possibleICAO = attemptSmartConversion(cleanCode)
+            
+            // If we found coordinates for the converted code, auto-learn it
+            if possibleICAO != cleanCode && possibleICAO != "K\(cleanCode)",
+               let _ = airportDB.getAirport(for: possibleICAO) {
+                // We found it! Auto-save this mapping for future use
+                print("🎓 Smart learning: Discovered \(cleanCode) → \(possibleICAO)")
+                UserAirportCodeMappings.shared.addMapping(iata: cleanCode, icao: possibleICAO)
+                return possibleICAO
+            }
+            
+            // Report unknown code to manager for user resolution
+            UnknownAirportCodeManager.shared.reportUnknownCode(cleanCode)
+            return "K" + cleanCode  // Default fallback
+        }
+        
+        return cleanCode
+    }
+    
+    /// Smart ICAO code discovery using pattern matching
+    private func attemptSmartConversion(_ iataCode: String) -> String {
+        let airportDB = AirportDatabaseManager.shared
+        
+        // Try different country prefixes based on common patterns
+        let prefixesToTry: [String]
+
+        if iataCode.hasPrefix("Y") {
+            // Canadian airports often start with Y
+            prefixesToTry = ["C\(iataCode)"]
+        } else if iataCode.hasPrefix("T") {
+            // Could be Turkish or Caribbean
+            prefixesToTry = ["LT\(iataCode.dropFirst())", "T\(iataCode)"]
+        } else if iataCode.hasPrefix("M") {
+            // Could be Mexican or other
+            prefixesToTry = ["MM\(iataCode.dropFirst())", "K\(iataCode)"]
+        } else {
+            // Try US (K), then Mexico (MM), then Canada (C)
+            prefixesToTry = [
+                "K\(iataCode)",
+                "MM\(iataCode.dropFirst())",
+                "C\(iataCode)"
+            ]
+        }
+        
+        // Try each possibility and see if coordinates exist
+        for possibleICAO in prefixesToTry {
+            if let _ = airportDB.getAirport(for: possibleICAO) {
+                print("🔍 Pattern match found: \(iataCode) → \(possibleICAO)")
+                return possibleICAO
+            }
+        }
+        
+        // No match found, return original
+        return iataCode
+    }
+    
+    /// Built-in IATA to ICAO mapping (matches RosterModels)
+    private let iataToIcaoMap: [String: String] = [
+        // USA - Major Hubs
+        "YIP": "KYIP", "DTW": "KDTW", "ORD": "KORD", "MDW": "KMDW", "LAX": "KLAX",
+        "LAS": "KLAS", "PHX": "KPHX", "DEN": "KDEN", "ATL": "KATL", "MIA": "KMIA",
+        "JFK": "KJFK", "LGA": "KLGA", "EWR": "KEWR", "BOS": "KBOS", "DCA": "KDCA",
+        "IAD": "KIAD", "BWI": "KBWI", "PHL": "KPHL", "CLT": "KCLT", "MSP": "KMSP",
+        "SEA": "KSEA", "SFO": "KSFO", "PDX": "KPDX", "LRD": "KLRD", "ELP": "KELP",
+        "SAT": "KSAT", "AUS": "KAUS", "DFW": "KDFW", "DAL": "KDAL", "IAH": "KIAH",
+        "HOU": "KHOU", "FLL": "KFLL", "MCO": "KMCO", "TPA": "KTPA", "SDF": "KSDF",
+        
+        // Mexico
+        "MEX": "MMMX", "CUN": "MMUN", "GDL": "MMGL", "TIJ": "MMTJ", "MTY": "MMMY",
+        "PVR": "MMPR", "CZM": "MMCZ", "MZT": "MMMZ", "SJD": "MMSD", "QRO": "MMQT",
+        "CUU": "MMCU", "BJX": "MMBJ", "AGU": "MMAG", "SLP": "MMSP", "ZCL": "MMZC",
+        "CUL": "MMCL", "HMO": "MMHO", "OAX": "MMOX", "PBC": "MMPB", "VER": "MMVR",
+        "LAP": "MMLP", "SLW": "MMIO", "ZIH": "MMZH", "ACA": "MMAA",
+        
+        // Canada
+        "YYZ": "CYYZ", "YVR": "CYVR", "YUL": "CYUL", "YYC": "CYYC", "YEG": "CYEG",
+        "YOW": "CYOW", "YWG": "CYWG", "YHZ": "CYHZ", "YQB": "CYQB",
+        
+        // Caribbean
+        "NAS": "MYNN", "SJU": "TJSJ", "STT": "TIST", "STX": "TISX", "SXM": "TNCM",
+        "CUR": "TNCC", "AUA": "TNCA", "BON": "TNCB", "POS": "TTPP", "BGI": "TBPB",
+        "PUJ": "MDPC", "SDQ": "MDSD", "STI": "MDST", "KIN": "MKJP", "MBJ": "MKJS",
+        "HAV": "MUHA", "GCM": "MWCR", "BZE": "MZBZ",
+        
+        // Central America
+        "GUA": "MGGT", "SAL": "MSLP", "TGU": "MHTG", "MGA": "MNMG", "SJO": "MROC", "PTY": "MPTO"
+    ]
 }
 
 // MARK: - Roster Item Action Sheet View
 struct RosterItemActionSheet: View {
     let rosterItem: BasicScheduleItem
-    let store: LogBookStore
+    let store: SwiftDataLogBookStore
     @Binding var isPresented: Bool
     @State private var showingTripPicker = false
     @State private var showingSuccessToast = false

@@ -10,7 +10,7 @@ import Charts
 
 // MARK: - Trip Timeline Gantt Chart View
 struct TripTimelineGanttChart: View {
-    let logbookStore: LogBookStore
+    let logbookStore: SwiftDataLogBookStore
     @State private var selectedTrip: TripGanttData?
     
     private var ganttData: [TripGanttData] {
@@ -520,7 +520,7 @@ struct TripGanttData: Identifiable {
 // MARK: - Preview
 struct TripTimelineGanttChart_Previews: PreviewProvider {
     static var previews: some View {
-        TripTimelineGanttChart(logbookStore: LogBookStore())
+        TripTimelineGanttChart(logbookStore: SwiftDataLogBookStore.preview)
             .preferredColorScheme(.dark)
     }
 }

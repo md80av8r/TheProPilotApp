@@ -10,17 +10,26 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
     @Published var locationStatus = "Initializing..."
     
     private let locationManager = CLLocationManager()
-    private let airportDB = AirportDatabaseManager()
+    private let airportDB = AirportDatabaseManager.shared
     private var monitoredGeofences: Set<String> = []
     
-    // 🔥 NEW: Speed trigger state machine
+    // 🔥 Speed trigger state machine
     private var lastFastRollTimestamp: Date? = nil
     private var hasPostedTakeoffThisSession = false
     private var hasPostedLandingThisSession = false
     
-    // 🛡️ FIXED: Prevent duplicate geofence setup
+    // 🛡️ Prevent duplicate geofence setup
     private var hasSetupGeofences = false
     private var isSettingUpGeofences = false
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 🛡️ NEW: GPS Spoofing Monitor Integration
+    // ═══════════════════════════════════════════════════════════════════════════
+    private let spoofingMonitor = GPSSpoofingMonitor.shared
+    @Published var gpsIntegrityStatus: GPSSpoofingAlertLevel = .normal
+    @Published var inKnownSpoofingZone: Bool = false
+    @Published var currentSpoofingZoneName: String? = nil
+    // ═══════════════════════════════════════════════════════════════════════════
     
     // Debug tracking
     @Published var debugInfo = ""
@@ -30,6 +39,12 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
         super.init()
         setupLocationManager()
         requestLocationPermission()
+        
+        // ═══════════════════════════════════════════════════════════════════════
+        // 🛡️ NEW: Setup spoofing monitor listeners
+        // ═══════════════════════════════════════════════════════════════════════
+        setupSpoofingMonitorListeners()
+        // ═══════════════════════════════════════════════════════════════════════
     }
     
     // MARK: - Setup
@@ -38,13 +53,67 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = 50
         
-        // 🔥 NEW: Background location updates + don't pause
+        // Background location updates + don't pause
         locationManager.allowsBackgroundLocationUpdates = true
         locationManager.pausesLocationUpdatesAutomatically = false
         
         print("🛩️ PilotLocationManager: Setting up location services")
         updateDebugInfo("Location manager configured")
     }
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 🛡️ NEW: Spoofing Monitor Listeners
+    // ═══════════════════════════════════════════════════════════════════════════
+    private func setupSpoofingMonitorListeners() {
+        // Listen for spoofing alerts
+        NotificationCenter.default.addObserver(
+            forName: .gpsSpoofingDetected,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleSpoofingNotification(notification)
+        }
+        
+        // Listen for zone entry
+        NotificationCenter.default.addObserver(
+            forName: .gpsSpoofingZoneEntered,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let zoneName = notification.userInfo?["zoneName"] as? String {
+                self?.inKnownSpoofingZone = true
+                self?.currentSpoofingZoneName = zoneName
+                print("🛡️ Entered GPS spoofing zone: \(zoneName)")
+            }
+        }
+        
+        // Listen for zone exit
+        NotificationCenter.default.addObserver(
+            forName: .gpsSpoofingZoneExited,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.inKnownSpoofingZone = false
+            self?.currentSpoofingZoneName = nil
+            print("🛡️ Exited GPS spoofing zone")
+        }
+        
+        print("🛡️ PilotLocationManager: Spoofing monitor listeners configured")
+    }
+    
+    private func handleSpoofingNotification(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let alertLevelString = userInfo["alertLevel"] as? String else { return }
+        
+        if let alertLevel = GPSSpoofingAlertLevel(rawValue: alertLevelString) {
+            gpsIntegrityStatus = alertLevel
+        }
+        
+        // Update zone status from monitor
+        inKnownSpoofingZone = spoofingMonitor.currentZone != nil
+        currentSpoofingZoneName = spoofingMonitor.currentZone?.name
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
     
     func requestLocationPermission() {
         switch locationManager.authorizationStatus {
@@ -86,6 +155,13 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
         print("🛩️ Starting location services...")
         locationManager.startUpdatingLocation()
         
+        // ═══════════════════════════════════════════════════════════════════════
+        // 🛡️ NEW: Start spoofing monitor when location services start
+        // ═══════════════════════════════════════════════════════════════════════
+        spoofingMonitor.startMonitoring()
+        print("🛡️ GPS Spoofing Monitor started")
+        // ═══════════════════════════════════════════════════════════════════════
+        
         // Setup geofencing only once with delay
         if !hasSetupGeofences && !isSettingUpGeofences {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -123,8 +199,6 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
         
         // Get priority airports (limited to 20 due to iOS restriction)
         let priorityAirports = airportDB.getPriorityAirportsForGeofencing()
-        // DEBUG: Commented out excessive print statement
-        // print("🛩️ Will monitor \(priorityAirports.count) priority airports (iOS limit: 20)")
         
         var setupCount = 0
         for (icao, coordinate) in priorityAirports {
@@ -167,6 +241,20 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
             // Check for current airport
             self.checkCurrentAirport(location)
             
+            // ═══════════════════════════════════════════════════════════════════
+            // 🛡️ NEW: Send location to GPS Spoofing Monitor
+            // ═══════════════════════════════════════════════════════════════════
+            self.spoofingMonitor.processLocationUpdate(
+                location,
+                flightNumber: self.getCurrentFlightNumber()
+            )
+            
+            // Update published spoofing status
+            self.gpsIntegrityStatus = self.spoofingMonitor.currentAlertLevel
+            self.inKnownSpoofingZone = self.spoofingMonitor.currentZone != nil
+            self.currentSpoofingZoneName = self.spoofingMonitor.currentZone?.name
+            // ═══════════════════════════════════════════════════════════════════
+            
             // 🔥 Speed-trigger logic (knots)
             let speedMS = max(0, location.speed)
             let speedKt = speedMS * 1.94384
@@ -207,6 +295,16 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
         }
     }
     
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 🛡️ NEW: Helper to get current flight number for spoofing logs
+    // ═══════════════════════════════════════════════════════════════════════════
+    private func getCurrentFlightNumber() -> String? {
+        // TODO: Connect to LogBookStore to get active trip's current leg flight number
+        // For now, return nil - the spoofing monitor will still work without it
+        return nil
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
+    
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         print("🛩️ Location authorization changed to: \(status)")
         
@@ -244,8 +342,7 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
         print("🛩️ ✅ ENTERED GEOFENCE: \(icaoCode)")
         
         DispatchQueue.main.async {
-            // ✅ FIXED: Check speed/altitude before declaring arrival
-            // Prevents false "arrived" notifications while flying over airports at FL360
+            // Check speed/altitude before declaring arrival
             if let location = self.currentLocation {
                 let speedMS = max(0, location.speed)
                 let speedKt = speedMS * 1.94384
@@ -313,23 +410,16 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
         let icaoCode = region.identifier
         let airportName = airportDB.getAirportName(for: icaoCode)
         
-        // DEBUG: Commented out excessive print statement (fires for all 20+ geofences)
-        // print("🛩️ Region state for \(icaoCode): \(stateDescription(state))")
-        
         DispatchQueue.main.async {
             switch state {
             case .inside:
-                // ✅ FIXED: Check speed before declaring arrival
-                // At FL360 you're going 400+ knots - not "at" an airport!
+                // Check speed before declaring arrival
                 if let location = self.currentLocation {
                     let speedMS = max(0, location.speed)
                     let speedKt = speedMS * 1.94384
                     let altitudeMeters = location.altitude
                     let altitudeFeet = altitudeMeters * 3.28084
                     
-                    // Suppress if:
-                    // - Speed > 100 knots (clearly flying, not on ground)
-                    // - Altitude > 5000 feet AGL (clearly airborne)
                     if speedKt > 100 {
                         print("🛩️ Ignoring region entry for \(icaoCode) - speed \(Int(speedKt)) kt (airborne)")
                         return
@@ -355,13 +445,9 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
                 )
                 
             case .outside:
-                // DEBUG: Commented out excessive print statement
-                // print("🛩️ Currently OUTSIDE \(icaoCode)")
                 break
                 
             case .unknown:
-                // DEBUG: Commented out excessive print statement
-                // print("🛩️ Unknown state for \(icaoCode)")
                 break
             }
         }
@@ -374,10 +460,7 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
     }
     
     func locationManager(_ manager: CLLocationManager, monitoringDidFailFor region: CLRegion?, withError error: Error) {
-        let regionName = region?.identifier ?? "unknown"
-        // DEBUG: Commented out excessive print statement (iOS limit = 20 geofences)
-        // print("🛩️ ⚠️ Geofence monitoring failed for \(regionName): \(error.localizedDescription)")
-        // Don't update debug info for every failed geofence to avoid spam
+        // Silently handle geofence monitoring failures (iOS limit = 20)
     }
     
     // MARK: - Helper Functions
@@ -438,6 +521,16 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
         info += "• Status: \(locationStatus)\n"
         info += "• Debug: \(debugInfo)\n"
         
+        // ═══════════════════════════════════════════════════════════════════════
+        // 🛡️ NEW: Include GPS integrity info in debug output
+        // ═══════════════════════════════════════════════════════════════════════
+        info += "• GPS Integrity: \(gpsIntegrityStatus.rawValue)\n"
+        if let zoneName = currentSpoofingZoneName {
+            info += "• ⚠️ In Spoofing Zone: \(zoneName)\n"
+        }
+        info += "• Spoofing Events: \(spoofingMonitor.recentEvents.count)\n"
+        // ═══════════════════════════════════════════════════════════════════════
+        
         if !nearbyAirports.isEmpty {
             info += "• Nearby Airports:\n"
             for airport in nearbyAirports.prefix(3) {
@@ -460,6 +553,38 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
         print("🛩️ Forcing location update...")
         locationManager.requestLocation()
     }
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 🛡️ NEW: Pre-flight route spoofing check
+    // ═══════════════════════════════════════════════════════════════════════════
+    func checkRouteForSpoofingZones(from departure: String, to arrival: String) -> [GPSSpoofingZone] {
+        // Get coordinates for airports
+        guard let depCoord = airportDB.getCoordinates(for: departure),
+              let arrCoord = airportDB.getCoordinates(for: arrival) else {
+            print("🛡️ Could not get coordinates for route \(departure)-\(arrival)")
+            return []
+        }
+        
+        return spoofingMonitor.checkRouteForSpoofingZones(
+            departure: depCoord,
+            arrival: arrCoord
+        )
+    }
+    
+    func getSpoofingBriefing(from departure: String, to arrival: String) -> String {
+        guard let depCoord = airportDB.getCoordinates(for: departure),
+              let arrCoord = airportDB.getCoordinates(for: arrival) else {
+            return "⚠️ Could not generate spoofing briefing - airport coordinates not found"
+        }
+        
+        return spoofingMonitor.getRouteSpoofingBriefing(
+            departure: departure,
+            arrival: arrival,
+            depCoord: depCoord,
+            arrCoord: arrCoord
+        )
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
     
     // MARK: - Test Functions
     func simulateAirportArrival(_ icaoCode: String = "KYIP") {
@@ -522,6 +647,27 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
             print("🛩️ Posted simulated landingRollDecel notification")
         }
     }
+    
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 🛡️ NEW: Simulate entering a spoofing zone (for testing)
+    // ═══════════════════════════════════════════════════════════════════════════
+    func simulateSpoofingZoneEntry(_ zoneName: String = "Laredo Border Region") {
+        print("🛡️ SIMULATING spoofing zone entry: \(zoneName)")
+        
+        // Create a fake location near Laredo
+        let laredoLocation = CLLocation(
+            coordinate: CLLocationCoordinate2D(latitude: 27.5436, longitude: -99.4803),
+            altitude: 3000,
+            horizontalAccuracy: 10,
+            verticalAccuracy: 10,
+            course: 180,
+            speed: 100, // ~194 kts
+            timestamp: Date()
+        )
+        
+        spoofingMonitor.processLocationUpdate(laredoLocation, flightNumber: "TEST123")
+    }
+    // ═══════════════════════════════════════════════════════════════════════════
 }
 
 // MARK: - CLAuthorizationStatus Extension
@@ -537,3 +683,4 @@ extension CLAuthorizationStatus {
         }
     }
 }
+

@@ -36,9 +36,10 @@ class AirlineSettingsStore: ObservableObject {
 
 // MARK: - Airline Settings Data Model
 struct AirlineSettings: Codable {
-    var airlineName: String = "USA Jet"
-    var homeBaseAirport: String = "KYIP"
-    var fleetCallsign: String = "JUS"
+    var airlineName: String = ""  // ✅ CHANGED - No hardcoded airline, user must configure
+    var homeBaseAirport: String = ""  // ✅ CHANGED - No hardcoded airport, user must configure
+    var fleetCallsign: String = ""  // ✅ CHANGED - No hardcoded callsign, user must configure
+    var flightNumberPrefix: String = ""  // ✅ ADDED - Flight number prefix for trip entry (e.g., "JUS" for JUS123)
     var enableTimerAlarms: Bool = true
     var selectedAlarmSound: AlarmSound = .chime
     var alarmVolume: Double = 0.8
@@ -385,6 +386,7 @@ struct AirlineQuickSetupView: View {
     private func setupAirline(_ airline: AirlinePreset, callsign: String) {
         airlineSettings.settings.airlineName = airline.name
         airlineSettings.settings.fleetCallsign = callsign
+        airlineSettings.settings.flightNumberPrefix = callsign  // ✅ ADDED - Auto-set flight number prefix
         airlineSettings.settings.homeBaseAirport = airline.hub
         airlineSettings.settings.logbookEmail = airlineSettings.settings.defaultLogbookEmail
         airlineSettings.settings.receiptsEmail = airlineSettings.settings.defaultReceiptsEmail

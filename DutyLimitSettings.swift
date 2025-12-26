@@ -449,60 +449,69 @@ struct ConfigurableLimitStatus {
     func getAllLimitStatuses() -> [LimitStatus] {
         var statuses: [LimitStatus] = []
         
-        if settings.perFDPFlightLimit.enabled {
-            statuses.append(LimitStatus(
-                name: "Per-FDP Flight Time",
-                current: currentFDPFlightTime,
-                limit: perFDPLimit,
-                periodDescription: "Current Duty Period",
-                regulation: isDayReportTime ? "§117.11 (Day)" : "§117.11 (Night)"
-            ))
-        }
+        // Check if currently in rest from multiple sources:
+        // 1. DutyTimerManager (manual duty timer ended = rest started)
+        // 2. ConfigurableLimitStatus.isInRest (calculated from trip data)
+        let inRest = DutyTimerManager.shared.isInRest || self.isInRest
         
+        // Only show Per-FDP if enabled AND NOT in rest (per-FDP resets after rest)
+        if settings.perFDPFlightLimit.enabled && !inRest {
+            // Additional check: if Per-FDP is 0 or very small, hide it
+            if currentFDPFlightTime > 0.1 {
+                statuses.append(LimitStatus(
+                    name: "Block Time (This FDP)",
+                    current: max(0, currentFDPFlightTime), // defensive clamp
+                    limit: perFDPLimit,
+                    periodDescription: "Current Duty Period",
+                    regulation: isDayReportTime ? "§117.11 (Day)" : "§117.11 (Night)"
+                ))
+            }
+        }
+
         if settings.flightTime7Day.enabled {
             statuses.append(LimitStatus(
-                name: "7-Day Flight Time",
-                current: flightTime7Day,
+                name: "7-Day Block Time",
+                current: max(0, flightTime7Day), // defensive clamp
                 limit: settings.flightTime7Day.hours,
                 periodDescription: "Rolling 7 Days",
                 regulation: "§135.267"
             ))
         }
-        
+
         if settings.flightTimeRolling.enabled {
             statuses.append(LimitStatus(
-                name: "\(settings.rollingPeriodDays)-Day Flight Time",
-                current: flightTimeRolling,
+                name: "\(settings.rollingPeriodDays)-Day Block Time",
+                current: max(0, flightTimeRolling), // defensive clamp
                 limit: settings.flightTimeRolling.hours,
                 periodDescription: "Rolling \(settings.rollingPeriodDays) Days",
                 regulation: settings.operationType == .part121 ? "§117.23(b)" : "§135.267"
             ))
         }
-        
+
         if settings.flightTime365Day.enabled {
             statuses.append(LimitStatus(
-                name: "Annual Flight Time",
-                current: flightTime365Day,
+                name: "Annual Block Time",
+                current: max(0, flightTime365Day), // defensive clamp
                 limit: settings.flightTime365Day.hours,
                 periodDescription: "Rolling 365 Days",
                 regulation: settings.operationType == .part121 ? "§117.23(b)" : "§135.267"
             ))
         }
-        
+
         if settings.fdp7Day.enabled {
             statuses.append(LimitStatus(
-                name: "7-Day FDP",
-                current: fdpTime7Day,
+                name: "7-Day Duty Time",
+                current: max(0, fdpTime7Day), // defensive clamp
                 limit: settings.fdp7Day.hours,
                 periodDescription: "Rolling 168 Hours",
                 regulation: "§117.23(c)"
             ))
         }
-        
+
         if settings.fdpRolling.enabled {
             statuses.append(LimitStatus(
-                name: "\(settings.rollingPeriodDays)-Day FDP",
-                current: fdpTimeRolling,
+                name: "\(settings.rollingPeriodDays)-Day Duty Time",
+                current: max(0, fdpTimeRolling), // defensive clamp
                 limit: settings.fdpRolling.hours,
                 periodDescription: "Rolling \(settings.rollingPeriodDays * 24) Hours",
                 regulation: "§117.23(c)"

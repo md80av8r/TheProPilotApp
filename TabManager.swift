@@ -37,23 +37,13 @@ class CustomizableTabManager: ObservableObject {
     private let recentTabKey = "RecentTabID"
     
     init() {
-        // 🔥 CRASH FIX: Wrap in error handling
-        do {
-            // TEMPORARY - forces reload of tabs
-            UserDefaults.standard.removeObject(forKey: "TabConfiguration")
-            
-            setupDefaultTabs()
-            loadConfiguration()
-            loadRecentTab()
-            updateTabArrays()
-        } catch {
-            print("⚠️ TabManager init error: \(error)")
-            // Fallback to minimal tabs
-            availableTabs = [
-                TabItem(id: "logbook", title: "Logbook", systemImage: "book.closed", order: 0)
-            ]
-            updateTabArrays()
-        }
+        // TEMPORARY - forces reload of tabs
+        UserDefaults.standard.removeObject(forKey: "TabConfiguration")
+
+        setupDefaultTabs()
+        loadConfiguration()
+        loadRecentTab()
+        updateTabArrays()
     }
     
     // MARK: - Tab Definitions
@@ -114,16 +104,18 @@ class CustomizableTabManager: ObservableObject {
             // ─────────────────────────────────────────────────────────────────
             // FLIGHT TOOLS SECTION
             // ─────────────────────────────────────────────────────────────────
+            // ID: "airportDatabase" → Opens: AirportManagementView ⭐ NEW
+            TabItem(id: "airportDatabase", title: "Airport Database", systemImage: "building.2.crop.circle", isVisible: false, order: 14),
             // ID: "gpsRaim" → Opens: GPSRAIMView
-            TabItem(id: "gpsRaim", title: "GPS/RAIM", systemImage: "location.fill", isVisible: false, order: 14),
+            TabItem(id: "gpsRaim", title: "GPS/RAIM", systemImage: "location.fill", isVisible: false, order: 15),
             // ID: "weather" → Opens: WeatherView
-            TabItem(id: "weather", title: "Weather", systemImage: "cloud.sun.fill", isVisible: false, order: 15),
+            TabItem(id: "weather", title: "Weather", systemImage: "cloud.sun.fill", isVisible: false, order: 16),
             // ID: "areaGuide" → Opens: AreaGuideViewComplete <--- ADDED HERE
-            TabItem(id: "areaGuide", title: "Area Guide", systemImage: "map.fill", isVisible: false, order: 16),
+            TabItem(id: "areaGuide", title: "Area Guide", systemImage: "map.fill", isVisible: false, order: 17),
             // ID: "calculator" → Opens: FlightCalculatorView
-            TabItem(id: "calculator", title: "Flight Calculator", systemImage: "function", isVisible: false, order: 17),
+            TabItem(id: "calculator", title: "Flight Calculator", systemImage: "function", isVisible: false, order: 18),
             // ID: "flightOps" → Opens: FlightOpsView
-            TabItem(id: "flightOps", title: "Flight Ops", systemImage: "airplane.circle.fill", isVisible: false, order: 18),
+            TabItem(id: "flightOps", title: "Flight Ops", systemImage: "airplane.circle.fill", isVisible: false, order: 19),
             
             // ─────────────────────────────────────────────────────────────────
             // TRACKING & REPORTS SECTION
@@ -152,19 +144,34 @@ class CustomizableTabManager: ObservableObject {
             TabItem(id: "dataBackup", title: "Backup & Restore", systemImage: "externaldrive.fill.badge.timemachine", isVisible: false, order: 25),
             
             // ─────────────────────────────────────────────────────────────────
+            // HELP & SUPPORT SECTION ⭐ NEW
+            // ─────────────────────────────────────────────────────────────────
+            // ID: "help" → Opens: HelpView
+            TabItem(id: "help", title: "Help & Support", systemImage: "questionmark.circle.fill", isVisible: false, order: 26),
+            // ID: "search" → Opens: LogbookSearchView
+            TabItem(id: "search", title: "Search Logbook", systemImage: "magnifyingglass.circle.fill", isVisible: false, order: 27),
+
+            // ─────────────────────────────────────────────────────────────────
             // JUMPSEAT NETWORK SECTION
             // ─────────────────────────────────────────────────────────────────
-            // ID: "jumpseat" → Opens: JumpseatView
-            // TabItem(id: "jumpseat", title: "Jumpseat Network", systemImage: "person.2.fill", isVisible: false, order: 26),
+            // ID: "jumpseat" → Opens: JumpseatFinderView ⭐ NEW
+            TabItem(id: "jumpseat", title: "Jumpseat Finder", systemImage: "person.2.fill", isVisible: false, order: 28),
             
             // ─────────────────────────────────────────────────────────────────
             // BETA TESTING SECTION
             // ─────────────────────────────────────────────────────────────────
             // ID: "nocTest" → Opens: NOCTestView ⭐ NEW
-            TabItem(id: "nocTest", title: "NOC Trip Tester", systemImage: "calendar.badge.plus", isVisible: false, order: 27),
+            TabItem(id: "nocTest", title: "NOC Trip Tester", systemImage: "calendar.badge.plus", isVisible: false, order: 29),
             // ID: "gpxTesting" → Opens: GPXTestingView
-            TabItem(id: "gpxTesting", title: "GPX Testing", systemImage: "location.viewfinder", isVisible: false, order: 28)
-        ] // ; print("📋 Available tabs: \(availableTabs.map { $0.id })")
+            TabItem(id: "gpxTesting", title: "GPX Testing", systemImage: "location.circle", isVisible: false, order: 30),
+            // ID: "airportTest" → Opens: AirportDatabaseTestView
+            TabItem(id: "airportTest", title: "Airport Database Test", systemImage: "building.2.crop.circle.fill", isVisible: false, order: 31),
+        ]
+
+        // ✅ Subscription Debug (only in DEBUG builds) - added after array initialization
+        #if DEBUG
+        availableTabs.append(TabItem(id: "subscriptionDebug", title: "Subscription Debug", systemImage: "dollarsign.circle.fill", isVisible: false, order: 32))
+        #endif
     }
     
     // MARK: - Recent Tab Management
@@ -353,9 +360,14 @@ struct MorePanelOverlay<Content: View>: View {
     private let flightLoggingTabs = ["autoTimeLogging", "scannerEmailSettings", "scanner"]
     private let scheduleOpsTabs = ["nocSchedule", "tripGeneration", "crewContacts"]
     private let clocksTabs = ["clocks"]
-    private let flightToolsTabs = ["gpsRaim", "weather", "areaGuide", "calculator", "flightOps"] // <--- ADDED HERE
+    private let flightToolsTabs = ["airportDatabase", "gpsRaim", "weather", "areaGuide", "calculator", "flightOps"]
     private let trackingReportsTabs = ["flightTimeLimits", "rolling30Day", "far117Compliance", "fleetTracker", "reports", "electronicLogbook"]
     private let documentsDataTabs = ["documents", "notes", "dataBackup"]
+    #if DEBUG
+    private let helpSupportTabs = ["help", "search", "subscriptionDebug"]  // ⭐ Added debug tab
+    #else
+    private let helpSupportTabs = ["help", "search"]
+    #endif
     private let jumpseatTabs = ["jumpseat"]
     private let betaTestingTabs = ["nocTest", "gpxTesting"]
     
@@ -403,6 +415,7 @@ struct MorePanelOverlay<Content: View>: View {
                                 flightToolsSection
                                 trackingReportsSection
                                 documentsDataSection
+                                helpSupportSection  // ⭐ NEW
                                 jumpseatSection
                                 betaTestingSection
                             }
@@ -541,6 +554,17 @@ struct MorePanelOverlay<Content: View>: View {
     }
     
     @ViewBuilder
+    private var helpSupportSection: some View {
+        if moreTabs.contains(where: { helpSupportTabs.contains($0.id) }) {
+            sectionHeader(title: "HELP & SUPPORT")
+            ForEach(moreTabs.filter { helpSupportTabs.contains($0.id) }) { tab in
+                tabButton(for: tab)
+            }
+            sectionDivider()
+        }
+    }
+    
+    @ViewBuilder
     private var jumpseatSection: some View {
         if moreTabs.contains(where: { jumpseatTabs.contains($0.id) }) {
             sectionHeader(title: "JUMPSEAT NETWORK")
@@ -615,6 +639,7 @@ struct MorePanelOverlay<Content: View>: View {
         case "clocks": return LogbookTheme.accentBlue
         
         // Flight Tools
+        case "airportDatabase": return .cyan
         case "gpsRaim": return .purple
         case "weather": return .cyan
         case "areaGuide": return LogbookTheme.accentGreen // <--- ADDED HERE
@@ -630,6 +655,13 @@ struct MorePanelOverlay<Content: View>: View {
         case "documents": return LogbookTheme.accentBlue
         case "notes": return .yellow
         case "dataBackup": return LogbookTheme.accentOrange
+        
+        // Help & Support
+        case "help": return .cyan
+        case "search": return .purple
+        #if DEBUG
+        case "subscriptionDebug": return .orange
+        #endif
         
         // Jumpseat Network
         case "jumpseat": return .cyan

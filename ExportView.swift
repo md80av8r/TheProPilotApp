@@ -2,7 +2,7 @@ import SwiftUI
 import PDFKit
 
 struct ExportView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @Environment(\.dismiss) private var dismiss
     @State private var exportData = ""
     @State private var showingShareSheet = false
@@ -676,7 +676,8 @@ struct ExportView: View {
                 let nightLandings = isDayOperation ? "0" : "1"
                 
                 // Pilot Flying toggle (assuming PIC = PF for now)
-                let pilotFlying = (trip.pilotRole == .captain) ? "TRUE" : "FALSE"
+                // Note: Currently unused, but preserved for future ForeFlight export enhancements
+                _ = (trip.pilotRole == .captain) ? "TRUE" : "FALSE"
                 
                 // Build the line with all 63 columns (COMMA-separated for ForeFlight)
                 // Column order MUST match Row 15 header exactly:
@@ -1170,7 +1171,7 @@ struct ExportView: View {
 
 // MARK: - Enhanced PDF Export View with Night Hours
 struct PDFExportView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     let filteredTrips: [Trip]
     let periodDescription: String
     @State private var showingShareSheet = false

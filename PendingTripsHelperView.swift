@@ -308,7 +308,7 @@ struct PendingTripRowCompact: View {
 struct PendingTripsHelperView: View {
     @ObservedObject var tripGenService = TripGenerationService.shared
     @ObservedObject var dismissedManager = DismissedRosterItemsManager.shared
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     
     @State private var showingPendingDetail = false
     @State private var showingDismissedItems = false
@@ -520,7 +520,7 @@ struct PendingTripsHelperView: View {
 // MARK: - Pending Trips Detail View
 struct PendingTripsDetailView: View {
     @ObservedObject var tripGenService = TripGenerationService.shared
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -671,7 +671,7 @@ struct PendingTripRowFull: View {
 // MARK: - Standby Trips List View
 struct StandbyTripsListView: View {
     let trips: [Trip]
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -691,7 +691,7 @@ struct StandbyTripsListView: View {
 // MARK: - Standby Trip Row
 struct StandbyTripRow: View {
     let trip: Trip
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @State private var showingActivateAlert = false
     
     private let dateFormatter: DateFormatter = {
@@ -784,7 +784,7 @@ struct StandbyTripRow: View {
 struct PendingTripsHelperView_Previews: PreviewProvider {
     static var previews: some View {
         List {
-            PendingTripsHelperView(store: LogBookStore())
+            PendingTripsHelperView(store: SwiftDataLogBookStore.preview)
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)

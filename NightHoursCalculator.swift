@@ -5,7 +5,7 @@ import CoreLocation
 
 // MARK: - Enhanced Night Hours Calculator
 class NightHoursCalculator {
-    private let airportManager = AirportDatabaseManager()
+    private let airportManager = AirportDatabaseManager.shared
     
     // Civil twilight offset in minutes (FAA definition: sun 6° below horizon)
     private let civilTwilightOffsetMinutes: Int = 30
@@ -34,13 +34,9 @@ class NightHoursCalculator {
         flightDate: Date
     ) async -> TimeInterval {
         
-        // Use async airport lookup from your existing AirportDatabaseManager
-        async let depInfoTask = airportManager.getAirportInfo(departure)
-        async let arrInfoTask = airportManager.getAirportInfo(arrival)
-        
-        let (depInfo, arrInfo) = await (depInfoTask, arrInfoTask)
-        
-        guard let depInfo = depInfo, let arrInfo = arrInfo else {
+        // Get airport info from the database
+        guard let depInfo = airportManager.getAirport(for: departure),
+              let arrInfo = airportManager.getAirport(for: arrival) else {
             print("⚠️ Night calc: Missing airport info, using estimation")
             return estimateNightHours(outTime: outTime, inTime: inTime, flightDate: flightDate)
         }
@@ -49,14 +45,14 @@ class NightHoursCalculator {
         let depTwilight = calculateTwilightTimes(
             for: depInfo.coordinate,
             date: flightDate,
-            timeZoneId: depInfo.timeZoneIdentifier
+            timeZoneId: depInfo.timeZone ?? "UTC"
         )
         
         // Get twilight times for arrival airport
         let arrTwilight = calculateTwilightTimes(
             for: arrInfo.coordinate,
             date: flightDate,
-            timeZoneId: arrInfo.timeZoneIdentifier
+            timeZoneId: arrInfo.timeZone ?? "UTC"
         )
         
         // Also check next day in case of overnight flight
@@ -64,12 +60,12 @@ class NightHoursCalculator {
         let depTwilightNextDay = calculateTwilightTimes(
             for: depInfo.coordinate,
             date: nextDay,
-            timeZoneId: depInfo.timeZoneIdentifier
+            timeZoneId: depInfo.timeZone ?? "UTC"
         )
         let arrTwilightNextDay = calculateTwilightTimes(
             for: arrInfo.coordinate,
             date: nextDay,
-            timeZoneId: arrInfo.timeZoneIdentifier
+            timeZoneId: arrInfo.timeZone ?? "UTC"
         )
         
         // Build night periods (sunset to sunrise)
@@ -119,7 +115,7 @@ class NightHoursCalculator {
         airportCode: String,
         date: Date
     ) async -> Bool {
-        guard let airportInfo = await airportManager.getAirportInfo(airportCode) else {
+        guard let airportInfo = airportManager.getAirport(for: airportCode) else {
             // Fallback: use simple hour check
             let hour = Calendar.current.component(.hour, from: time)
             return hour >= 19 || hour < 6
@@ -128,7 +124,7 @@ class NightHoursCalculator {
         let twilight = calculateTwilightTimes(
             for: airportInfo.coordinate,
             date: date,
-            timeZoneId: airportInfo.timeZoneIdentifier
+            timeZoneId: airportInfo.timeZone ?? "UTC"
         )
         
         // Check if time is before morning twilight
@@ -396,17 +392,15 @@ class NightHoursCalculator {
     
     /// Get airport name for display purposes
     func getAirportName(for icao: String) async -> String {
-        if let info = await airportManager.getAirportInfo(icao) {
-            return info.airportName
+        if let info = airportManager.getAirport(for: icao) {
+            return info.name
         }
         return "Unknown Airport"
     }
     
     /// Get cache status for debugging
-    func getCacheStatus() -> (staticCount: Int, dynamicCount: Int) {
-        let staticCount = airportManager.getAllBuiltInAirports().count
-        let dynamicCount = airportManager.getAllAirports().count
-        return (staticCount: staticCount, dynamicCount: dynamicCount)
+    func getCacheStatus() -> Int {
+        return airportManager.getAllAirports().count
     }
     
     // MARK: - Formatting Helpers

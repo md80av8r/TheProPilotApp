@@ -25,7 +25,7 @@ enum LegPilotRole: String, Codable, CaseIterable {
     case notSet = "Not Set"
     case pilotFlying = "PF"           // Pilot Flying this leg
     case pilotMonitoring = "PM"       // Pilot Monitoring this leg
-    
+
     var displayName: String {
         switch self {
         case .notSet: return "Not Set"
@@ -33,8 +33,35 @@ enum LegPilotRole: String, Codable, CaseIterable {
         case .pilotMonitoring: return "Pilot Monitoring"
         }
     }
-    
+
     var shortName: String { rawValue }
+}
+
+// MARK: - Block Time Mismatch Severity
+/// Indicates how far off actual block time is from scheduled (NOC roster)
+enum MismatchSeverity: String, Codable {
+    case none = "None"              // Within threshold (≤5 min)
+    case minor = "Minor"            // 6-15 minutes off
+    case moderate = "Moderate"      // 16-30 minutes off
+    case significant = "Significant" // >30 minutes off
+
+    var symbolName: String {
+        switch self {
+        case .none: return "checkmark.circle"
+        case .minor: return "exclamationmark.circle"
+        case .moderate: return "exclamationmark.triangle"
+        case .significant: return "exclamationmark.triangle.fill"
+        }
+    }
+
+    var color: String {
+        switch self {
+        case .none: return "green"
+        case .minor: return "yellow"
+        case .moderate: return "orange"
+        case .significant: return "red"
+        }
+    }
 }
 
 struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
@@ -57,10 +84,24 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
     var status: LegStatus = .active  // Default for backward compatibility
     
     // MARK: - Scheduled Times from Roster
-    var scheduledOut: Date?          // Original roster OUT time
-    var scheduledIn: Date?           // Original roster IN time
+    var scheduledOut: Date?          // Original roster OUT time (STD)
+    var scheduledIn: Date?           // Original roster IN time (STA)
     var scheduledFlightNumber: String? // Original roster flight number
+    var scheduledBlockMinutesFromRoster: Int? // BLH from roster (more accurate than STD-STA)
     var rosterSourceId: String?      // Link back to roster item for reference
+
+    // MARK: - NOC Roster Fields (CloudKit sync)
+    var nocUID: String?                    // Server's unique ID (e.g., "117760") for sync
+    var nocTimestamp: Date?                // DTSTAMP - when roster was last modified on server
+    var isLastLegOfTrip: Bool = false      // RD: X marker - indicates end of trip
+    var tripGroupId: String?               // Groups legs into same trip (e.g., "UJ325")
+    var checkInTime: Date?                 // CI - Show time
+    var checkOutTime: Date?                // CO - Release time
+    var scheduledDeparture: Date?          // STD - Wheels off time
+    var scheduledArrival: Date?            // STA - Wheels on time
+    var scheduledFlightMinutes: Int?       // Duration (flight time, not block)
+    var aircraftType: String?              // e.g., "M88", "M83"
+    var tailNumber: String?                // e.g., "N832US"
     
     // MARK: - Deadhead Time Tracking
     var deadheadOutTime: String = ""
@@ -73,6 +114,152 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
     // MARK: - Night Operations Tracking
     var nightTakeoff: Bool = false      // Was takeoff at night? (for currency)
     var nightLanding: Bool = false      // Was landing at night? (for currency)
+    
+    // MARK: - Initializers
+    
+    /// Default memberwise initializer (must be explicit when custom init(from:) exists)
+    init(id: UUID = UUID(),
+         departure: String = "",
+         arrival: String = "",
+         outTime: String = "",
+         offTime: String = "",
+         onTime: String = "",
+         inTime: String = "",
+         flightNumber: String = "",
+         isDeadhead: Bool = false,
+         flightDate: Date? = nil,
+         status: LegStatus = .active,
+         scheduledOut: Date? = nil,
+         scheduledIn: Date? = nil,
+         scheduledFlightNumber: String? = nil,
+         scheduledBlockMinutesFromRoster: Int? = nil,
+         rosterSourceId: String? = nil,
+         nocUID: String? = nil,
+         nocTimestamp: Date? = nil,
+         isLastLegOfTrip: Bool = false,
+         tripGroupId: String? = nil,
+         checkInTime: Date? = nil,
+         checkOutTime: Date? = nil,
+         scheduledDeparture: Date? = nil,
+         scheduledArrival: Date? = nil,
+         scheduledFlightMinutes: Int? = nil,
+         aircraftType: String? = nil,
+         tailNumber: String? = nil,
+         deadheadOutTime: String = "",
+         deadheadInTime: String = "",
+         deadheadFlightHours: Double = 0.0,
+         legPilotRole: LegPilotRole = .notSet,
+         nightTakeoff: Bool = false,
+         nightLanding: Bool = false) {
+        
+        self.id = id
+        self.departure = departure
+        self.arrival = arrival
+        self.outTime = outTime
+        self.offTime = offTime
+        self.onTime = onTime
+        self.inTime = inTime
+        self.flightNumber = flightNumber
+        self.isDeadhead = isDeadhead
+        self.flightDate = flightDate
+        self.status = status
+        self.scheduledOut = scheduledOut
+        self.scheduledIn = scheduledIn
+        self.scheduledFlightNumber = scheduledFlightNumber
+        self.scheduledBlockMinutesFromRoster = scheduledBlockMinutesFromRoster
+        self.rosterSourceId = rosterSourceId
+        self.nocUID = nocUID
+        self.nocTimestamp = nocTimestamp
+        self.isLastLegOfTrip = isLastLegOfTrip
+        self.tripGroupId = tripGroupId
+        self.checkInTime = checkInTime
+        self.checkOutTime = checkOutTime
+        self.scheduledDeparture = scheduledDeparture
+        self.scheduledArrival = scheduledArrival
+        self.scheduledFlightMinutes = scheduledFlightMinutes
+        self.aircraftType = aircraftType
+        self.tailNumber = tailNumber
+        self.deadheadOutTime = deadheadOutTime
+        self.deadheadInTime = deadheadInTime
+        self.deadheadFlightHours = deadheadFlightHours
+        self.legPilotRole = legPilotRole
+        self.nightTakeoff = nightTakeoff
+        self.nightLanding = nightLanding
+    }
+    
+    // MARK: - Custom Decoder for Legacy Data Compatibility
+    enum CodingKeys: String, CodingKey {
+        case id, departure, arrival, outTime, offTime, onTime, inTime
+        case flightNumber, isDeadhead, flightDate, status
+        case scheduledOut, scheduledIn, scheduledFlightNumber
+        case scheduledBlockMinutesFromRoster, rosterSourceId
+        case nocUID, nocTimestamp, isLastLegOfTrip, tripGroupId
+        case checkInTime, checkOutTime, scheduledDeparture, scheduledArrival
+        case scheduledFlightMinutes, aircraftType, tailNumber
+        case deadheadOutTime, deadheadInTime, deadheadFlightHours
+        case legPilotRole, nightTakeoff, nightLanding
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Use decodeIfPresent for everything to handle missing fields gracefully
+        id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
+        departure = (try? container.decode(String.self, forKey: .departure)) ?? ""
+        arrival = (try? container.decode(String.self, forKey: .arrival)) ?? ""
+        outTime = (try? container.decode(String.self, forKey: .outTime)) ?? ""
+        offTime = (try? container.decode(String.self, forKey: .offTime)) ?? ""
+        onTime = (try? container.decode(String.self, forKey: .onTime)) ?? ""
+        inTime = (try? container.decode(String.self, forKey: .inTime)) ?? ""
+        flightNumber = (try? container.decode(String.self, forKey: .flightNumber)) ?? ""
+        isDeadhead = (try? container.decode(Bool.self, forKey: .isDeadhead)) ?? false
+        flightDate = try? container.decode(Date.self, forKey: .flightDate)
+        
+        // Handle status with fallback for old data
+        if let statusString = try? container.decode(String.self, forKey: .status),
+           let parsedStatus = LegStatus(rawValue: statusString) {
+            status = parsedStatus
+        } else {
+            status = .active  // Default for legacy data
+        }
+        
+        // Scheduled times (optional)
+        scheduledOut = try? container.decode(Date.self, forKey: .scheduledOut)
+        scheduledIn = try? container.decode(Date.self, forKey: .scheduledIn)
+        scheduledFlightNumber = try? container.decode(String.self, forKey: .scheduledFlightNumber)
+        scheduledBlockMinutesFromRoster = try? container.decode(Int.self, forKey: .scheduledBlockMinutesFromRoster)
+        rosterSourceId = try? container.decode(String.self, forKey: .rosterSourceId)
+        
+        // NOC roster fields (optional)
+        nocUID = try? container.decode(String.self, forKey: .nocUID)
+        nocTimestamp = try? container.decode(Date.self, forKey: .nocTimestamp)
+        isLastLegOfTrip = (try? container.decode(Bool.self, forKey: .isLastLegOfTrip)) ?? false
+        tripGroupId = try? container.decode(String.self, forKey: .tripGroupId)
+        checkInTime = try? container.decode(Date.self, forKey: .checkInTime)
+        checkOutTime = try? container.decode(Date.self, forKey: .checkOutTime)
+        scheduledDeparture = try? container.decode(Date.self, forKey: .scheduledDeparture)
+        scheduledArrival = try? container.decode(Date.self, forKey: .scheduledArrival)
+        scheduledFlightMinutes = try? container.decode(Int.self, forKey: .scheduledFlightMinutes)
+        aircraftType = try? container.decode(String.self, forKey: .aircraftType)
+        tailNumber = try? container.decode(String.self, forKey: .tailNumber)
+        
+        // Deadhead fields
+        deadheadOutTime = (try? container.decode(String.self, forKey: .deadheadOutTime)) ?? ""
+        deadheadInTime = (try? container.decode(String.self, forKey: .deadheadInTime)) ?? ""
+        deadheadFlightHours = (try? container.decode(Double.self, forKey: .deadheadFlightHours)) ?? 0.0
+        
+        // Pilot role with fallback
+        if let roleString = try? container.decode(String.self, forKey: .legPilotRole),
+           let parsedRole = LegPilotRole(rawValue: roleString) {
+            legPilotRole = parsedRole
+        } else {
+            legPilotRole = .notSet
+        }
+        
+        // Night operations
+        nightTakeoff = (try? container.decode(Bool.self, forKey: .nightTakeoff)) ?? false
+        nightLanding = (try? container.decode(Bool.self, forKey: .nightLanding)) ?? false
+    }
 
     var isValid: Bool {
         return !departure.isEmpty && !arrival.isEmpty &&
@@ -169,7 +356,13 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
     }
     
     /// Scheduled block minutes from roster
+    /// Prefers BLH (scheduledBlockMinutesFromRoster) if available, otherwise calculates from STD/STA
     var scheduledBlockMinutes: Int? {
+        // Prefer the explicit BLH from roster if available (more accurate)
+        if let blh = scheduledBlockMinutesFromRoster {
+            return blh
+        }
+        // Fallback to calculating from scheduled times (less accurate - uses flight time not block)
         guard let out = scheduledOut, let inTime = scheduledIn else { return nil }
         return Int(inTime.timeIntervalSince(out) / 60)
     }
@@ -181,6 +374,31 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
         let actual = blockMinutes()
         guard actual > 0 else { return nil }
         return actual - scheduled
+    }
+
+    /// Threshold in minutes for flagging block time mismatch (default 5 minutes)
+    static let blockTimeMismatchThreshold: Int = 5
+
+    /// Returns true if actual block time differs from scheduled by more than threshold
+    /// Used to flag legs that need review
+    var hasBlockTimeMismatch: Bool {
+        guard let variance = blockTimeVarianceMinutes else { return false }
+        return abs(variance) > FlightLeg.blockTimeMismatchThreshold
+    }
+
+    /// Severity of block time mismatch for UI display
+    var blockTimeMismatchSeverity: MismatchSeverity {
+        guard let variance = blockTimeVarianceMinutes else { return .none }
+        let absVariance = abs(variance)
+        if absVariance <= FlightLeg.blockTimeMismatchThreshold {
+            return .none
+        } else if absVariance <= 15 {
+            return .minor  // 6-15 minutes off
+        } else if absVariance <= 30 {
+            return .moderate  // 16-30 minutes off
+        } else {
+            return .significant  // >30 minutes off
+        }
     }
 
     func calculateFlightMinutes() -> Int {

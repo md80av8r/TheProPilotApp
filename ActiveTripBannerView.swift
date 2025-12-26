@@ -88,7 +88,7 @@ struct ActiveTripBanner: View {
         return !trip.legs.isEmpty
     }
     
-    /// Check if there are upcoming legs AFTER excluding the current one
+    /// Check if there are upcoming legs AFTER excluding the current one (or first if planning)
     private var hasRemainingUpcomingLegs: Bool {
         let currentIdx = currentLegIndex
         
@@ -101,7 +101,12 @@ struct ActiveTripBanner: View {
                 continue
             }
             
-            // This is a true upcoming leg - it's standby and not the current one
+            // If trip needs activation, skip the first leg (shown in planning section)
+            if tripNeedsActivation && index == 0 {
+                continue
+            }
+            
+            // This is a true upcoming leg - it's standby and not the current/first one
             return true
         }
         
@@ -174,7 +179,7 @@ struct ActiveTripBanner: View {
                     }
                 }
                 
-                // Current Leg (from trip.activeLegIndex)
+                // Current Leg (from trip.activeLegIndex) OR first leg if trip needs activation
                 if let legIndex = currentLegIndex {
                     currentLegView(leg: trip.legs[legIndex], index: legIndex)
                     
@@ -182,9 +187,17 @@ struct ActiveTripBanner: View {
                     Divider()
                         .background(LogbookTheme.accentGreen.opacity(0.5))
                         .padding(.horizontal, 16)
+                } else if tripNeedsActivation, let firstLeg = trip.legs.first {
+                    // Show first leg with activate button when trip is in planning status
+                    planningLegView(leg: firstLeg, index: 0)
+                    
+                    // Add divider after planning leg
+                    Divider()
+                        .background(LogbookTheme.accentGreen.opacity(0.5))
+                        .padding(.horizontal, 16)
                 }
                 
-                // Standby legs info (if any AFTER excluding current)
+                // Standby legs info (if any AFTER excluding current or first)
                 if hasRemainingUpcomingLegs {
                     standbyLegsInfoView
                 }
@@ -205,11 +218,6 @@ struct ActiveTripBanner: View {
                 Divider()
                     .background(Color.gray.opacity(0.3))
                     .padding(.horizontal, 16)
-                
-                // Activate Trip Button (only for planning trips with standby legs)
-                if tripNeedsActivation {
-                    activateTripButton
-                }
                 
                 // Scanner Functions
                 scannerButtonsView
@@ -575,6 +583,88 @@ struct ActiveTripBanner: View {
         }
     }
     
+    // MARK: - Planning Leg View (first leg with activate button)
+    private func planningLegView(leg: FlightLeg, index: Int) -> some View {
+        VStack(spacing: 4) {
+            HStack {
+                Label {
+                    Text("\(leg.departure) → \(leg.arrival)")
+                        .font(.subheadline.bold())
+                        .foregroundColor(LogbookTheme.accentOrange.opacity(0.8))
+                } icon: {
+                    Image(systemName: "airplane")
+                        .font(.caption)
+                        .foregroundColor(LogbookTheme.accentOrange)
+                }
+                
+                Spacer()
+                
+                // Activate Trip button
+                Button(action: {
+                    onActivateTrip?()
+                }) {
+                    Text("Activate Trip")
+                        .font(.caption2.bold())
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            LogbookTheme.accentGreen.opacity(0.8)
+                        )
+                        .cornerRadius(6)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            
+            // Time row - show scheduled OUT/IN, empty OFF/ON
+            HStack(spacing: 4) {
+                // OUT (scheduled)
+                VStack(spacing: 2) {
+                    Text(formatTime(leg.outTime))
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(leg.outTime.isEmpty ? .gray.opacity(0.5) : LogbookTheme.accentOrange.opacity(0.7))
+                }
+                .frame(maxWidth: .infinity)
+                
+                // OFF (empty)
+                Text("--:--")
+                    .font(.caption.monospacedDigit())
+                    .foregroundColor(.gray.opacity(0.4))
+                    .frame(maxWidth: .infinity)
+                
+                // ON (empty)
+                Text("--:--")
+                    .font(.caption.monospacedDigit())
+                    .foregroundColor(.gray.opacity(0.4))
+                    .frame(maxWidth: .infinity)
+                
+                // IN (scheduled)
+                VStack(spacing: 2) {
+                    Text(formatTime(leg.inTime))
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(leg.inTime.isEmpty ? .gray.opacity(0.5) : LogbookTheme.accentOrange.opacity(0.7))
+                }
+                .frame(maxWidth: .infinity)
+                
+                // FLT placeholder
+                Text("--:--")
+                    .font(.caption.monospacedDigit())
+                    .foregroundColor(.gray.opacity(0.4))
+                    .frame(width: 50)
+                
+                // BLK placeholder
+                Text("--:--")
+                    .font(.caption.monospacedDigit())
+                    .foregroundColor(.gray.opacity(0.4))
+                    .frame(width: 50)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+        }
+        .background(LogbookTheme.accentOrange.opacity(0.05))
+    }
+    
     // Helper function for status badge
     private func statusBadge(for leg: FlightLeg) -> some View {
         let (text, color): (String, Color)
@@ -614,23 +704,9 @@ struct ActiveTripBanner: View {
     
     // MARK: - Standby Legs Info View
     private var standbyLegsInfoView: some View {
-        // Get standby legs, but EXCLUDE the one being shown as "current"
-        // The currentLegIndex might point to a standby leg that's being treated as active
-        let currentIdx = currentLegIndex
-        
-        let standbyLegs = trip.legs.enumerated().filter { index, leg in
-            // Must be standby status
-            guard leg.status == .standby else { return false }
+        VStack(spacing: 0) {
+            let standbyLegs = getStandbyLegs()
             
-            // Exclude if this is the current leg (shown in active section)
-            if let currentIdx = currentIdx, index == currentIdx {
-                return false
-            }
-            
-            return true
-        }
-        
-        return VStack(spacing: 0) {
             // Header showing count
             HStack {
                 Image(systemName: "clock.badge")
@@ -648,10 +724,11 @@ struct ActiveTripBanner: View {
             .background(LogbookTheme.accentOrange.opacity(0.1))
             
             // Show each standby leg
-            ForEach(standbyLegs, id: \.element.id) { index, leg in
-                standbyLegRow(leg: leg, index: index)
+            ForEach(Array(standbyLegs.indices), id: \.self) { i in
+                let (actualIndex, leg) = standbyLegs[i]
+                standbyLegRow(leg: leg, actualIndex: actualIndex)
                 
-                if index < standbyLegs.last?.offset ?? 0 {
+                if i < standbyLegs.count - 1 {
                     Divider()
                         .background(LogbookTheme.accentOrange.opacity(0.2))
                         .padding(.horizontal, 16)
@@ -660,8 +737,33 @@ struct ActiveTripBanner: View {
         }
     }
     
+    // MARK: - Helper to get standby legs
+    private func getStandbyLegs() -> [(Int, FlightLeg)] {
+        let currentIdx = currentLegIndex
+        var result: [(Int, FlightLeg)] = []
+        
+        for (index, leg) in trip.legs.enumerated() {
+            // Must be standby status
+            guard leg.status == .standby else { continue }
+            
+            // Exclude if this is the current leg (shown in active section)
+            if let currentIdx = currentIdx, index == currentIdx {
+                continue
+            }
+            
+            // Exclude if this is the first leg and trip needs activation (shown in planning section)
+            if tripNeedsActivation && index == 0 {
+                continue
+            }
+            
+            result.append((index, leg))
+        }
+        
+        return result
+    }
+    
     // MARK: - Standby Leg Row (shows scheduled times, grayed out)
-    private func standbyLegRow(leg: FlightLeg, index: Int) -> some View {
+    private func standbyLegRow(leg: FlightLeg, actualIndex: Int) -> some View {
         VStack(spacing: 4) {
             // Route header with standby indicator
             HStack {
@@ -678,6 +780,7 @@ struct ActiveTripBanner: View {
                 
                 Spacer()
                 
+                // Regular standby badge
                 Text("Standby")
                     .font(.caption2)
                     .foregroundColor(.gray)

@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct BottomSheetTripsView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     let onEdit: (Int) -> Void
     
     var body: some View {

@@ -10,7 +10,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct DataManagementView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @State private var showingFilePicker = false
     @State private var showingAlert = false
     @State private var alertTitle = ""
@@ -525,6 +525,6 @@ struct ExportOptionsView: View {
 
 #Preview {
     NavigationView {
-        DataManagementView(store: LogBookStore())
+        DataManagementView(store: SwiftDataLogBookStore.preview)
     }
 }

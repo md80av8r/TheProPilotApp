@@ -188,7 +188,7 @@ struct FlightOperationsView: View {
                         
                         OperationalCard {
                             VStack(alignment: .leading, spacing: 16) {
-                                FeatureRow(
+                                FlightOpsFeatureRow(
                                     icon: "fuelpump.fill",
                                     title: "Fuel Receipt Scanning",
                                     description: "Scan and email fuel receipts automatically",
@@ -198,7 +198,7 @@ struct FlightOperationsView: View {
                                 Divider()
                                     .background(Color.gray.opacity(0.3))
                                 
-                                FeatureRow(
+                                FlightOpsFeatureRow(
                                     icon: "doc.text.fill",
                                     title: "Document Management",
                                     description: "Organize trip documents and logbook pages",
@@ -208,7 +208,7 @@ struct FlightOperationsView: View {
                                 Divider()
                                     .background(Color.gray.opacity(0.3))
                                 
-                                FeatureRow(
+                                FlightOpsFeatureRow(
                                     icon: "applewatch",
                                     title: "Apple Watch Integration",
                                     description: "Log times directly from your wrist",
@@ -218,7 +218,7 @@ struct FlightOperationsView: View {
                                 Divider()
                                     .background(Color.gray.opacity(0.3))
                                 
-                                FeatureRow(
+                                FlightOpsFeatureRow(
                                     icon: "calendar.badge.clock",
                                     title: "Schedule Integration",
                                     description: "Import trips from NOC roster",
@@ -402,7 +402,7 @@ struct FlightOpsLimitRow: View {
     }
 }
 
-struct FeatureRow: View {
+struct FlightOpsFeatureRow: View {
     let icon: String
     let title: String
     let description: String
@@ -455,7 +455,8 @@ struct AirlineSetupSheet: View {
                         .textInputAutocapitalization(.characters)
                 }
                 
-                Section {
+                Section(header: Text("Operations Contact"),
+                        footer: Text("Enter the phone number for your airline's operations center").font(.caption)) {
                     TextField("OPS Phone Number", text: $opsPhoneNumber)
                         .keyboardType(.phonePad)
                     
@@ -467,20 +468,11 @@ struct AirlineSetupSheet: View {
                         .font(.caption)
                         .foregroundColor(LogbookTheme.accentBlue)
                     }
-                } header: {
-                    Text("Operations Contact")
-                } footer: {
-                    Text("Enter the phone number for your airline's operations center")
-                        .font(.caption)
                 }
                 
-                Section {
+                Section(header: Text("Automatic Calling"), 
+                        footer: Text("Automatically call OPS when arriving at home base").font(.caption)) {
                     Toggle("Auto-Call OPS", isOn: $opsManager.autoCallEnabled)
-                } header: {
-                    Text("Automatic Calling")
-                } footer: {
-                    Text("Automatically call OPS when arriving at home base")
-                        .font(.caption)
                 }
             }
             .navigationTitle("Airline Setup")

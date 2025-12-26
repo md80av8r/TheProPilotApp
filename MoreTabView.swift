@@ -3,7 +3,7 @@ import SwiftUI
 import Foundation
 
 struct MoreTabView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @ObservedObject var airlineSettings: AirlineSettingsStore
     @EnvironmentObject var nocSettings: NOCSettingsStore
     @EnvironmentObject var scheduleStore: ScheduleStore
@@ -46,6 +46,7 @@ struct MoreTabView: View {
     @State private var showingNotificationSettings = false
     @State private var showingElectronicLogbookView = false
     @State private var showingRolling30Day = false
+    @State private var showingAreaGuide = false
     
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
@@ -205,6 +206,9 @@ struct MoreTabView: View {
                         }
                     }
             }
+        }
+        .sheet(isPresented: $showingAreaGuide) {
+            AreaGuideView()
         }
     }
     
@@ -404,6 +408,15 @@ struct MoreTabView: View {
             // FLIGHT TOOLS SECTION
             Section("Flight Tools") {
                 MoreRowItem(
+                    title: "Area Guide",
+                    subtitle: "Airport info, restaurants, hotels, and transportation",
+                    icon: "map.fill",
+                    color: .green
+                ) {
+                    showingAreaGuide = true
+                }
+                
+                MoreRowItem(
                     title: "GPS RAIM Check",
                     subtitle: "Monitor GPS accuracy and integrity",
                     icon: "location.fill",
@@ -594,6 +607,10 @@ struct MoreTabView: View {
                 }
                 
                 // Flight Tools
+                MoreGridCard(title: "Area Guide", icon: "map.fill", color: .green) {
+                    showingAreaGuide = true
+                }
+                
                 MoreGridCard(title: "GPS/RAIM", icon: "location.fill", color: .purple) {
                     showingGPSRAIM = true
                 }

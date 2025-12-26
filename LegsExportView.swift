@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct LegsExportView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @State private var showingExportOptions = false
     @State private var selectedDateRange: DateRange = .lastMonth
     @State private var selectedExportFormat: ExportFormat = .summary

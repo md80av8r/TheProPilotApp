@@ -200,10 +200,62 @@ struct SimpleGPSSignalView: View {
                     .cornerRadius(12)
                 }
             }
+            
+            // CloudKit Sync Status
+            CloudKitStatusIndicator()
         }
         .padding()
         .background(LogbookTheme.navyLight)
         .cornerRadius(16)
+    }
+}
+
+// MARK: - CloudKit Status Indicator (for debugging)
+struct CloudKitStatusIndicator: View {
+    @ObservedObject private var errorHandler = CloudKitErrorHandler.shared
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: statusIcon)
+                .font(.caption)
+                .foregroundColor(statusColor)
+            
+            Text(errorHandler.syncStatus.displayMessage)
+                .font(.caption2)
+                .foregroundColor(LogbookTheme.textSecondary)
+                .lineLimit(1)
+            
+            Spacer()
+        }
+        .padding(.top, 8)
+    }
+    
+    private var statusIcon: String {
+        switch errorHandler.syncStatus {
+        case .idle:
+            return "icloud"
+        case .syncing:
+            return "icloud.and.arrow.up"
+        case .success:
+            return "icloud.fill"
+        case .partialFailure:
+            return "icloud.slash"
+        case .failed:
+            return "exclamationmark.icloud"
+        }
+    }
+    
+    private var statusColor: Color {
+        switch errorHandler.syncStatus {
+        case .idle, .syncing:
+            return LogbookTheme.accentBlue
+        case .success:
+            return LogbookTheme.accentGreen
+        case .partialFailure:
+            return LogbookTheme.accentOrange
+        case .failed:
+            return LogbookTheme.errorRed
+        }
     }
 }
 

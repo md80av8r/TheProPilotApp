@@ -14,9 +14,25 @@ struct BasicScheduleItem: Identifiable, Codable, Equatable {
     let blockIn: Date
     let summary: String
     let status: ScheduleStatus
-    
+    let scheduledBlockMinutes: Int?  // BLH from roster (e.g., "01:35" = 95 minutes)
+
+    // MARK: - New NOC Roster Fields (CloudKit sync)
+    let nocUID: String?                    // Server's unique ID (e.g., "117760")
+    let nocTimestamp: Date?                // DTSTAMP - when roster was last modified on server
+    let isLastLegOfTrip: Bool              // RD: X marker - indicates end of trip
+    let tripGroupId: String?               // Groups legs into same trip (e.g., "UJ325")
+    let checkInTime: Date?                 // CI - Show time
+    let checkOutTime: Date?                // CO - Release time
+    let scheduledDeparture: Date?          // STD - Wheels off time
+    let scheduledArrival: Date?            // STA - Wheels on time
+    let scheduledFlightMinutes: Int?       // Duration (flight time, not block)
+    let aircraftType: String?              // e.g., "M88", "M83"
+    let tailNumber: String?                // e.g., "N832US"
+
+    // MARK: - Legacy Initializer (backward compatibility)
     init(date: Date, tripNumber: String, departure: String, arrival: String,
-         blockOut: Date, blockOff: Date, blockOn: Date, blockIn: Date, summary: String) {
+         blockOut: Date, blockOff: Date, blockOn: Date, blockIn: Date, summary: String,
+         scheduledBlockMinutes: Int? = nil) {
         self.id = UUID()
         self.date = date
         self.tripNumber = tripNumber
@@ -28,10 +44,24 @@ struct BasicScheduleItem: Identifiable, Codable, Equatable {
         self.blockIn = blockIn
         self.summary = summary
         self.status = .activeTrip
+        self.scheduledBlockMinutes = scheduledBlockMinutes
+        // New fields default to nil/false
+        self.nocUID = nil
+        self.nocTimestamp = nil
+        self.isLastLegOfTrip = false
+        self.tripGroupId = nil
+        self.checkInTime = nil
+        self.checkOutTime = nil
+        self.scheduledDeparture = nil
+        self.scheduledArrival = nil
+        self.scheduledFlightMinutes = nil
+        self.aircraftType = nil
+        self.tailNumber = nil
     }
-    
+
     init(date: Date, tripNumber: String, departure: String, arrival: String,
-         blockOut: Date, blockOff: Date, blockOn: Date, blockIn: Date, summary: String, status: ScheduleStatus) {
+         blockOut: Date, blockOff: Date, blockOn: Date, blockIn: Date, summary: String,
+         status: ScheduleStatus, scheduledBlockMinutes: Int? = nil) {
         self.id = UUID()
         self.date = date
         self.tripNumber = tripNumber
@@ -43,6 +73,51 @@ struct BasicScheduleItem: Identifiable, Codable, Equatable {
         self.blockIn = blockIn
         self.summary = summary
         self.status = status
+        self.scheduledBlockMinutes = scheduledBlockMinutes
+        // New fields default to nil/false
+        self.nocUID = nil
+        self.nocTimestamp = nil
+        self.isLastLegOfTrip = false
+        self.tripGroupId = nil
+        self.checkInTime = nil
+        self.checkOutTime = nil
+        self.scheduledDeparture = nil
+        self.scheduledArrival = nil
+        self.scheduledFlightMinutes = nil
+        self.aircraftType = nil
+        self.tailNumber = nil
+    }
+
+    // MARK: - Full Initializer with all NOC fields
+    init(date: Date, tripNumber: String, departure: String, arrival: String,
+         blockOut: Date, blockOff: Date, blockOn: Date, blockIn: Date, summary: String,
+         status: ScheduleStatus, scheduledBlockMinutes: Int?,
+         nocUID: String?, nocTimestamp: Date?, isLastLegOfTrip: Bool, tripGroupId: String?,
+         checkInTime: Date?, checkOutTime: Date?, scheduledDeparture: Date?, scheduledArrival: Date?,
+         scheduledFlightMinutes: Int?, aircraftType: String?, tailNumber: String?) {
+        self.id = UUID()
+        self.date = date
+        self.tripNumber = tripNumber
+        self.departure = departure
+        self.arrival = arrival
+        self.blockOut = blockOut
+        self.blockOff = blockOff
+        self.blockOn = blockOn
+        self.blockIn = blockIn
+        self.summary = summary
+        self.status = status
+        self.scheduledBlockMinutes = scheduledBlockMinutes
+        self.nocUID = nocUID
+        self.nocTimestamp = nocTimestamp
+        self.isLastLegOfTrip = isLastLegOfTrip
+        self.tripGroupId = tripGroupId
+        self.checkInTime = checkInTime
+        self.checkOutTime = checkOutTime
+        self.scheduledDeparture = scheduledDeparture
+        self.scheduledArrival = scheduledArrival
+        self.scheduledFlightMinutes = scheduledFlightMinutes
+        self.aircraftType = aircraftType
+        self.tailNumber = tailNumber
     }
     
     // MARK: - Computed Properties for Display
@@ -143,6 +218,16 @@ struct BasicScheduleItem: Identifiable, Codable, Equatable {
             return "Off Duty"
         }
         return tripNumber
+    }
+    
+    /// Get formatted display for Off Duty items with home base on second line
+    /// Usage: In your view, call this method passing the airline settings home base
+    func formattedOffDutyDisplay(homeBase: String) -> (line1: String, line2: String?) {
+        let upper = tripNumber.uppercased()
+        if upper.contains("OFF") && !upper.contains("WOFF") {
+            return ("Off Duty", homeBase.isEmpty ? nil : homeBase)
+        }
+        return (displayTitle, nil)
     }
     
     // MARK: - Equatable Conformance
@@ -555,36 +640,52 @@ class ScheduleStore: ObservableObject {
               let dtEnd = dict["DTEND"] else {
             return nil
         }
-        
+
         guard let startDate = parseICSDate(dtStart),
               let endDate = parseICSDate(dtEnd) else {
             return nil
         }
-        
+
+        // Extract UID and DTSTAMP from the event
+        let nocUID = dict["UID"]
+        let nocTimestamp = dict["DTSTAMP"].flatMap { parseICSDate($0) }
+
         if let description = dict["DESCRIPTION"], !description.isEmpty {
-            let (tripNumber, departure, arrival, status) = parseDetailedFlightInfo(description, summary: summary)
-            
+            let parsedInfo = parseDetailedFlightInfo(description, summary: summary, startDate: startDate)
+
             let taxiOut = 15 * 60.0
             let taxiIn = 10 * 60.0
-            
+
             return BasicScheduleItem(
                 date: startDate,
-                tripNumber: tripNumber,
-                departure: departure,
-                arrival: arrival,
+                tripNumber: parsedInfo.tripNumber,
+                departure: parsedInfo.departure,
+                arrival: parsedInfo.arrival,
                 blockOut: startDate,
                 blockOff: startDate.addingTimeInterval(taxiOut),
                 blockOn: endDate.addingTimeInterval(-taxiIn),
                 blockIn: endDate,
                 summary: "\(summary) | \(description)",
-                status: status
+                status: parsedInfo.status,
+                scheduledBlockMinutes: parsedInfo.blhMinutes,
+                nocUID: nocUID,
+                nocTimestamp: nocTimestamp,
+                isLastLegOfTrip: parsedInfo.isLastLegOfTrip,
+                tripGroupId: parsedInfo.tripGroupId,
+                checkInTime: parsedInfo.checkInTime,
+                checkOutTime: parsedInfo.checkOutTime,
+                scheduledDeparture: parsedInfo.scheduledDeparture,
+                scheduledArrival: parsedInfo.scheduledArrival,
+                scheduledFlightMinutes: parsedInfo.scheduledFlightMinutes,
+                aircraftType: parsedInfo.aircraftType,
+                tailNumber: parsedInfo.tailNumber
             )
         } else {
             let (tripNumber, departure, arrival, status) = parseUSAJetSummary(summary)
-            
+
             let taxiOut = 15 * 60.0
             let taxiIn = 10 * 60.0
-            
+
             return BasicScheduleItem(
                 date: startDate,
                 tripNumber: tripNumber,
@@ -595,52 +696,141 @@ class ScheduleStore: ObservableObject {
                 blockOn: endDate.addingTimeInterval(-taxiIn),
                 blockIn: endDate,
                 summary: summary,
-                status: status
+                status: status,
+                scheduledBlockMinutes: nil,
+                nocUID: nocUID,
+                nocTimestamp: nocTimestamp,
+                isLastLegOfTrip: false,
+                tripGroupId: nil,
+                checkInTime: nil,
+                checkOutTime: nil,
+                scheduledDeparture: nil,
+                scheduledArrival: nil,
+                scheduledFlightMinutes: nil,
+                aircraftType: nil,
+                tailNumber: nil
             )
         }
     }
     
-    private func parseDetailedFlightInfo(_ description: String, summary: String) -> (tripNumber: String, departure: String, arrival: String, status: BasicScheduleItem.ScheduleStatus) {
+    // MARK: - Parsed Flight Info Result
+    struct ParsedFlightInfo {
+        let tripNumber: String
+        let departure: String
+        let arrival: String
+        let status: BasicScheduleItem.ScheduleStatus
+        let blhMinutes: Int?
+        let isLastLegOfTrip: Bool
+        let tripGroupId: String?
+        let checkInTime: Date?
+        let checkOutTime: Date?
+        let scheduledDeparture: Date?
+        let scheduledArrival: Date?
+        let scheduledFlightMinutes: Int?
+        let aircraftType: String?
+        let tailNumber: String?
+    }
+
+    private func parseDetailedFlightInfo(_ description: String, summary: String, startDate: Date) -> ParsedFlightInfo {
+        // Extracts all NOC fields from the DESCRIPTION field
         let lines = description.components(separatedBy: .newlines)
-        
+
+        // Non-airport keywords to exclude from airport code parsing
+        let nonAirportKeywords = ["HOL", "HOLIDAY", "NEW", "YEAR", "DAY", "EVE", "OFF"]
+
         var tripNumber = "Unknown"
         var departure = ""
         var arrival = ""
         var status: BasicScheduleItem.ScheduleStatus = .activeTrip
-        var aircraft = ""
-        
+        var blhMinutes: Int? = nil
+        var scheduledFlightMinutes: Int? = nil
+        var isLastLegOfTrip = false
+        var tripGroupId: String? = nil
+        var checkInTime: Date? = nil
+        var checkOutTime: Date? = nil
+        var scheduledDeparture: Date? = nil
+        var scheduledArrival: Date? = nil
+        var aircraftType: String? = nil
+        var tailNumber: String? = nil
+
+        // Join all lines for pattern matching (handles line wrapping)
+        let fullDescription = description.replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\\n", with: " ")
+        let upperDescription = fullDescription.uppercased()
+
         for line in lines {
             let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-            
+
+            // Extract flight info: "UJ518 YIP-LRD" pattern
             if let regex = try? NSRegularExpression(pattern: #"UJ(\d+).*?([A-Z]{3})\s*[-–]\s*([A-Z]{3})"#),
                let match = regex.firstMatch(in: trimmedLine, range: NSRange(trimmedLine.startIndex..., in: trimmedLine)) {
-                
+
                 if let flightRange = Range(match.range(at: 1), in: trimmedLine) {
                     tripNumber = "UJ" + String(trimmedLine[flightRange])
+                    tripGroupId = tripNumber  // Use flight number as trip group ID
                 }
                 if let depRange = Range(match.range(at: 2), in: trimmedLine) {
-                    departure = convertToICAO(String(trimmedLine[depRange]))
+                    let depCode = String(trimmedLine[depRange])
+                    if !nonAirportKeywords.contains(depCode) {
+                        departure = convertToICAO(depCode)
+                    }
                 }
                 if let arrRange = Range(match.range(at: 3), in: trimmedLine) {
-                    arrival = convertToICAO(String(trimmedLine[arrRange]))
+                    let arrCode = String(trimmedLine[arrRange])
+                    if !nonAirportKeywords.contains(arrCode) {
+                        arrival = convertToICAO(arrCode)
+                    }
                 }
                 status = .activeTrip
             }
-            
+
+            // Extract BLH (Block Hours): "BLH: 01:35"
+            if trimmedLine.contains("BLH") {
+                if let blhRegex = try? NSRegularExpression(pattern: #"BLH[:\s]*(\d{1,2}):(\d{2})"#, options: .caseInsensitive),
+                   let blhMatch = blhRegex.firstMatch(in: trimmedLine, range: NSRange(trimmedLine.startIndex..., in: trimmedLine)) {
+                    if let hoursRange = Range(blhMatch.range(at: 1), in: trimmedLine),
+                       let minsRange = Range(blhMatch.range(at: 2), in: trimmedLine),
+                       let hours = Int(trimmedLine[hoursRange]),
+                       let mins = Int(trimmedLine[minsRange]) {
+                        blhMinutes = hours * 60 + mins
+                    }
+                }
+            }
+
+            // Extract Duration (flight time): "Duration: 03:05"
+            if trimmedLine.contains("DURATION") {
+                if let durationRegex = try? NSRegularExpression(pattern: #"DURATION[:\s]*(\d{1,2}):(\d{2})"#, options: .caseInsensitive),
+                   let durationMatch = durationRegex.firstMatch(in: trimmedLine, range: NSRange(trimmedLine.startIndex..., in: trimmedLine)) {
+                    if let hoursRange = Range(durationMatch.range(at: 1), in: trimmedLine),
+                       let minsRange = Range(durationMatch.range(at: 2), in: trimmedLine),
+                       let hours = Int(trimmedLine[hoursRange]),
+                       let mins = Int(trimmedLine[minsRange]) {
+                        scheduledFlightMinutes = hours * 60 + mins
+                    }
+                }
+            }
+
+            // Extract Aircraft: "Aircraft: M88 - MD-83 - N832US"
             if trimmedLine.contains("AIRCRAFT:") {
                 let aircraftParts = trimmedLine.replacingOccurrences(of: "AIRCRAFT:", with: "")
                     .components(separatedBy: " - ")
                     .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                     .filter { !$0.isEmpty }
-                
+
+                // First part is aircraft type (e.g., "M88")
+                if let firstPart = aircraftParts.first {
+                    aircraftType = firstPart
+                }
+                // Last part is tail number if starts with N (e.g., "N832US")
                 if let lastPart = aircraftParts.last, lastPart.hasPrefix("N") {
-                    aircraft = lastPart
+                    tailNumber = lastPart
                     if tripNumber != "Unknown" {
-                        tripNumber = "\(tripNumber) (\(aircraft))"
+                        tripNumber = "\(tripNumber) (\(lastPart))"
                     }
                 }
             }
-            
+
+            // Detect status from content
             if trimmedLine.contains("REST") || trimmedLine.contains("OFF DUTY") || summary.uppercased().contains("REST") {
                 status = .other
             } else if summary.uppercased().contains("ON DUTY") {
@@ -649,12 +839,112 @@ class ScheduleStore: ObservableObject {
                 status = .activeTrip
             }
         }
-        
-        if tripNumber == "Unknown" || departure.isEmpty {
-            return parseUSAJetSummary(summary)
+
+        // Extract RD: X marker for isLastLegOfTrip (critical for trip grouping!)
+        // Pattern: "RD: X" or "RD: L,X" where X indicates last leg of trip
+        if let rdRegex = try? NSRegularExpression(pattern: #"RD:\s*([A-Z,]+)"#, options: .caseInsensitive),
+           let rdMatch = rdRegex.firstMatch(in: upperDescription, range: NSRange(upperDescription.startIndex..., in: upperDescription)),
+           let rdRange = Range(rdMatch.range(at: 1), in: upperDescription) {
+            let rdValue = String(upperDescription[rdRange])
+            isLastLegOfTrip = rdValue.contains("X")
         }
-        
-        return (tripNumber, departure, arrival, status)
+
+        // Extract CI (Check-In/Show time): "CI 1645Z"
+        if let ciRegex = try? NSRegularExpression(pattern: #"CI\s+(\d{4})Z"#, options: .caseInsensitive),
+           let ciMatch = ciRegex.firstMatch(in: upperDescription, range: NSRange(upperDescription.startIndex..., in: upperDescription)),
+           let ciRange = Range(ciMatch.range(at: 1), in: upperDescription) {
+            let ciTimeStr = String(upperDescription[ciRange])
+            checkInTime = parseZuluTime(ciTimeStr, referenceDate: startDate)
+        }
+
+        // Extract CO (Check-Out/Release time): "CO 0045Z"
+        if let coRegex = try? NSRegularExpression(pattern: #"CO\s+(\d{4})Z"#, options: .caseInsensitive),
+           let coMatch = coRegex.firstMatch(in: upperDescription, range: NSRange(upperDescription.startIndex..., in: upperDescription)),
+           let coRange = Range(coMatch.range(at: 1), in: upperDescription) {
+            let coTimeStr = String(upperDescription[coRange])
+            checkOutTime = parseZuluTime(coTimeStr, referenceDate: startDate)
+        }
+
+        // Extract STD (Scheduled Time of Departure/Wheels Off): "STD 1715Z"
+        if let stdRegex = try? NSRegularExpression(pattern: #"STD\s+(\d{4})Z"#, options: .caseInsensitive),
+           let stdMatch = stdRegex.firstMatch(in: upperDescription, range: NSRange(upperDescription.startIndex..., in: upperDescription)),
+           let stdRange = Range(stdMatch.range(at: 1), in: upperDescription) {
+            let stdTimeStr = String(upperDescription[stdRange])
+            scheduledDeparture = parseZuluTime(stdTimeStr, referenceDate: startDate)
+        }
+
+        // Extract STA (Scheduled Time of Arrival/Wheels On): "STA 1945Z"
+        if let staRegex = try? NSRegularExpression(pattern: #"STA\s+(\d{4})Z"#, options: .caseInsensitive),
+           let staMatch = staRegex.firstMatch(in: upperDescription, range: NSRange(upperDescription.startIndex..., in: upperDescription)),
+           let staRange = Range(staMatch.range(at: 1), in: upperDescription) {
+            let staTimeStr = String(upperDescription[staRange])
+            scheduledArrival = parseZuluTime(staTimeStr, referenceDate: startDate)
+        }
+
+        // Fallback to summary parsing if we couldn't extract info from description
+        if tripNumber == "Unknown" || departure.isEmpty {
+            let fallback = parseUSAJetSummary(summary)
+            return ParsedFlightInfo(
+                tripNumber: fallback.0,
+                departure: fallback.1,
+                arrival: fallback.2,
+                status: fallback.3,
+                blhMinutes: blhMinutes,
+                isLastLegOfTrip: isLastLegOfTrip,
+                tripGroupId: tripGroupId,
+                checkInTime: checkInTime,
+                checkOutTime: checkOutTime,
+                scheduledDeparture: scheduledDeparture,
+                scheduledArrival: scheduledArrival,
+                scheduledFlightMinutes: scheduledFlightMinutes,
+                aircraftType: aircraftType,
+                tailNumber: tailNumber
+            )
+        }
+
+        return ParsedFlightInfo(
+            tripNumber: tripNumber,
+            departure: departure,
+            arrival: arrival,
+            status: status,
+            blhMinutes: blhMinutes,
+            isLastLegOfTrip: isLastLegOfTrip,
+            tripGroupId: tripGroupId,
+            checkInTime: checkInTime,
+            checkOutTime: checkOutTime,
+            scheduledDeparture: scheduledDeparture,
+            scheduledArrival: scheduledArrival,
+            scheduledFlightMinutes: scheduledFlightMinutes,
+            aircraftType: aircraftType,
+            tailNumber: tailNumber
+        )
+    }
+
+    /// Parse a Zulu time string (e.g., "1645") to a Date using the reference date
+    private func parseZuluTime(_ timeStr: String, referenceDate: Date) -> Date? {
+        guard timeStr.count == 4,
+              let hours = Int(timeStr.prefix(2)),
+              let minutes = Int(timeStr.suffix(2)),
+              hours < 24 && minutes < 60 else {
+            return nil
+        }
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+
+        var components = calendar.dateComponents([.year, .month, .day], from: referenceDate)
+        components.hour = hours
+        components.minute = minutes
+        components.second = 0
+
+        guard var result = calendar.date(from: components) else { return nil }
+
+        // Handle overnight flights - if time is earlier than reference, it's probably next day
+        if result < referenceDate {
+            result = calendar.date(byAdding: .day, value: 1, to: result) ?? result
+        }
+
+        return result
     }
     
     // MARK: - Comprehensive IATA to ICAO Conversion
@@ -827,6 +1117,12 @@ class ScheduleStore: ObservableObject {
     private func convertToICAO(_ code: String) -> String {
         let cleanCode = code.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
+        // 🔧 FIX: Filter out non-airport keywords FIRST before any conversion
+        let nonAirportKeywords = ["HOL", "HOLIDAY", "NEW", "YEAR", "DAY", "EVE", "OFF", "DUTY"]
+        if nonAirportKeywords.contains(cleanCode) {
+            return cleanCode  // Return as-is, don't convert to airport code
+        }
+        
         // Already ICAO format (4 letters starting with K, C, M, P, T, etc.)
         if cleanCode.count == 4 {
             let firstChar = cleanCode.first!
@@ -877,6 +1173,7 @@ class ScheduleStore: ObservableObject {
         let dutyCodeMap: [String: (type: String, status: BasicScheduleItem.ScheduleStatus)] = [
             "OND": ("On Duty", .onDuty),
             "OFF": ("Off Duty", .other),
+            "KOFF": ("Off Duty", .other),  // 🔥 ADDED: KOFF from NOC calendar
             "LB1": ("Line 1", .activeTrip),
             "LB2": ("Line 2", .activeTrip),
             "LB3": ("Line 3", .activeTrip),
@@ -910,11 +1207,15 @@ class ScheduleStore: ObservableObject {
                 tripNumber = dutyInfo.type
                 status = dutyInfo.status
             }
-            // Check if it's a flight number (JUS followed by digits or just digits)
-            else if let regex = try? NSRegularExpression(pattern: #"JUS?(\d+)"#),
+            // ✅ FIXED: Generic flight number parsing (works with any airline code, not just "JUS")
+            // Matches patterns like: JUS123, AAL456, DAL789, etc.
+            else if let regex = try? NSRegularExpression(pattern: #"([A-Z]{2,3})(\d+)"#),
                     let match = regex.firstMatch(in: firstComponent, range: NSRange(firstComponent.startIndex..., in: firstComponent)),
-                    let range = Range(match.range(at: 1), in: firstComponent) {
-                tripNumber = String(firstComponent[range])
+                    let codeRange = Range(match.range(at: 1), in: firstComponent),
+                    let numRange = Range(match.range(at: 2), in: firstComponent) {
+                let code = String(firstComponent[codeRange])
+                let number = String(firstComponent[numRange])
+                tripNumber = "\(code)\(number)"  // Keep full flight number
                 status = .activeTrip
             }
             // Check if it starts with just digits (trip number)
@@ -930,9 +1231,17 @@ class ScheduleStore: ObservableObject {
             }
         }
         
+        // 🔧 FIX: List of non-airport keywords to exclude from airport parsing
+        let nonAirportKeywords = ["HOL", "HOLIDAY", "NEW", "YEAR", "DAY", "EVE", "OFF"]
+        
         // Extract airport codes from remaining components
         var airports: [String] = []
         for component in components {
+            // 🔧 FIX: Skip non-airport keywords before processing
+            if nonAirportKeywords.contains(component) {
+                continue
+            }
+            
             // Check if it's already an ICAO code (K + 3 letters)
             if component.hasPrefix("K") && component.count == 4 {
                 airports.append(component)
@@ -946,9 +1255,9 @@ class ScheduleStore: ObservableObject {
         // Parse route information
         if airports.count >= 1 {
             departure = airports[0]
-            if airports.count == 1 && airports[0] != "KYIP" {
-                arrival = "KYIP" // Return to base
-            } else if airports.count >= 2 {
+            // ✅ REMOVED: No longer assume KYIP as default return base
+            // Each airline configures their own home base in settings
+            if airports.count >= 2 {
                 arrival = airports[1]
             }
         }
@@ -1030,6 +1339,29 @@ extension ScheduleStore {
         }
     }
     
+    // 🔥 NEW: Check if currently in a rest or off-duty period
+    /// Returns true if there's a current Off Duty, Rest, or WOFF event covering NOW
+    var isCurrentlyInRestOrOffDuty: Bool {
+        let now = Date()
+        
+        return nonDismissedItems.contains { item in
+            let upper = item.tripNumber.uppercased()
+            let isOffDutyType = upper.contains("OFF") || upper.contains("REST")
+            
+            // Check if the item time range covers NOW
+            let coversNow = item.blockOut <= now && item.blockIn >= now
+            
+            if isOffDutyType && coversNow {
+                print("🛏️ Currently in Rest/Off Duty: \(item.tripNumber)")
+                print("   Start: \(item.blockOut.formatted(date: .abbreviated, time: .shortened))")
+                print("   End: \(item.blockIn.formatted(date: .abbreviated, time: .shortened))")
+                return true
+            }
+            
+            return false
+        }
+    }
+    
     /// Get items for a specific date range
     func items(from startDate: Date, to endDate: Date) -> [BasicScheduleItem] {
         let dismissedManager = DismissedRosterItemsManager.shared
@@ -1047,6 +1379,57 @@ extension ScheduleStore {
         let today = Calendar.current.startOfDay(for: Date())
         let pastDate = Calendar.current.date(byAdding: .day, value: -days, to: today) ?? today
         return items(from: pastDate, to: today)
+    }
+}
+// ═══════════════════════════════════════════════════════════════
+// ADD THIS EXTENSION TO ScheduleStore
+// Place it RIGHT AFTER the "Dismissed Items Filtering" extension
+// ═══════════════════════════════════════════════════════════════
+
+// Add this AFTER the closing brace of the "Dismissed Items Filtering" extension
+
+// MARK: - Duty Status Management
+extension ScheduleStore {
+    /// Restore duty status from NOC calendar data
+    /// Called after test operations to ensure clean state
+    func restoreDutyStatusFromNOC() {
+        print("🔄 ScheduleStore: Restoring duty status from NOC...")
+        
+        guard let nocSettings = nocSettings else {
+            print("⚠️ NOC settings not available")
+            return
+        }
+        
+        guard let calendarData = nocSettings.calendarData else {
+            print("⚠️ No NOC calendar data available")
+            return
+        }
+        
+        guard let content = String(data: calendarData, encoding: .utf8) else {
+            print("⚠️ Failed to decode calendar data")
+            return
+        }
+        
+        let (flights, events) = ICalFlightParser.parseCalendarString(content)
+        
+        OffDutyStatusManager.shared.updateFromNOCEvents(events, flights: flights)
+        RestStatusManager.shared.updateFromNOCEvents(events, flights: flights)
+        
+        print("✅ Duty status restored:")
+        print("   OFF DUTY: \(OffDutyStatusManager.shared.isOffDuty)")
+        print("   IN REST: \(RestStatusManager.shared.isInRest)")
+        
+        if OffDutyStatusManager.shared.isOffDuty {
+            if let endTime = OffDutyStatusManager.shared.offDutyEndTime {
+                print("   OFF DUTY ENDS: \(endTime)")
+            }
+        }
+        
+        if RestStatusManager.shared.isInRest {
+            if let endTime = RestStatusManager.shared.restEndTime {
+                print("   REST ENDS: \(endTime)")
+            }
+        }
     }
 }
 // DAYS OFF & REST PERIOD IMPROVEMENTS

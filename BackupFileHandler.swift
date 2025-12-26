@@ -30,7 +30,7 @@ class BackupFileHandler: ObservableObject {
     @Published var importedTripCount = 0
     
     // Store reference passed from app
-    var logbookStore: LogBookStore?
+    var logbookStore: SwiftDataLogBookStore?
     
     private init() {}
     
@@ -176,7 +176,7 @@ class BackupFileHandler: ObservableObject {
     }
     
     // MARK: - Confirm Import
-    func confirmImport(store: LogBookStore) {
+    func confirmImport(store: SwiftDataLogBookStore) {
         guard let url = pendingBackupURL else {
             showError("No backup file to import.")
             return
@@ -286,7 +286,7 @@ struct BackupPreviewData {
 // MARK: - Backup Import Confirmation View
 struct BackupImportConfirmationView: View {
     @ObservedObject var handler = BackupFileHandler.shared
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -448,8 +448,8 @@ private struct BackupInfoRow: View {
 // MARK: - View Modifier for Backup Import Handling
 struct BackupImportHandlerModifier: ViewModifier {
     @StateObject private var handler = BackupFileHandler.shared
-    let store: LogBookStore  // Direct parameter, no @EnvironmentObject
-    
+    let store: SwiftDataLogBookStore  // Direct parameter, no @EnvironmentObject
+
     func body(content: Content) -> some View {
         content
             .onAppear {
@@ -474,7 +474,7 @@ struct BackupImportHandlerModifier: ViewModifier {
 
 // MARK: - View Extension
 extension View {
-    func backupImportHandler(store: LogBookStore) -> some View {
+    func backupImportHandler(store: SwiftDataLogBookStore) -> some View {
         modifier(BackupImportHandlerModifier(store: store))
     }
 }

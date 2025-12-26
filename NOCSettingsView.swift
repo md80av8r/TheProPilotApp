@@ -70,6 +70,36 @@ struct NOCSettingsView: View {
                 Section(header: Text("Automatic Sync")) {
                     Toggle("Auto Sync Enabled", isOn: $nocSettings.autoSyncEnabled)
                     
+                    // 🔥 Background Processing Indicator - Makes it clear to Apple reviewers
+                    if nocSettings.autoSyncEnabled {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .foregroundColor(.green)
+                                .font(.caption)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Background sync active")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                                    .fontWeight(.semibold)
+                                Text("Updates schedule even when app is closed")
+                                    .font(.caption2)
+                                    .foregroundColor(.green.opacity(0.8))
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.green.opacity(0.15))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.green.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                        .padding(.vertical, 4)
+                    }
+                    
                     if nocSettings.autoSyncEnabled {
                         VStack(alignment: .leading, spacing: 12) {
                             // Sync Interval Slider

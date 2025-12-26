@@ -102,6 +102,40 @@ class CloudKitManager: ObservableObject {
         }
     }
     
+    // MARK: - Test CloudKit Airport Database
+    func testCloudKitAirportDatabase() async {
+        print("🧪 Testing CloudKit Airport Database...")
+        
+        let publicDB = container.publicCloudDatabase
+        
+        do {
+            let predicate = NSPredicate(format: "code == %@", "KYIP")
+            let query = CKQuery(recordType: "Airport", predicate: predicate)
+            
+            let (matchResults, _) = try await publicDB.records(matching: query)
+            
+            if matchResults.isEmpty {
+                print("❌ NO DATA - Check Development vs Production!")
+                print("   Make sure airports are uploaded to the correct environment")
+            } else {
+                print("✅ FOUND DATA - CloudKit working!")
+                for (_, result) in matchResults {
+                    if case .success(let record) = result {
+                        print("   Name: \(record["name"] as? String ?? "?")")
+                        print("   Runway: \(record["longestRunway"] as? Int ?? 0) ft")
+                        print("   Frequencies: \(record["frequencies"] as? String ?? "?")")
+                    }
+                }
+            }
+        } catch {
+            print("❌ ERROR: \(error)")
+            if let ckError = error as? CKError {
+                print("   CKError code: \(ckError.code.rawValue)")
+                print("   Description: \(ckError.localizedDescription)")
+            }
+        }
+    }
+    
     // MARK: - Save Trip to CloudKit
     func saveTrip(_ trip: Trip) async throws {
         print("🔵 saveTrip() called for: \(trip.tripNumber) (ID: \(trip.id.uuidString))")
@@ -367,15 +401,18 @@ class CloudKitManager: ObservableObject {
         
         // ✅ Sort trips by date (newest first)
         trips.sort { $0.date > $1.date }
-        
-        print("✅ Downloaded \(trips.count) trips from CloudKit")
-        
+
+        // Capture the final value for MainActor (Swift 6 concurrency fix)
+        let tripCount = trips.count
+
+        print("✅ Downloaded \(tripCount) trips from CloudKit")
+
         // 🔥 FIX: Update UI properties on main thread
         await MainActor.run {
-            self.syncStatus = "✅ Synced \(trips.count) trips"
+            self.syncStatus = "✅ Synced \(tripCount) trips"
             self.lastSyncTime = Date()
         }
-        
+
         return trips
     }
     
@@ -470,7 +507,7 @@ extension LogBookStore {
             let cloudTrips = try await CloudKitManager.shared.fetchAllTrips()
             
             // Take a snapshot of current trips on the main actor to avoid capturing across awaits
-            var currentTrips = self.trips
+            let currentTrips = self.trips
             
             // Enable verbose logging while debugging
             let verboseLogging = true
@@ -482,16 +519,18 @@ extension LogBookStore {
             for cloudTrip in cloudTrips {
                 if let localIndex = currentTrips.firstIndex(where: { $0.id == cloudTrip.id }) {
                     let localTrip = currentTrips[localIndex]
-                    
-                    // Count how many legs have COMPLETE flight data
+
+                    // Count how many legs have COMPLETE flight data (all 4 times: OUT, OFF, ON, IN)
                     let localCompleteLegs = localTrip.legs.filter { leg in
                         !leg.departure.isEmpty && !leg.arrival.isEmpty &&
-                        !leg.outTime.isEmpty && !leg.offTime.isEmpty
+                        !leg.outTime.isEmpty && !leg.offTime.isEmpty &&
+                        !leg.onTime.isEmpty && !leg.inTime.isEmpty
                     }.count
-                    
+
                     let cloudCompleteLegs = cloudTrip.legs.filter { leg in
                         !leg.departure.isEmpty && !leg.arrival.isEmpty &&
-                        !leg.outTime.isEmpty && !leg.offTime.isEmpty
+                        !leg.outTime.isEmpty && !leg.offTime.isEmpty &&
+                        !leg.onTime.isEmpty && !leg.inTime.isEmpty
                     }.count
                     
                     // Choose version with MORE complete flight data

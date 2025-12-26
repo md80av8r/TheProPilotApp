@@ -248,7 +248,7 @@ class DataBackupManager: ObservableObject {
     // MARK: - Restore from Backup
     func restoreFromBackup(
         backupURL: URL,
-        store: LogBookStore,
+        store: SwiftDataLogBookStore,
         airlineSettings: AirlineSettingsStore,
         nocSettings: NOCSettingsStore,
         scannerSettings: ScannerSettings,
@@ -302,7 +302,7 @@ class DataBackupManager: ObservableObject {
     // MARK: - Simple Trip Import (for logbook.json files)
     func restoreTripsFromSimpleJSON(
         backupURL: URL,
-        store: LogBookStore
+        store: SwiftDataLogBookStore
     ) async -> Result<String, Error> {
         
         await MainActor.run {
@@ -576,7 +576,7 @@ struct JSONViewerView: View {
 // MARK: - Backup View
 struct DataBackupView: View {
     @StateObject private var backupManager = DataBackupManager()
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @ObservedObject var airlineSettings: AirlineSettingsStore
     @ObservedObject var nocSettings: NOCSettingsStore
     @ObservedObject var scannerSettings: ScannerSettings

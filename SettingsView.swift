@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @ObservedObject var airlineSettings: AirlineSettingsStore
     @ObservedObject var nocSettings: NOCSettingsStore
     @State private var showingHomeBaseConfig = false
@@ -483,6 +483,22 @@ struct SettingsView: View {
                         }
                         .listRowBackground(LogbookTheme.navyLight)
                     }
+                    
+                    // ✅ NEW: Subscription Debug (only in DEBUG builds)
+                    #if DEBUG
+                    NavigationLink(destination: SubscriptionDebugView()) {
+                        HStack {
+                            Image(systemName: "dollarsign.circle.fill")
+                                .foregroundColor(.orange)
+                            Text("Subscription Debug")
+                            Spacer()
+                            Image(systemName: "wrench.and.screwdriver")
+                                .foregroundColor(.orange)
+                                .font(.caption)
+                        }
+                    }
+                    .listRowBackground(LogbookTheme.navyLight)
+                    #endif
                 }
                 .textCase(nil)
 

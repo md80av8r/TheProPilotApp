@@ -17,7 +17,7 @@ struct ContentView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     
     // MARK: - Environment Objects (Injected from App) ✅ CRITICAL FIX
-    @EnvironmentObject private var store: LogBookStore
+    @EnvironmentObject private var store: SwiftDataLogBookStore
     @EnvironmentObject private var activityManager: PilotActivityManager
     @EnvironmentObject private var nocSettings: NOCSettingsStore
     @EnvironmentObject private var scheduleStore: ScheduleStore  // ✅ From environment
@@ -35,6 +35,9 @@ struct ContentView: View {
     @StateObject private var speedMonitor = GPSSpeedMonitor()
     @StateObject private var tabManager = CustomizableTabManager.shared
     @StateObject private var dutyTimerManager = DutyTimerManager.shared
+    
+    // 🆕 PAYWALL: Subscription status checker
+    @StateObject private var trialChecker = SubscriptionStatusChecker.shared
     
     // MARK: - State Variables
     @State private var simTotalMinutes: Int = 120
@@ -63,6 +66,13 @@ struct ContentView: View {
     @State private var showingDuplicateTripAlert = false
     @State private var existingTripForDuplicate: Trip?
     @State private var showingFreightPaperwork = false
+    @State private var showingWeatherBanner = false  // ✅ NEW: Weather banner toggle
+    @State private var showWelcomeScreen = false  // ✅ NEW: Welcome screen for first-time users
+    @State private var showingPaywall = false  // 🆕 PAYWALL: Show subscription paywall
+    
+    // Track if user has ever had trips (persisted)
+    @AppStorage("hasEverHadTrips") private var hasEverHadTrips = false
+    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
     
     // MARK: - iPad-Specific State
     @State private var selectedTab: String = "logbook"
@@ -92,7 +102,7 @@ struct ContentView: View {
     @State private var pilotRole: PilotRole = .captain
     @State private var shouldAutoStartDuty = true
     
-    private let airportDB = AirportDatabaseManager()
+    private let airportDB = AirportDatabaseManager.shared
     
     
     // MARK: - Computed Properties
@@ -640,6 +650,7 @@ struct ContentView: View {
         setupNotificationObservers()
         setupWatchConnectivity()
         checkAndAutoStartDutyForActiveTrip()
+        checkIfShouldShowWelcome()  // ✅ NEW: Check welcome screen status
     }
     
     private func setupNotificationObservers() {
@@ -703,6 +714,12 @@ struct ContentView: View {
                 print("🛬 Stopped GPS monitoring - no active trip")
             }
         }
+        .onChange(of: store.trips) { _, newTrips in
+            // Track if user ever has trips (for smart empty state logic)
+            if !newTrips.isEmpty {
+                hasEverHadTrips = true
+            }
+        }
         .onChange(of: aircraft) { _, newAircraft in
             if showTripSheet && editingTripIndex == nil {
                 autoFillTATForAircraft(newAircraft)
@@ -713,6 +730,173 @@ struct ContentView: View {
         }
         .background(sheetPresenters)
         .background(alertPresenters)
+        .overlay(welcomeScreenOverlay)
+    }
+    
+    // MARK: - Welcome Screen Logic
+    
+    /// Check if we should show the welcome screen on app launch
+    private func checkIfShouldShowWelcome() {
+        let hasTripNow = !store.trips.isEmpty
+        
+        // Only show welcome if:
+        // 1. User has no trips right now
+        // 2. User has never had trips before
+        // 3. User hasn't seen the welcome yet
+        if !hasTripNow && !hasEverHadTrips && !hasSeenWelcome {
+            // Small delay so the view hierarchy is ready
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showWelcomeScreen = true
+                    hasSeenWelcome = true
+                }
+            }
+        }
+    }
+    
+    /// Welcome screen overlay (fullscreen for first-time users)
+    @ViewBuilder
+    private var welcomeScreenOverlay: some View {
+        if showWelcomeScreen {
+            LogbookWelcomeView(
+                isPresented: $showWelcomeScreen,
+                onAddTrip: {
+                    // Show the trip creation sheet
+                    showTripSheet = true
+                },
+                onImportNOC: {
+                    // Navigate to NOC import - assuming you have schedule tab
+                    selectedTab = "schedule"
+                    // You might need to add additional navigation logic here
+                },
+                onImportCSV: {
+                    // Show CSV import
+                    showingFileImport = true
+                }
+            )
+            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+            .zIndex(100)
+        }
+    }
+    
+    // MARK: - Empty State Views
+    
+    /// Data recovery view for users who HAD trips but lost them
+    private var dataRecoveryView: some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(LogbookTheme.warningYellow)
+                
+                Text("No flight data found")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                Spacer()
+            }
+            
+            Text("It looks like you might have lost your flight data when switching apps. Tap below to recover or import your flights.")
+                .font(.callout)
+                .foregroundColor(LogbookTheme.textSecondary)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack(spacing: 12) {
+                Button(action: {
+                    let success = store.recoverDataWithCrewMemberMigration()
+                    if success {
+                        print("✅ Recovery successful!")
+                    } else {
+                        print("❌ No recoverable data found")
+                    }
+                }) {
+                    Text("Attempt Recovery")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(LogbookTheme.warningYellow)
+                        .cornerRadius(20)
+                }
+                
+                Button(action: {
+                    showingFileImport = true
+                }) {
+                    Text("Import Flight Data")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(LogbookTheme.accentBlue)
+                        .cornerRadius(20)
+                }
+                .sheet(isPresented: $showingFileImport) {
+                    NavigationView {
+                        SimpleFileImportView { content, filename in
+                            handleFileImport(content: content, filename: filename)
+                        }
+                        .padding()
+                        .background(LogbookTheme.navy)
+                        .navigationTitle("Import Flight Data")
+                        .navigationBarItems(trailing: Button("Done") { showingFileImport = false })
+                    }
+                }
+                
+                Spacer()
+            }
+        }
+        .padding(20)
+        .background(Color.black.opacity(0.2))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(LogbookTheme.accentBlue.opacity(0.3), lineWidth: 1)
+        )
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
+    
+    /// Friendly empty state for NEW users (no scary warning)
+    private var newUserEmptyStateView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "book.closed")
+                .font(.system(size: 50))
+                .foregroundColor(LogbookTheme.accentBlue.opacity(0.7))
+            
+            Text("No Flights Yet")
+                .font(.title3.bold())
+                .foregroundColor(.white)
+            
+            Text("Tap the '+' button above to log your first flight")
+                .font(.subheadline)
+                .foregroundColor(LogbookTheme.textSecondary)
+                .multilineTextAlignment(.center)
+            
+            // Optional: Add a button to re-show welcome
+            Button(action: {
+                withAnimation {
+                    showWelcomeScreen = true
+                }
+            }) {
+                Text("Show Getting Started Guide")
+                    .font(.subheadline)
+                    .foregroundColor(LogbookTheme.accentBlue)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(LogbookTheme.accentBlue.opacity(0.15))
+                    .cornerRadius(20)
+            }
+            .padding(.top, 8)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(40)
+        .background(Color.black.opacity(0.1))
+        .cornerRadius(16)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
     
     // MARK: - Layout Variants
@@ -792,10 +976,19 @@ struct ContentView: View {
         case "clocks": clocksTab
         case "flightTracking": flightTrackingTab
         case "fleetTracker": fleetTrackerTab
+        case "airportDatabase":
+            AirportDatabaseView()
+                .preferredColorScheme(.dark)
         case "gpsRaim": gpsRaimTab
         case "electronicLogbook": electronicLogbookTab
         case "weather": weatherTab
         case "areaGuide": AreaGuideView()
+        case "jumpseat":
+            // Option 1: Always show (current - for testing)
+            JumpseatFinderView()
+            
+            // Option 2: Protected by subscription (uncomment when ready)
+            // ProtectedJumpseatFinderView()
         case "notes": notesTab
         case "documents": documentsTab
         case "calculator": calculatorTab
@@ -854,6 +1047,10 @@ struct ContentView: View {
                 .environmentObject(locationManager)
                 .preferredColorScheme(.dark)
         
+        case "airportTest":
+            AirportDatabaseTestView()
+                .preferredColorScheme(.dark)
+        
         //case "jumpseat":
         //    JumpseatView()
         //        .preferredColorScheme(.dark)
@@ -870,6 +1067,24 @@ struct ContentView: View {
             FAR121ComplianceView()
                 .environmentObject(store)
                 .preferredColorScheme(.dark)
+
+        // ✅ NEW: Help & Support
+        case "help":
+            HelpView()
+                .preferredColorScheme(.dark)
+        
+        // ✅ NEW: Search
+        case "search":
+            LogbookSearchView()
+                .environmentObject(store)
+                .preferredColorScheme(.dark)
+        
+        // ✅ NEW: Subscription Debug (DEBUG only)
+        #if DEBUG
+        case "subscriptionDebug":
+            SubscriptionDebugView()
+                .preferredColorScheme(.dark)
+        #endif
 
         case "settings":
             settingsTab
@@ -898,27 +1113,55 @@ struct ContentView: View {
     
     private var logbookContent: some View {
         VStack(spacing: 0) {
-            // MARK: - Header Section
+            // MARK: - Header Section with Zulu Clock & Weather Toggle
             HStack(alignment: .center) {
-                Text("Trips")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
+                ZuluClockView()
                 
                 Spacer()
+                
+                // ═══════════════════════════════════════════════════════════════
+                // 🛡️ GPS Integrity Status Pill
+                // ═══════════════════════════════════════════════════════════════
+                GPSSpoofingStatusPill()
+                    .padding(.trailing, 6)
+                // ═══════════════════════════════════════════════════════════════
+                
+                // Weather Condition Icon
+                WeatherConditionIcon(
+                    activeTrip: activeTrip,
+                    isExpanded: showingWeatherBanner,
+                    onTap: {
+                        withAnimation(.spring(response: 0.3)) {
+                            showingWeatherBanner.toggle()
+                        }
+                    }
+                )
+                .padding(.trailing, 8)
                 
                 addTripButton
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
+            
+            // 🆕 PAYWALL: Trial Status Banner
+            TrialStatusBanner()
              
             // MARK: - FAR 117 Real-Time Status (Collapsible)
             VStack(spacing: 0) {
                 ConfigurableLimitsStatusView(store: store)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 6)
             .background(LogbookTheme.navyDark)
+
+            // MARK: - Weather Banner (Collapsible)
+            if showingWeatherBanner {
+                WeatherBannerView(activeTrip: activeTrip)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 4)
+                    .padding(.bottom, 8)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             
             // MARK: - Active Trip Banner
             if let activeTrip = activeTrip,
@@ -1115,82 +1358,15 @@ struct ContentView: View {
                     .padding(.bottom, 8)
             }
             
-            // MARK: - Empty State (if no trips)
+            // MARK: - Empty State (Smart Logic)
             if store.trips.isEmpty {
-                VStack(spacing: 16) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 18))
-                            .foregroundColor(LogbookTheme.warningYellow)
-                        
-                        Text("No flight data found")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        
-                        Spacer()
-                    }
-                    
-                    Text("It looks like you might have lost your flight data when switching apps. Tap below to recover or import your flights.")
-                        .font(.callout)
-                        .foregroundColor(LogbookTheme.textSecondary)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    HStack(spacing: 12) {
-                        Button(action: {
-                            let success = store.recoverDataWithCrewMemberMigration()
-                            if success {
-                                print("Recovery successful!")
-                            } else {
-                                print("No recoverable data found")
-                            }
-                        }) {
-                            Text("Attempt Recovery")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .background(LogbookTheme.warningYellow)
-                                .cornerRadius(20)
-                        }
-                        
-                        Button(action: {
-                            showingFileImport = true
-                        }) {
-                            Text("Import Flight Data")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .background(LogbookTheme.accentBlue)
-                                .cornerRadius(20)
-                        }
-                        .sheet(isPresented: $showingFileImport) {
-                            NavigationView {
-                                SimpleFileImportView { content, filename in
-                                    handleFileImport(content: content, filename: filename)
-                                }
-                                .padding()
-                                .background(LogbookTheme.navy)
-                                .navigationTitle("Import Flight Data")
-                                .navigationBarItems(trailing: Button("Done") { showingFileImport = false })
-                            }
-                        }
-                        
-                        Spacer()
-                    }
+                if hasEverHadTrips {
+                    // User HAD trips before - show recovery (data loss scenario)
+                    dataRecoveryView
+                } else {
+                    // New user - show friendly empty state (no scary warning)
+                    newUserEmptyStateView
                 }
-                .padding(20)
-                .background(Color.black.opacity(0.2))
-                .cornerRadius(16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(LogbookTheme.accentBlue.opacity(0.3), lineWidth: 1)
-                )
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
             }
             
             // MARK: - View All Legs Button
@@ -1271,69 +1447,97 @@ struct ContentView: View {
     private var addTripButton: some View {
         HStack(spacing: 12) {
             Menu {
-                Button(action: {
-                    resetTripFields()
-                    tripType = .operating
-                    shouldAutoStartDuty = true
-                    
-                    if let currentAirport = locationManager.currentAirport {
-                        if legs.isEmpty { legs = [FlightLeg()] }
-                        legs[0].departure = currentAirport
-                        print("✈️ Pre-filled departure: \(currentAirport)")
-                    } else if let nearestAirport = locationManager.nearbyAirports.first {
-                        if legs.isEmpty { legs = [FlightLeg()] }
-                        legs[0].departure = nearestAirport.icao
-                        print("✈️ Pre-filled departure with nearest: \(nearestAirport.icao)")
-                    }
-                    
-                    showTripSheet = true
-                }) {
-                    Label("New Flight", systemImage: "airplane.departure")
-                }
-                
-                Button(action: {
-                    resetTripFields()
-                    tripType = .deadhead
-                    shouldAutoStartDuty = true
-                    
-                    if let currentAirport = locationManager.currentAirport {
-                        if legs.isEmpty { legs = [FlightLeg()] }
-                        legs[0].departure = currentAirport
-                        print("✈️ Pre-filled deadhead departure: \(currentAirport)")
-                    } else if let nearestAirport = locationManager.nearbyAirports.first {
-                        if legs.isEmpty { legs = [FlightLeg()] }
-                        legs[0].departure = nearestAirport.icao
-                        print("✈️ Pre-filled deadhead departure with nearest: \(nearestAirport.icao)")
-                    }
-                    
-                    showTripSheet = true
-                }) {
-                    Label("New Deadhead", systemImage: "airplane")
-                }
-                
-                Button(action: {
-                    resetTripFields()
-                    tripType = .simulator
-                    shouldAutoStartDuty = false
-                    legs = []
-                    showTripSheet = true
-                }) {
-                    Label("Sim Session", systemImage: "airplane.up.forward.fill")
-                }
+                flightTypeButtons
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 20))
+                    Image(systemName: trialChecker.canCreateTrip ? "airplane.departure" : "lock.fill")
+                        .font(.system(size: 10, weight: .bold))
                     Text("New Trip")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold))
                 }
-                .foregroundColor(.black)
+                .foregroundColor(trialChecker.canCreateTrip ? .white : .gray)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(LogbookTheme.accentGreen)
-                .cornerRadius(15)
+                .background(
+                    trialChecker.canCreateTrip ? 
+                    LogbookTheme.accentGreen.opacity(0.15) : 
+                    Color.white.opacity(0.05)
+                )
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 25)
+                        .stroke(trialChecker.canCreateTrip ? LogbookTheme.accentGreen.opacity(0.5) : .gray, lineWidth: 1)
+                )
+            }
+            .disabled(!trialChecker.canCreateTrip)
+            .simultaneousGesture(TapGesture().onEnded {
+                if !trialChecker.canCreateTrip {
+                    showingPaywall = true
+                }
+            })
+        }
+        .sheet(isPresented: $showingPaywall) {
+            PaywallView()
+        }
+    }
+    
+    // MARK: - Flight Type Menu Buttons (Reusable)
+    @ViewBuilder
+    private var flightTypeButtons: some View {
+        Button(action: {
+            createNewTrip(type: .operating)
+        }) {
+            Label("New Flight", systemImage: "airplane.departure")
+        }
+        
+        Button(action: {
+            createNewTrip(type: .deadhead)
+        }) {
+            Label {
+                Text("New Deadhead")
+            } icon: {
+                // Use custom asset if you have one named "airplaneseat"
+                // Otherwise, use SF Symbol "airplane"
+                Image("airplaneseat")  // Your custom SVG from Assets.xcassets
+                    .renderingMode(.template)
             }
         }
+        
+        Button(action: {
+            createNewTrip(type: .simulator)
+        }) {
+            Label("Sim Session", systemImage: "gauge.with.dots.needle.67percent")
+        }
+    }
+    
+    // MARK: - Create Trip Helper (DRY - Don't Repeat Yourself)
+    private func createNewTrip(type: TripType) {
+        guard trialChecker.canCreateTrip else {
+            showingPaywall = true
+            return
+        }
+        
+        resetTripFields()
+        tripType = type
+        shouldAutoStartDuty = (type != .simulator)
+        
+        // Auto-fill departure for flights (not simulator)
+        if type != .simulator {
+            if let currentAirport = locationManager.currentAirport {
+                if legs.isEmpty { legs = [FlightLeg()] }
+                legs[0].departure = currentAirport
+                print("✈️ Pre-filled departure: \(currentAirport)")
+            } else if let nearestAirport = locationManager.nearbyAirports.first {
+                if legs.isEmpty { legs = [FlightLeg()] }
+                legs[0].departure = nearestAirport.icao
+                print("✈️ Pre-filled departure with nearest: \(nearestAirport.icao)")
+            }
+        } else {
+            // Simulator doesn't need legs
+            legs = []
+        }
+        
+        showTripSheet = true
     }
     
     private var clocksTab: some View {
@@ -2227,120 +2431,120 @@ struct ContentView: View {
                 print("❌ No active trip to update with auto-time")
                 return
             }
-            
+
             print("📋 Active trip found: \(activeTrip.tripNumber)")
+
+            Task { @MainActor in
+                guard let tripIndex = self.store.trips.firstIndex(where: { $0.id == activeTrip.id }) else {
+                    print("❌ Could not find trip in store")
+                    return
+                }
+
+                print("📍 Trip index: \(tripIndex)")
+
+                var updatedTrip = self.store.trips[tripIndex]
             
-            guard let tripIndex = self.store.trips.firstIndex(where: { $0.id == activeTrip.id }) else {
-                print("❌ Could not find trip in store")
-                return
-            }
-            
-            print("📍 Trip index: \(tripIndex)")
-            
-            var updatedTrip = self.store.trips[tripIndex]
-            
-            // ✅ FIXED: Use smart leg detection (same as other handlers)
-            func isLegFullyCompleted(_ leg: FlightLeg) -> Bool {
-                return !leg.outTime.isEmpty &&
-                       !leg.offTime.isEmpty &&
-                       !leg.onTime.isEmpty &&
-                       !leg.inTime.isEmpty
-            }
-            
-            var currentLegIndex: Int? = nil
-            for (index, leg) in updatedTrip.legs.enumerated() {
-                switch leg.status {
-                case .completed:
-                    continue
-                case .active:
-                    if !isLegFullyCompleted(leg) {
+                // ✅ FIXED: Use smart leg detection (same as other handlers)
+                func isLegFullyCompleted(_ leg: FlightLeg) -> Bool {
+                    return !leg.outTime.isEmpty &&
+                           !leg.offTime.isEmpty &&
+                           !leg.onTime.isEmpty &&
+                           !leg.inTime.isEmpty
+                }
+
+                var currentLegIndex: Int? = nil
+                for (index, leg) in updatedTrip.legs.enumerated() {
+                    switch leg.status {
+                    case .completed:
+                        continue
+                    case .active:
+                        if !isLegFullyCompleted(leg) {
+                            currentLegIndex = index
+                            break
+                        }
+                        continue
+                    case .standby:
                         currentLegIndex = index
                         break
+                    case .skipped:
+                        continue
                     }
-                    continue
-                case .standby:
-                    currentLegIndex = index
+                    if currentLegIndex != nil { break }
+                }
+
+                guard let legIndex = currentLegIndex else {
+                    print("❌ No current leg found for auto-time. All legs:")
+                    for (idx, leg) in updatedTrip.legs.enumerated() {
+                        print("   Leg \(idx): \(leg.departure)-\(leg.arrival) OUT:\(leg.outTime) OFF:\(leg.offTime) ON:\(leg.onTime) IN:\(leg.inTime) status:\(leg.status)")
+                    }
+                    return
+                }
+
+                print("🎯 Target leg index: \(legIndex)")
+                let currentLeg = updatedTrip.legs[legIndex]
+                print("   Current state: OUT:\(currentLeg.outTime) OFF:\(currentLeg.offTime) ON:\(currentLeg.onTime) IN:\(currentLeg.inTime)")
+
+                // ✅ FIXED: Find actual location in logpages
+                var flatIndex = 0
+                var foundPage = -1
+                var foundLegInPage = -1
+
+                for (pageIndex, logpage) in updatedTrip.logpages.enumerated() {
+                    for legInPageIndex in logpage.legs.indices {
+                        if flatIndex == legIndex {
+                            foundPage = pageIndex
+                            foundLegInPage = legInPageIndex
+                            break
+                        }
+                        flatIndex += 1
+                    }
+                    if foundPage >= 0 { break }
+                }
+
+                guard foundPage >= 0, foundLegInPage >= 0 else {
+                    print("❌ Could not locate leg \(legIndex) in logpages")
+                    return
+                }
+
+                switch timeType {
+                case "OFF":
+                    if updatedTrip.logpages[foundPage].legs[foundLegInPage].offTime.isEmpty {
+                        updatedTrip.logpages[foundPage].legs[foundLegInPage].offTime = timeValue
+                        print("✈️ Auto-logged OFF time: \(timeValue)")
+                        self.showAutoTimeNotification(type: "OFF", time: timeValue, speed: speed)
+                    } else {
+                        print("⚠️ OFF time already set - not overwriting")
+                    }
+                case "ON":
+                    if updatedTrip.logpages[foundPage].legs[foundLegInPage].onTime.isEmpty {
+                        updatedTrip.logpages[foundPage].legs[foundLegInPage].onTime = timeValue
+
+                        // Auto-fill arrival airport if empty
+                        if updatedTrip.logpages[foundPage].legs[foundLegInPage].arrival.isEmpty,
+                           let currentAirport = self.locationManager.currentAirport {
+                            updatedTrip.logpages[foundPage].legs[foundLegInPage].arrival = currentAirport
+                            print("✈️ Auto-filled arrival airport: \(currentAirport)")
+                        }
+
+                        print("✈️ Auto-logged ON time: \(timeValue)")
+                        self.showAutoTimeNotification(type: "ON", time: timeValue, speed: speed)
+                    } else {
+                        print("⚠️ ON time already set - not overwriting")
+                    }
+                default:
+                    print("❌ Unknown time type: \(timeType)")
                     break
-                case .skipped:
-                    continue
                 }
-                if currentLegIndex != nil { break }
-            }
-            
-            guard let legIndex = currentLegIndex else {
-                print("❌ No current leg found for auto-time. All legs:")
-                for (idx, leg) in updatedTrip.legs.enumerated() {
-                    print("   Leg \(idx): \(leg.departure)-\(leg.arrival) OUT:\(leg.outTime) OFF:\(leg.offTime) ON:\(leg.onTime) IN:\(leg.inTime) status:\(leg.status)")
-                }
-                return
-            }
-            
-            print("🎯 Target leg index: \(legIndex)")
-            let currentLeg = updatedTrip.legs[legIndex]
-            print("   Current state: OUT:\(currentLeg.outTime) OFF:\(currentLeg.offTime) ON:\(currentLeg.onTime) IN:\(currentLeg.inTime)")
-            
-            // ✅ FIXED: Find actual location in logpages
-            var flatIndex = 0
-            var foundPage = -1
-            var foundLegInPage = -1
-            
-            for (pageIndex, logpage) in updatedTrip.logpages.enumerated() {
-                for legInPageIndex in logpage.legs.indices {
-                    if flatIndex == legIndex {
-                        foundPage = pageIndex
-                        foundLegInPage = legInPageIndex
-                        break
-                    }
-                    flatIndex += 1
-                }
-                if foundPage >= 0 { break }
-            }
-            
-            guard foundPage >= 0, foundLegInPage >= 0 else {
-                print("❌ Could not locate leg \(legIndex) in logpages")
-                return
-            }
-            
-            switch timeType {
-            case "OFF":
-                if updatedTrip.logpages[foundPage].legs[foundLegInPage].offTime.isEmpty {
-                    updatedTrip.logpages[foundPage].legs[foundLegInPage].offTime = timeValue
-                    print("✈️ Auto-logged OFF time: \(timeValue)")
-                    self.showAutoTimeNotification(type: "OFF", time: timeValue, speed: speed)
-                } else {
-                    print("⚠️ OFF time already set - not overwriting")
-                }
-            case "ON":
-                if updatedTrip.logpages[foundPage].legs[foundLegInPage].onTime.isEmpty {
-                    updatedTrip.logpages[foundPage].legs[foundLegInPage].onTime = timeValue
-                    
-                    // Auto-fill arrival airport if empty
-                    if updatedTrip.logpages[foundPage].legs[foundLegInPage].arrival.isEmpty,
-                       let currentAirport = self.locationManager.currentAirport {
-                        updatedTrip.logpages[foundPage].legs[foundLegInPage].arrival = currentAirport
-                        print("✈️ Auto-filled arrival airport: \(currentAirport)")
-                    }
-                    
-                    print("✈️ Auto-logged ON time: \(timeValue)")
-                    self.showAutoTimeNotification(type: "ON", time: timeValue, speed: speed)
-                } else {
-                    print("⚠️ ON time already set - not overwriting")
-                }
-            default:
-                print("❌ Unknown time type: \(timeType)")
-                break
-            }
-            
-            // ✅ FIXED: Check if leg should be completed and advanced
-            updatedTrip.checkAndAdvanceLeg(at: legIndex)
-            
-            self.store.updateTrip(updatedTrip, at: tripIndex)
-            print("💾 Trip updated in store")
-            
-            // Sync to watch
-            PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
-            
-            Task { @MainActor in
+
+                // ✅ FIXED: Check if leg should be completed and advanced
+                updatedTrip.checkAndAdvanceLeg(at: legIndex)
+
+                self.store.updateTrip(updatedTrip, at: tripIndex)
+                print("💾 Trip updated in store")
+
+                // Sync to watch
+                PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
+
                 self.activityManager.syncWithTrip(updatedTrip)
             }
         }
@@ -2353,43 +2557,49 @@ struct ContentView: View {
             object: nil,
             queue: .main
         ) { _ in
-            guard let activeTrip = self.activeTrip,
-                  let tripIndex = self.store.trips.firstIndex(where: { $0.id == activeTrip.id }) else {
+            guard let activeTrip = self.activeTrip else {
                 print("❌ No active trip to clear times")
                 return
             }
-            
-            var updatedTrip = self.store.trips[tripIndex]
-            
-            // ✅ FIXED: Clear through logpages directly
-            for pageIndex in updatedTrip.logpages.indices {
-                for legIndex in updatedTrip.logpages[pageIndex].legs.indices {
-                    updatedTrip.logpages[pageIndex].legs[legIndex].outTime = ""
-                    updatedTrip.logpages[pageIndex].legs[legIndex].offTime = ""
-                    updatedTrip.logpages[pageIndex].legs[legIndex].onTime = ""
-                    updatedTrip.logpages[pageIndex].legs[legIndex].inTime = ""
-                    updatedTrip.logpages[pageIndex].legs[legIndex].status = .active  // Reset to active
+
+            Task { @MainActor in
+                guard let tripIndex = self.store.trips.firstIndex(where: { $0.id == activeTrip.id }) else {
+                    print("❌ Could not find trip in store")
+                    return
                 }
-            }
-            
-            // Reset first leg to active, rest to standby
-            if !updatedTrip.logpages.isEmpty && !updatedTrip.logpages[0].legs.isEmpty {
-                updatedTrip.logpages[0].legs[0].status = .active
-                var isFirst = true
+
+                var updatedTrip = self.store.trips[tripIndex]
+
+                // ✅ FIXED: Clear through logpages directly
                 for pageIndex in updatedTrip.logpages.indices {
                     for legIndex in updatedTrip.logpages[pageIndex].legs.indices {
-                        if isFirst {
-                            isFirst = false
-                            continue
-                        }
-                        updatedTrip.logpages[pageIndex].legs[legIndex].status = .standby
+                        updatedTrip.logpages[pageIndex].legs[legIndex].outTime = ""
+                        updatedTrip.logpages[pageIndex].legs[legIndex].offTime = ""
+                        updatedTrip.logpages[pageIndex].legs[legIndex].onTime = ""
+                        updatedTrip.logpages[pageIndex].legs[legIndex].inTime = ""
+                        updatedTrip.logpages[pageIndex].legs[legIndex].status = .active  // Reset to active
                     }
                 }
+
+                // Reset first leg to active, rest to standby
+                if !updatedTrip.logpages.isEmpty && !updatedTrip.logpages[0].legs.isEmpty {
+                    updatedTrip.logpages[0].legs[0].status = .active
+                    var isFirst = true
+                    for pageIndex in updatedTrip.logpages.indices {
+                        for legIndex in updatedTrip.logpages[pageIndex].legs.indices {
+                            if isFirst {
+                                isFirst = false
+                                continue
+                            }
+                            updatedTrip.logpages[pageIndex].legs[legIndex].status = .standby
+                        }
+                    }
+                }
+
+                self.store.updateTrip(updatedTrip, at: tripIndex)
+                PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
+                print("🗑️ Cleared all flight times for trip \(updatedTrip.tripNumber)")
             }
-            
-            self.store.updateTrip(updatedTrip, at: tripIndex)
-            PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
-            print("🗑️ Cleared all flight times for trip \(updatedTrip.tripNumber)")
         }
     }
     
@@ -2448,3 +2658,215 @@ struct ContentView_Previews: PreviewProvider {
         }
     }
 }
+
+// MARK: - Zulu Clock View
+struct ZuluClockView: View {
+    @State private var currentTime = Date()
+    @State private var timeZoneMode: TimeZoneMode = .zulu
+    @EnvironmentObject private var airlineSettings: AirlineSettingsStore
+    
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    
+    enum TimeZoneMode {
+        case zulu
+        case local
+        case homeBase
+    }
+    
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 3) {
+            Text(timeString)
+                .font(.system(size: 30, weight: .bold, design: .default))
+                .monospacedDigit()
+                .foregroundColor(.white)
+            
+            Text(timeZoneLabel)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(timeZoneColor)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // Tap cycles through: Zulu -> Local -> Zulu
+            withAnimation(.easeInOut(duration: 0.2)) {
+                switch timeZoneMode {
+                case .zulu:
+                    timeZoneMode = .local
+                case .local:
+                    timeZoneMode = .zulu
+                case .homeBase:
+                    timeZoneMode = .zulu
+                }
+            }
+        }
+        .onLongPressGesture(minimumDuration: 0.5) {
+            // Long press goes to home base
+            withAnimation(.easeInOut(duration: 0.2)) {
+                timeZoneMode = .homeBase
+            }
+            
+            // Haptic feedback
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+        }
+        .onReceive(timer) { _ in
+            currentTime = Date()
+        }
+    }
+    
+    private var timeString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HHmm"
+        
+        switch timeZoneMode {
+        case .zulu:
+            formatter.timeZone = TimeZone(identifier: "UTC")
+            return formatter.string(from: currentTime)
+        case .local:
+            formatter.timeZone = TimeZone.current
+            return formatter.string(from: currentTime)
+        case .homeBase:
+            let homeBase = airlineSettings.settings.homeBaseAirport
+            if !homeBase.isEmpty {
+                formatter.timeZone = AirportDatabase.timeZone(for: homeBase)
+                return formatter.string(from: currentTime)
+            } else {
+                // Fallback to local if no home base set
+                formatter.timeZone = TimeZone.current
+                return formatter.string(from: currentTime)
+            }
+        }
+    }
+    
+    private var timeZoneLabel: String {
+        switch timeZoneMode {
+        case .zulu:
+            return "Z"  // Standard aviation abbreviation
+        case .local:
+            // iOS provides worldwide timezone abbreviations automatically
+            return TimeZone.current.abbreviation() ?? "LCL"
+        case .homeBase:
+            let homeBase = airlineSettings.settings.homeBaseAirport
+            if !homeBase.isEmpty {
+                let tz = AirportDatabase.timeZone(for: homeBase)
+                return tz.abbreviation() ?? homeBase
+            } else {
+                return "---"
+            }
+        }
+    }
+    
+    private var timeZoneColor: Color {
+        switch timeZoneMode {
+        case .zulu:
+            return LogbookTheme.accentBlue
+        case .local:
+            return LogbookTheme.accentGreen
+        case .homeBase:
+            return LogbookTheme.accentOrange
+        }
+    }
+}
+
+// MARK: - Weather Condition Icon
+struct WeatherConditionIcon: View {
+    let activeTrip: Trip?
+    let isExpanded: Bool
+    let onTap: () -> Void
+
+    @EnvironmentObject private var locationManager: PilotLocationManager
+    @State private var currentWeather: RawMETAR?
+    @State private var currentAirportCode: String?
+    @State private var refreshTimer: Timer?
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        Button(action: onTap) {
+            ZStack {
+                // Weather icon from WeatherIconHelper
+                Image(systemName: WeatherIconHelper.icon(for: currentWeather, filled: true))
+                    .font(.system(size: 18, weight: .medium))
+                    .symbolRenderingMode(.multicolor)
+                    .foregroundStyle(WeatherIconHelper.color(for: currentWeather))
+
+                // Severe weather indicator
+                if WeatherIconHelper.isSevereWeather(currentWeather) {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 10, y: -10)
+                }
+            }
+            .frame(width: 36, height: 36)
+            .background(
+                Circle()
+                    .fill(isExpanded ? WeatherIconHelper.color(for: currentWeather).opacity(0.2) : Color.clear)
+            )
+        }
+        .onAppear {
+            loadWeather()
+            startRefreshTimer()
+        }
+        .onDisappear {
+            stopRefreshTimer()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // Refresh when app becomes active (user glances at phone)
+            if newPhase == .active {
+                loadWeather()
+            }
+        }
+        .onChange(of: locationManager.currentAirport) { _, _ in
+            loadWeather()
+        }
+        .onChange(of: locationManager.nearbyAirports.first?.icao) { _, _ in
+            loadWeather()
+        }
+        .onChange(of: activeTrip?.legs.first?.departure) { _, _ in
+            loadWeather()
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func startRefreshTimer() {
+        // Refresh weather every 5 minutes
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { _ in
+            loadWeather()
+        }
+    }
+
+    private func stopRefreshTimer() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+    }
+
+    private func loadWeather() {
+        // Priority: Active trip departure -> Current airport -> Nearest airport
+        let icao: String
+
+        if let departure = activeTrip?.legs.first?.departure, !departure.isEmpty {
+            icao = departure
+        } else if let current = locationManager.currentAirport {
+            icao = current
+        } else if let nearest = locationManager.nearbyAirports.first {
+            icao = nearest.icao
+        } else {
+            return
+        }
+
+        // Track which airport we're showing
+        currentAirportCode = icao
+
+        Task {
+            do {
+                let weather = try await BannerWeatherService.shared.fetchMETAR(for: icao)
+                await MainActor.run {
+                    currentWeather = weather
+                }
+            } catch {
+                print("❌ Failed to fetch weather for \(icao): \(error)")
+            }
+        }
+    }
+}
+

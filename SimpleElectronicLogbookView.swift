@@ -4,7 +4,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct SimpleElectronicLogbookView: View {
-    let mainStore: LogBookStore
+    let mainStore: SwiftDataLogBookStore
     @Environment(\.dismiss) private var dismiss
     @StateObject private var manager = UnifiedLogbookManager()
     

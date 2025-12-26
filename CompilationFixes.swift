@@ -24,7 +24,7 @@ extension Int {
 }
 
 // MARK: - Missing Store Classes (if needed)
-class LogBookStore: ObservableObject {
+class SwiftDataLogBookStore: ObservableObject {
     @Published var trips: [Trip] = []
     
     func addTrip(_ trip: Trip) {
@@ -121,7 +121,7 @@ class PhoneWatchConnectivity: ObservableObject {
     @Published var isWatchConnected = false
     
     func setReferences(
-        logBookStore: LogBookStore,
+        logBookStore: SwiftDataLogBookStore,
         opsManager: OPSCallingManager,
         activityManager: PilotActivityManager,
         locationManager: PilotLocationManager
@@ -199,7 +199,7 @@ extension Notification.Name {
 
 // MARK: - Missing View Stubs (temporary)
 struct PerDiemSummaryView: View {
-    let store: LogBookStore
+    let store: SwiftDataLogBookStore
     
     var body: some View {
         NavigationView {
@@ -216,7 +216,7 @@ struct PerDiemSummaryView: View {
 }
 
 struct MoreTabView: View {
-    let store: LogBookStore
+    let store: SwiftDataLogBookStore
     let emailSettings: EmailSettingsStore
     let airlineSettings: AirlineSettingsStore
     let nocSettings: NOCSettingsStore
@@ -260,7 +260,7 @@ struct ScheduleCalendarView: View {
 }
 
 struct LogbookImportExportView: View {
-    let mainStore: LogBookStore
+    let mainStore: SwiftDataLogBookStore
     
     var body: some View {
         NavigationView {
@@ -277,7 +277,7 @@ struct LogbookImportExportView: View {
 }
 
 struct LogbookView: View {
-    let store: LogBookStore
+    let store: SwiftDataLogBookStore
     let onEditTrip: (Int) -> Void
     
     var body: some View {
@@ -302,7 +302,7 @@ struct LogbookView: View {
 }
 
 struct ScannerView: View {
-    let store: LogBookStore
+    let store: SwiftDataLogBookStore
     
     var body: some View {
         VStack {

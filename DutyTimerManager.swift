@@ -21,6 +21,10 @@ class DutyTimerManager: ObservableObject {
     @Published var showingWarning: Bool = false
     @Published var warningMessage: String = ""
     
+    // 🔥 NEW: Rest period tracking
+    @Published var isInRest: Bool = false
+    @Published var restStartTime: Date?
+    
     // MARK: - Convenience computed property for compatibility
     var isDutyActive: Bool { isOnDuty }
     
@@ -67,6 +71,11 @@ class DutyTimerManager: ObservableObject {
         isOnDuty = true
         elapsedTime = 0
         resetWarningFlags()
+        
+        // 🔥 NEW: End rest period when duty starts
+        isInRest = false
+        restStartTime = nil
+        
         saveState()
         startTimer()
         
@@ -84,6 +93,7 @@ class DutyTimerManager: ObservableObject {
         updateWidgetData()
         
         print("✈️ DUTY TIMER: Started at \(now.formatted(date: .omitted, time: .shortened))")
+        print("🔚 REST PERIOD: Ended")
     }
     
     func endDuty() {
@@ -94,9 +104,21 @@ class DutyTimerManager: ObservableObject {
         isOnDuty = false
         elapsedTime = 0
         resetWarningFlags()
+        
+        // 🔥 NEW: Start rest period when duty ends
+        isInRest = true
+        restStartTime = endTime
+        
         saveState()
         stopTimer()
         cancelAllNotifications()
+        
+        // 🔥 NEW: Post notification that rest period started
+        NotificationCenter.default.post(
+            name: NSNotification.Name("RestPeriodStarted"),
+            object: nil,
+            userInfo: ["restStartTime": endTime]
+        )
         
         // Sync to Watch
         syncToWatch()
@@ -115,6 +137,7 @@ class DutyTimerManager: ObservableObject {
         updateWidgetData()
         
         print("✈️ DUTY TIMER: Ended (Duration: \(formatDuration(duration)))")
+        print("🛏️ REST PERIOD: Started at \(endTime.formatted(date: .omitted, time: .shortened))")
     }
     
     func toggleDuty() {

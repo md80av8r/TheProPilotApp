@@ -170,13 +170,13 @@ struct DutyLimitSettingsView: View {
         .textCase(nil)
     }
     
-    // MARK: - Per-FDP Flight Time Limits Section
+    // MARK: - Per-FDP Block Time Limits Section
     private var perFDPLimitsSection: some View {
         Section {
-            Toggle("Track Per-FDP Flight Time", isOn: $settingsStore.configuration.perFDPFlightLimit.enabled)
+            Toggle("Track Block Time Per Duty Period", isOn: $settingsStore.configuration.perFDPFlightLimit.enabled)
                 .foregroundColor(.white)
                 .tint(LogbookTheme.accentGreen)
-            
+
             if settingsStore.configuration.perFDPFlightLimit.enabled {
                 VStack(alignment: .leading, spacing: 16) {
                     // Day Limit
@@ -185,7 +185,7 @@ struct DutyLimitSettingsView: View {
                             Text("Day Report Time (0500-1959)")
                                 .font(.subheadline)
                                 .foregroundColor(.white)
-                            Text("Maximum flight time when reporting during day hours")
+                            Text("Maximum block time when reporting during day hours")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
@@ -200,17 +200,17 @@ struct DutyLimitSettingsView: View {
                                 .foregroundColor(.gray)
                         }
                     }
-                    
+
                     Divider()
                         .background(Color.gray.opacity(0.3))
-                    
+
                     // Night Limit
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Night Report Time (2000-0459)")
                                 .font(.subheadline)
                                 .foregroundColor(.white)
-                            Text("Maximum flight time when reporting during night hours")
+                            Text("Maximum block time when reporting during night hours")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
@@ -225,20 +225,20 @@ struct DutyLimitSettingsView: View {
                                 .foregroundColor(.gray)
                         }
                     }
-                    
+
                     Divider()
                         .background(Color.gray.opacity(0.3))
-                    
+
                     // Reset after rest toggle
                     Toggle("Resets After Legal Rest Period", isOn: $settingsStore.configuration.perFDPFlightLimit.resetsAfterRest)
                         .foregroundColor(.white)
                         .tint(LogbookTheme.accentBlue)
-                    
+
                     if settingsStore.configuration.perFDPFlightLimit.resetsAfterRest {
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundColor(LogbookTheme.accentGreen)
-                            Text("Per FAR 117, flight time limits are per-FDP and reset after receiving a legal rest period (10 hours with 8 hours sleep opportunity)")
+                            Text("Per FAR 117, block time limits reset after receiving a legal rest period (10 hours with 8 hours sleep opportunity)")
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
@@ -247,33 +247,33 @@ struct DutyLimitSettingsView: View {
                 .padding(.vertical, 8)
             }
         } header: {
-            Text("Per-Duty Period Flight Time")
+            Text("Block Time Per Duty Period")
                 .foregroundColor(.white)
         } footer: {
-            Text("FAR 117.11 - Flight time limits per flight duty period based on report time")
+            Text("FAR 117.11 - Block time limits per duty period based on report time")
                 .foregroundColor(.gray)
         }
         .listRowBackground(LogbookTheme.navyLight)
         .textCase(nil)
     }
     
-    // MARK: - Cumulative Flight Time Limits Section
+    // MARK: - Cumulative Block Time Limits Section
     private var cumulativeFlightTimeLimitsSection: some View {
         Section {
             // 7-Day Limit (Part 135)
             if settingsStore.configuration.operationType == .part135 ||
                settingsStore.configuration.operationType == .custom {
                 LimitConfigRow(
-                    title: "7-Day Flight Time",
+                    title: "7-Day Block Time",
                     subtitle: "Rolling 168 hours",
                     limit: $settingsStore.configuration.flightTime7Day,
                     defaultHours: 34
                 )
             }
-            
+
             // Rolling Period Limit
             LimitConfigRow(
-                title: "\(settingsStore.configuration.rollingPeriodDays)-Day Flight Time",
+                title: "\(settingsStore.configuration.rollingPeriodDays)-Day Block Time",
                 subtitle: "Rolling \(settingsStore.configuration.rollingPeriodDays * 24) hours",
                 limit: Binding(
                     get: { settingsStore.configuration.flightTimeRolling },
@@ -285,41 +285,41 @@ struct DutyLimitSettingsView: View {
                 ),
                 defaultHours: 100
             )
-            
+
             // 365-Day Limit
             LimitConfigRow(
-                title: "Annual Flight Time",
+                title: "Annual Block Time",
                 subtitle: "Rolling 365 days",
                 limit: $settingsStore.configuration.flightTime365Day,
                 defaultHours: settingsStore.configuration.operationType == .part135 ? 1200 : 1000
             )
         } header: {
-            Text("Cumulative Flight Time Limits")
+            Text("Cumulative Block Time Limits")
                 .foregroundColor(.white)
         } footer: {
             Text(settingsStore.configuration.operationType == .part121 ?
-                 "FAR 117.23(b) - Cumulative flight time limitations" :
-                 "FAR 135.267 - Flight time limitations")
+                 "FAR 117.23(b) - Cumulative block time limitations" :
+                 "FAR 135.267 - Block time limitations")
                 .foregroundColor(.gray)
         }
         .listRowBackground(LogbookTheme.navyLight)
         .textCase(nil)
     }
     
-    // MARK: - FDP Limits Section
+    // MARK: - Duty Time Limits Section
     private var fdpLimitsSection: some View {
         Section {
-            // 7-Day FDP
+            // 7-Day Duty Time
             FDPLimitConfigRow(
-                title: "7-Day FDP",
+                title: "7-Day Duty Time",
                 subtitle: "Rolling 168 hours",
                 limit: $settingsStore.configuration.fdp7Day,
                 defaultHours: 60
             )
-            
-            // Rolling Period FDP
+
+            // Rolling Period Duty Time
             FDPLimitConfigRow(
-                title: "\(settingsStore.configuration.rollingPeriodDays)-Day FDP",
+                title: "\(settingsStore.configuration.rollingPeriodDays)-Day Duty Time",
                 subtitle: "Rolling \(settingsStore.configuration.rollingPeriodDays * 24) hours",
                 limit: Binding(
                     get: { settingsStore.configuration.fdpRolling },
@@ -332,10 +332,10 @@ struct DutyLimitSettingsView: View {
                 defaultHours: 190
             )
         } header: {
-            Text("Cumulative FDP Limits")
+            Text("Cumulative Duty Time Limits")
                 .foregroundColor(.white)
         } footer: {
-            Text("FAR 117.23(c) - Flight duty period limitations")
+            Text("FAR 117.23(c) - Duty time limitations (report to release)")
                 .foregroundColor(.gray)
         }
         .listRowBackground(LogbookTheme.navyLight)

@@ -25,7 +25,7 @@ struct LegStatistics {
 
 // MARK: - Main View
 struct LegsReportView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @State private var searchText = ""
     @State private var filterOption: FilterOption = .all
     @State private var sortOption: SortOption = .dateNewest

@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct PerDiemView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @StateObject private var airlineSettings = AirlineSettingsStore()
     @Environment(\.dismiss) private var dismiss
     @FocusState private var rateFieldFocused: Bool
@@ -623,7 +623,7 @@ struct PerDiemView: View {
 
 // MARK: - Per Diem Rate Settings View
 struct PerDiemRateSettingsView: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @ObservedObject var airlineSettings: AirlineSettingsStore
     @Environment(\.dismiss) private var dismiss
     @FocusState private var rateFieldFocused: Bool

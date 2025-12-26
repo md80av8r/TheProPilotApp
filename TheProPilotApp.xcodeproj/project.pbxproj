@@ -22,7 +22,6 @@
 		97046B122ECD344A0066DC9F /* GradientGlowButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97046B112ECD344A0066DC9F /* GradientGlowButton.swift */; };
 		97046B162ECD4D880066DC9F /* KDTW_KCLE.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 97046B152ECD4D880066DC9F /* KDTW_KCLE.gpx */; };
 		97111C4B2E3A4F1300850DA5 /* ChainRouteDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97111C4A2E3A4F1300850DA5 /* ChainRouteDisplay.swift */; };
-		97126E0C2EEE062C00D6D150 /* Untitled 2.txt in Resources */ = {isa = PBXBuildFile; fileRef = 97126E0B2EEE062500D6D150 /* Untitled 2.txt */; };
 		97126E122EEF4E5300D6D150 /* CLE_to_YIP.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 97126E0F2EEF4E5300D6D150 /* CLE_to_YIP.gpx */; };
 		97126E142EEF4E5300D6D150 /* NOCTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97126E102EEF4E5300D6D150 /* NOCTestView.swift */; };
 		971461092EE4809F00751961 /* TripTimelineGanttChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971461082EE4809F00751961 /* TripTimelineGanttChart.swift */; };
@@ -34,6 +33,24 @@
 		9719753F2ED76DBD00CC1511 /* TripType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719753E2ED76DBD00CC1511 /* TripType.swift */; };
 		971975402ED772CF00CC1511 /* TripType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719753E2ED76DBD00CC1511 /* TripType.swift */; };
 		972D01932ECBF2850064BD51 /* TimeFormattingUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 972D01922ECBF2840064BD51 /* TimeFormattingUtilities.swift */; };
+		97366B2A2EFED52000C1A7A0 /* SDTrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B262EFED52000C1A7A0 /* SDTrip.swift */; };
+		97366B2B2EFED52000C1A7A0 /* SwiftDataLogBookStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B282EFED52000C1A7A0 /* SwiftDataLogBookStore.swift */; };
+		97366B2C2EFED52000C1A7A0 /* SDFlightLeg.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B242EFED52000C1A7A0 /* SDFlightLeg.swift */; };
+		97366B2D2EFED52000C1A7A0 /* SDCrewMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B232EFED52000C1A7A0 /* SDCrewMember.swift */; };
+		97366B2E2EFED52000C1A7A0 /* SwiftDataConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B272EFED52000C1A7A0 /* SwiftDataConfiguration.swift */; };
+		97366B2F2EFED52000C1A7A0 /* SDLogpage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B252EFED52000C1A7A0 /* SDLogpage.swift */; };
+		97366B302EFED52000C1A7A0 /* MigrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B222EFED52000C1A7A0 /* MigrationManager.swift */; };
+		97366B312EFED62D00C1A7A0 /* SDCrewMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B232EFED52000C1A7A0 /* SDCrewMember.swift */; };
+		97366B322EFED63F00C1A7A0 /* SDFlightLeg.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B242EFED52000C1A7A0 /* SDFlightLeg.swift */; };
+		97366B332EFED64600C1A7A0 /* SDLogpage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B252EFED52000C1A7A0 /* SDLogpage.swift */; };
+		97366B342EFED65200C1A7A0 /* SDTrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B262EFED52000C1A7A0 /* SDTrip.swift */; };
+		97366B352EFED65900C1A7A0 /* SwiftDataConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B272EFED52000C1A7A0 /* SwiftDataConfiguration.swift */; };
+		97366B392EFF072700C1A7A0 /* CloudKitDataRepairUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B382EFF072700C1A7A0 /* CloudKitDataRepairUtility.swift */; };
+		97366B3B2EFF091800C1A7A0 /* CloudKitErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B3A2EFF091800C1A7A0 /* CloudKitErrorHandler.swift */; };
+		97366B3D2EFF094700C1A7A0 /* CloudKitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B3C2EFF094700C1A7A0 /* CloudKitSettingsView.swift */; };
+		97366B412EFF0AD600C1A7A0 /* CLOUDKIT_ERROR_HANDLING_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 97366B402EFF0AD600C1A7A0 /* CLOUDKIT_ERROR_HANDLING_SUMMARY.md */; };
+		97366B432EFF25E900C1A7A0 /* SubscriptionDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B422EFF25E900C1A7A0 /* SubscriptionDebugView.swift */; };
+		97366B452EFF36B300C1A7A0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B442EFF36B300C1A7A0 /* SettingsView.swift */; };
 		9738A28A2EE8E35200C6CA28 /* RestStatusManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9738A2892EE8E35200C6CA28 /* RestStatusManager.swift */; };
 		973AFA0B2EE0954900CDF4AB /* RosterToTripHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973AFA0A2EE0954900CDF4AB /* RosterToTripHelper.swift */; };
 		973AFA0D2EE097BF00CDF4AB /* GMTClockSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 973AFA0C2EE097BF00CDF4AB /* GMTClockSettings.swift */; };
@@ -54,7 +71,6 @@
 		975582302EE8B80C0009D2CF /* DutyLimitSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9755822F2EE8B80C0009D2CF /* DutyLimitSettings.swift */; };
 		975582322EE8B88A0009D2CF /* DutyLimitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975582312EE8B88A0009D2CF /* DutyLimitSettingsView.swift */; };
 		9756B82E2E95CC0800F59538 /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9756B82D2E95CC0800F59538 /* TabManager.swift */; };
-		9756B8302E95E92400F59538 /* WeatherData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9756B82F2E95E92400F59538 /* WeatherData.swift */; };
 		975C23C32ECD4F2D0092249D /* YIP_DTW.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 976A7D592E8C7B3D00E2676E /* YIP_DTW.gpx */; };
 		975C23D02ECD70F50092249D /* NOCSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C23CF2ECD70F50092249D /* NOCSettingsStore.swift */; };
 		975C23D22ECDF6460092249D /* NOCRosterGanttView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C23D12ECDF6460092249D /* NOCRosterGanttView.swift */; };
@@ -118,8 +134,6 @@
 		97747CE92ED8E73800126113 /* ForeFlightStyleTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747CE82ED8E73800126113 /* ForeFlightStyleTimerView.swift */; };
 		97747CED2ED9137B00126113 /* FlexibleTimerView 2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747CEC2ED9137B00126113 /* FlexibleTimerView 2.swift */; };
 		97747CEF2ED9318600126113 /* ElectronicLogbookViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97747CEE2ED9318600126113 /* ElectronicLogbookViewer.swift */; };
-		9777E2FD2EEFAC02000AF7C4 /* privacy.txt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9777E2FC2EEFABFA000AF7C4 /* privacy.txt.swift */; };
-		9777E2FF2EEFAC76000AF7C4 /* privacy.md in Resources */ = {isa = PBXBuildFile; fileRef = 9777E2FE2EEFAC67000AF7C4 /* privacy.md */; };
 		977992EC2EC8D76F00A8CA39 /* SnappingScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977992EB2EC8D76F00A8CA39 /* SnappingScrollView.swift */; };
 		977992F42EC91A7C00A8CA39 /* SmartTimeEntryField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977992F32EC91A7C00A8CA39 /* SmartTimeEntryField.swift */; };
 		977C64EC2E81A663002B9552 /* AppBackupData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C64EB2E81A663002B9552 /* AppBackupData.swift */; };
@@ -145,7 +159,6 @@
 		977C7C1A2E1E9B9F0040362B /* ForeFlightLogBookRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BEC2E1E9B9F0040362B /* ForeFlightLogBookRow.swift */; };
 		977C7C1B2E1E9B9F0040362B /* PerDiemSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BFA2E1E9B9F0040362B /* PerDiemSummaryView.swift */; };
 		977C7C1D2E1E9B9F0040362B /* FlightAwareManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BE72E1E9B9F0040362B /* FlightAwareManager.swift */; };
-		977C7C1E2E1E9B9F0040362B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7C002E1E9B9F0040362B /* SettingsView.swift */; };
 		977C7C1F2E1E9B9F0040362B /* AirlineSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BD82E1E9B9F0040362B /* AirlineSettingsView.swift */; };
 		977C7C212E1E9B9F0040362B /* AutoCompleteTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BDA2E1E9B9F0040362B /* AutoCompleteTestView.swift */; };
 		977C7C222E1E9B9F0040362B /* LogPageTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977C7BF62E1E9B9F0040362B /* LogPageTableView.swift */; };
@@ -168,7 +181,17 @@
 		977D007C2EEA63180036EAD0 /* UnifiedAircraftView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977D007A2EEA63180036EAD0 /* UnifiedAircraftView.swift */; };
 		977D007F2EEAFD1A0036EAD0 /* FAR117StatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977D007E2EEAFD1A0036EAD0 /* FAR117StatusBanner.swift */; };
 		977D00812EEAFD590036EAD0 /* GroupedRosterDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977D00802EEAFD590036EAD0 /* GroupedRosterDisplay.swift */; };
+		9782BF542EF0FC61007BE2CE /* BundledAirportDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9782BF532EF0FC61007BE2CE /* BundledAirportDatabase.swift */; };
+		9782BF562EF240AF007BE2CE /* AddLegsToTripSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9782BF552EF240AF007BE2CE /* AddLegsToTripSheet.swift */; };
+		9782BF582EF240D3007BE2CE /* PendingTripCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9782BF572EF240D3007BE2CE /* PendingTripCard.swift */; };
+		9782BF6B2EF25B3F007BE2CE /* FlightScheduleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9782BF6A2EF25B3F007BE2CE /* FlightScheduleService.swift */; };
+		9782BF6D2EF25B88007BE2CE /* JumpseatFinderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9782BF6C2EF25B88007BE2CE /* JumpseatFinderView.swift */; };
+		9782BF712EF25BFE007BE2CE /* SubscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9782BF702EF25BFE007BE2CE /* SubscriptionService.swift */; };
+		9782BF732EF25C19007BE2CE /* JumpseatFinderView+Subscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9782BF722EF25C19007BE2CE /* JumpseatFinderView+Subscription.swift */; };
+		9782BFF82EF39A16007BE2CE /* CloudKitDiagnosticView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9782BFF72EF39A16007BE2CE /* CloudKitDiagnosticView.swift */; };
 		978B5C222EED9FDE00316AE1 /* WatchTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052AC2ECAA638007CB9C5 /* WatchTheme.swift */; };
+		978DB39F2EFEBE5800552684 /* SubscriptionPromptBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 978DB39E2EFEBE5800552684 /* SubscriptionPromptBanner.swift */; };
+		978DB3A12EFEBE7D00552684 /* SUBSCRIPTION_BANNER_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 978DB3A02EFEBE7D00552684 /* SUBSCRIPTION_BANNER_GUIDE.md */; };
 		9799E7402EAE5B8600F0FADE /* TripFolderBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9799E73F2EAE5B8600F0FADE /* TripFolderBrowserView.swift */; };
 		9799E7422EAE68ED00F0FADE /* PDFThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9799E7412EAE68ED00F0FADE /* PDFThumbnailView.swift */; };
 		9799E7442EAE6A0500F0FADE /* PDFThumbnailGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9799E7432EAE6A0500F0FADE /* PDFThumbnailGenerator.swift */; };
@@ -180,7 +203,6 @@
 		97A7C8562ECD04B4009E4A5E /* ProximitySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97A7C8552ECD04B4009E4A5E /* ProximitySettingsView.swift */; };
 		97AFBB832EE4C1A700C63E38 /* Rolling30DayComplianceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AFBB822EE4C1A700C63E38 /* Rolling30DayComplianceView.swift */; };
 		97AFBB852EE5466600C63E38 /* PendingTripsHelperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AFBB842EE5466600C63E38 /* PendingTripsHelperView.swift */; };
-		97AFBB912EE6558100C63E38 /* JUMPSEAT_IMPLEMENTATION_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 97AFBB872EE6558100C63E38 /* JUMPSEAT_IMPLEMENTATION_GUIDE.md */; };
 		97AFBBA52EE7812900C63E38 /* UserAirportCodeMappings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AFBBA42EE7812900C63E38 /* UserAirportCodeMappings.swift */; };
 		97AFBBA92EE78CB300C63E38 /* EnhancedAircraftManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AFBBA72EE78CB300C63E38 /* EnhancedAircraftManagementView.swift */; };
 		97AFBBAA2EE78CB300C63E38 /* AircraftDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97AFBBA62EE78CB300C63E38 /* AircraftDatabase.swift */; };
@@ -192,6 +214,7 @@
 		97BCC3B72E29A83500D36E5B /* DataValidatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BCC3B62E29A83500D36E5B /* DataValidatorView.swift */; };
 		97C37E142EE1F9F900975E84 /* schema.json in Resources */ = {isa = PBXBuildFile; fileRef = 97C37E132EE1F9F900975E84 /* schema.json */; };
 		97C759AD2E2A69210048549B /* OPSCallingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C759AC2E2A69210048549B /* OPSCallingManager.swift */; };
+		97D696DD2EF3A56B004675D0 /* AirportDatabaseTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D696DC2EF3A56B004675D0 /* AirportDatabaseTestView.swift */; };
 		97D69EBE2E3D735600FFF195 /* UserDefaults+AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D69EBD2E3D735600FFF195 /* UserDefaults+AppGroup.swift */; };
 		97D69EC02E3D954C00FFF195 /* DutyTimerLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D69EBF2E3D954C00FFF195 /* DutyTimerLiveActivity.swift */; };
 		97D75BA52E50D25A00EF6DB3 /* SharePointFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D75BA42E50D25A00EF6DB3 /* SharePointFile.swift */; };
@@ -213,6 +236,47 @@
 		97F2C3F22EDE1D16002B9BD6 /* FAR117ComplianceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F2C3F12EDE1D16002B9BD6 /* FAR117ComplianceView.swift */; };
 		97F2C3F62EDE5020002B9BD6 /* ContinuationPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F2C3F52EDE5020002B9BD6 /* ContinuationPrompt.swift */; };
 		97F2C3F82EDE5039002B9BD6 /* ContinuationPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F2C3F72EDE5039002B9BD6 /* ContinuationPromptView.swift */; };
+		97F93D1D2EF98B4F00855419 /* DutyTimeSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D1C2EF98B4F00855419 /* DutyTimeSettingsStore.swift */; };
+		97F93D1F2EFA2F6B00855419 /* LogbookWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D1E2EFA2F6B00855419 /* LogbookWelcomeView.swift */; };
+		97F93D212EFA30F500855419 /* WelcomeScreenDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D202EFA30F500855419 /* WelcomeScreenDebugView.swift */; };
+		97F93D272EFA315E00855419 /* WELCOME_INTEGRATION_VISUAL_GUIDE.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D262EFA315E00855419 /* WELCOME_INTEGRATION_VISUAL_GUIDE.swift */; };
+		97F93D292EFA341A00855419 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D282EFA341A00855419 /* HelpView.swift */; };
+		97F93D2B2EFA342800855419 /* LogbookSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D2A2EFA342800855419 /* LogbookSearchView.swift */; };
+		97F93D352EFA367900855419 /* INTEGRATION_CODE_SNIPPETS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D342EFA367900855419 /* INTEGRATION_CODE_SNIPPETS.swift */; };
+		97F93D412EFAC4DB00855419 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D392EFAC19300855419 /* SubscriptionManager.swift */; };
+		97F93D422EFAC4DB00855419 /* SubscriptionGateModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D3C2EFAC1BB00855419 /* SubscriptionGateModifier.swift */; };
+		97F93D432EFAC4DB00855419 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D3B2EFAC1AC00855419 /* PaywallView.swift */; };
+		97F93D442EFAC4DB00855419 /* SubscriptionStatusChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D3A2EFAC1A000855419 /* SubscriptionStatusChecker.swift */; };
+		97F93D502EFAF1E000855419 /* propilot_airports.csv in Resources */ = {isa = PBXBuildFile; fileRef = 97F93D4F2EFAF1E000855419 /* propilot_airports.csv */; };
+		97F93D552EFB17B600855419 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D542EFB17B200855419 /* WeatherService.swift */; };
+		97F93D572EFB17CA00855419 /* AirportReviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D562EFB17CA00855419 /* AirportReviewSheet.swift */; };
+		97F93D5B2EFB181B00855419 /* AirportDatabaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D5A2EFB181B00855419 /* AirportDatabaseView.swift */; };
+		97F93D612EFB199600855419 /* SettingsIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D602EFB199600855419 /* SettingsIntegration.swift */; };
+		97F93D7F2EFB353200855419 /* WeatherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D7E2EFB353200855419 /* WeatherView.swift */; };
+		97F93D882EFB78F500855419 /* ICalendarImportExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D872EFB78F500855419 /* ICalendarImportExample.swift */; };
+		97F93D8A2EFB790800855419 /* ICalendarImportWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D892EFB790800855419 /* ICalendarImportWizardView.swift */; };
+		97F93D8C2EFB791C00855419 /* ICalendarImportEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D8B2EFB791C00855419 /* ICalendarImportEngine.swift */; };
+		97F93D8E2EFB792E00855419 /* ICalendarParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D8D2EFB792D00855419 /* ICalendarParser.swift */; };
+		97F93D902EFB794000855419 /* ImportMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D8F2EFB794000855419 /* ImportMapping.swift */; };
+		97F93D922EFB7BAB00855419 /* ImportMappingStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D912EFB7BAB00855419 /* ImportMappingStore.swift */; };
+		97F93D942EFB7C2800855419 /* ImportMappingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D932EFB7C2800855419 /* ImportMappingSettingsView.swift */; };
+		97F93DAA2EFC1D5000855419 /* WeatherModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93DA92EFC1D5000855419 /* WeatherModels.swift */; };
+		97F93DAE2EFC1E2A00855419 /* WeatherSettingsView_EXAMPLE.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93DAD2EFC1E2A00855419 /* WeatherSettingsView_EXAMPLE.swift */; };
+		97F93DB52EFC23D100855419 /* AirportDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93DB42EFC23D100855419 /* AirportDetailView.swift */; };
+		97F93E212EFC5CDA00855419 /* GPSSpoofingAlertLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93E1F2EFC584F00855419 /* GPSSpoofingAlertLevel.swift */; };
+		97F93E222EFC5CDE00855419 /* GPSSpoofingStatusPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93E202EFC586100855419 /* GPSSpoofingStatusPill.swift */; };
+		97F93E242EFC65B000855419 /* WEATHER_CONDITION_ICON.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E232EFC65B000855419 /* WEATHER_CONDITION_ICON.md */; };
+		97F93E262EFC683B00855419 /* WeatherIconHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93E252EFC683B00855419 /* WeatherIconHelper.swift */; };
+		97F93E282EFC689300855419 /* WEATHER_ICON_SYSTEM.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E272EFC689300855419 /* WEATHER_ICON_SYSTEM.md */; };
+		97F93E2A2EFC68B500855419 /* WEATHER_ICON_REFERENCE.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E292EFC68B500855419 /* WEATHER_ICON_REFERENCE.md */; };
+		97F93E2C2EFC68E200855419 /* WeatherIconHelper_Examples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93E2B2EFC68E200855419 /* WeatherIconHelper_Examples.swift */; };
+		97F93E2E2EFCD25900855419 /* SCHEDULE_VIEW_REORDER_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E2D2EFCD25900855419 /* SCHEDULE_VIEW_REORDER_SUMMARY.md */; };
+		97F93E302EFCD27C00855419 /* SCHEDULE_VIEW_REORDER_UI_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E2F2EFCD27C00855419 /* SCHEDULE_VIEW_REORDER_UI_GUIDE.md */; };
+		97F93E322EFCD57500855419 /* MONTH_VIEW_NAVIGATION_UPDATE.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E312EFCD57500855419 /* MONTH_VIEW_NAVIGATION_UPDATE.md */; };
+		97F93E342EFCD5EB00855419 /* BUG_FIX_SPLIT_VIEW.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E332EFCD5EB00855419 /* BUG_FIX_SPLIT_VIEW.md */; };
+		97F93E362EFCD72F00855419 /* REMOVED_SPLIT_VIEW.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E352EFCD72F00855419 /* REMOVED_SPLIT_VIEW.md */; };
+		97F93E3C2EFD7C3C00855419 /* airplaneseat.svg in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E3B2EFD7C3C00855419 /* airplaneseat.svg */; };
+		97FB7C2F2EF07DFF0050C5E4 /* WeatherBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97FB7C2E2EF07DFF0050C5E4 /* WeatherBannerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -286,7 +350,6 @@
 		97046B112ECD344A0066DC9F /* GradientGlowButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientGlowButton.swift; sourceTree = "<group>"; };
 		97046B152ECD4D880066DC9F /* KDTW_KCLE.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = KDTW_KCLE.gpx; sourceTree = "<group>"; };
 		97111C4A2E3A4F1300850DA5 /* ChainRouteDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChainRouteDisplay.swift; sourceTree = "<group>"; };
-		97126E0B2EEE062500D6D150 /* Untitled 2.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Untitled 2.txt"; sourceTree = "<group>"; };
 		97126E0F2EEF4E5300D6D150 /* CLE_to_YIP.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = CLE_to_YIP.gpx; sourceTree = "<group>"; };
 		97126E102EEF4E5300D6D150 /* NOCTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCTestView.swift; sourceTree = "<group>"; };
 		971461082EE4809F00751961 /* TripTimelineGanttChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTimelineGanttChart.swift; sourceTree = "<group>"; };
@@ -296,6 +359,19 @@
 		9719753C2ED76D0D00CC1511 /* DocumentEmailData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEmailData.swift; sourceTree = "<group>"; };
 		9719753E2ED76DBD00CC1511 /* TripType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripType.swift; sourceTree = "<group>"; };
 		972D01922ECBF2840064BD51 /* TimeFormattingUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormattingUtilities.swift; sourceTree = "<group>"; };
+		97366B222EFED52000C1A7A0 /* MigrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationManager.swift; sourceTree = "<group>"; };
+		97366B232EFED52000C1A7A0 /* SDCrewMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDCrewMember.swift; sourceTree = "<group>"; };
+		97366B242EFED52000C1A7A0 /* SDFlightLeg.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDFlightLeg.swift; sourceTree = "<group>"; };
+		97366B252EFED52000C1A7A0 /* SDLogpage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDLogpage.swift; sourceTree = "<group>"; };
+		97366B262EFED52000C1A7A0 /* SDTrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDTrip.swift; sourceTree = "<group>"; };
+		97366B272EFED52000C1A7A0 /* SwiftDataConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataConfiguration.swift; sourceTree = "<group>"; };
+		97366B282EFED52000C1A7A0 /* SwiftDataLogBookStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDataLogBookStore.swift; sourceTree = "<group>"; };
+		97366B382EFF072700C1A7A0 /* CloudKitDataRepairUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitDataRepairUtility.swift; sourceTree = "<group>"; };
+		97366B3A2EFF091800C1A7A0 /* CloudKitErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitErrorHandler.swift; sourceTree = "<group>"; };
+		97366B3C2EFF094700C1A7A0 /* CloudKitSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitSettingsView.swift; sourceTree = "<group>"; };
+		97366B402EFF0AD600C1A7A0 /* CLOUDKIT_ERROR_HANDLING_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLOUDKIT_ERROR_HANDLING_SUMMARY.md; sourceTree = "<group>"; };
+		97366B422EFF25E900C1A7A0 /* SubscriptionDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionDebugView.swift; sourceTree = "<group>"; };
+		97366B442EFF36B300C1A7A0 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		9738A2892EE8E35200C6CA28 /* RestStatusManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestStatusManager.swift; sourceTree = "<group>"; };
 		973AFA0A2EE0954900CDF4AB /* RosterToTripHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosterToTripHelper.swift; sourceTree = "<group>"; };
 		973AFA0C2EE097BF00CDF4AB /* GMTClockSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GMTClockSettings.swift; sourceTree = "<group>"; };
@@ -316,7 +392,6 @@
 		9755822F2EE8B80C0009D2CF /* DutyLimitSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DutyLimitSettings.swift; sourceTree = "<group>"; };
 		975582312EE8B88A0009D2CF /* DutyLimitSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DutyLimitSettingsView.swift; sourceTree = "<group>"; };
 		9756B82D2E95CC0800F59538 /* TabManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
-		9756B82F2E95E92400F59538 /* WeatherData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherData.swift; sourceTree = "<group>"; };
 		9756EE422E2D987E00810911 /* ProPilotApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ProPilotApp.entitlements; sourceTree = "<group>"; };
 		975C23CF2ECD70F50092249D /* NOCSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCSettingsStore.swift; sourceTree = "<group>"; };
 		975C23D12ECDF6460092249D /* NOCRosterGanttView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCRosterGanttView.swift; sourceTree = "<group>"; };
@@ -376,7 +451,6 @@
 		97747CE82ED8E73800126113 /* ForeFlightStyleTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForeFlightStyleTimerView.swift; sourceTree = "<group>"; };
 		97747CEC2ED9137B00126113 /* FlexibleTimerView 2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FlexibleTimerView 2.swift"; sourceTree = "<group>"; };
 		97747CEE2ED9318600126113 /* ElectronicLogbookViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectronicLogbookViewer.swift; sourceTree = "<group>"; };
-		9777E2FC2EEFABFA000AF7C4 /* privacy.txt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = privacy.txt.swift; sourceTree = "<group>"; };
 		9777E2FE2EEFAC67000AF7C4 /* privacy.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = privacy.md; sourceTree = "<group>"; };
 		977992EB2EC8D76F00A8CA39 /* SnappingScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnappingScrollView.swift; sourceTree = "<group>"; };
 		977992F32EC91A7C00A8CA39 /* SmartTimeEntryField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTimeEntryField.swift; sourceTree = "<group>"; };
@@ -418,7 +492,6 @@
 		977C7BFB2E1E9B9F0040362B /* PerDiemTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerDiemTabView.swift; sourceTree = "<group>"; };
 		977C7BFD2E1E9B9F0040362B /* RosterModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RosterModels.swift; sourceTree = "<group>"; };
 		977C7BFF2E1E9B9F0040362B /* ScheduleCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCalendarView.swift; sourceTree = "<group>"; };
-		977C7C002E1E9B9F0040362B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		977C7C012E1E9B9F0040362B /* SimpleGPSSignalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleGPSSignalView.swift; sourceTree = "<group>"; };
 		977C7C022E1E9B9F0040362B /* Trip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trip.swift; sourceTree = "<group>"; };
 		977D00732EEA5C560036EAD0 /* AircraftDefinition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftDefinition.swift; sourceTree = "<group>"; };
@@ -428,6 +501,35 @@
 		977D007A2EEA63180036EAD0 /* UnifiedAircraftView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedAircraftView.swift; sourceTree = "<group>"; };
 		977D007E2EEAFD1A0036EAD0 /* FAR117StatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FAR117StatusBanner.swift; sourceTree = "<group>"; };
 		977D00802EEAFD590036EAD0 /* GroupedRosterDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupedRosterDisplay.swift; sourceTree = "<group>"; };
+		9782BF122EF0BB87007BE2CE /* TRIP_GROUPING_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TRIP_GROUPING_FIX.md; sourceTree = "<group>"; };
+		9782BF142EF0BE80007BE2CE /* ACTIVATE_TRIP_BUTTON_UPDATE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ACTIVATE_TRIP_BUTTON_UPDATE.md; sourceTree = "<group>"; };
+		9782BF162EF0BF20007BE2CE /* ACTIVATE_BUTTON_CRASH_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ACTIVATE_BUTTON_CRASH_FIX.md; sourceTree = "<group>"; };
+		9782BF182EF0BFF3007BE2CE /* PLANNING_LEG_VIEW_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PLANNING_LEG_VIEW_FIX.md; sourceTree = "<group>"; };
+		9782BF1A2EF0C33D007BE2CE /* IATA_TO_ICAO_CONVERSION_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = IATA_TO_ICAO_CONVERSION_FIX.md; sourceTree = "<group>"; };
+		9782BF1C2EF0C489007BE2CE /* SMART_AIRPORT_LEARNING_SYSTEM.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SMART_AIRPORT_LEARNING_SYSTEM.md; sourceTree = "<group>"; };
+		9782BF1E2EF0C590007BE2CE /* ICLOUD_SYNC_IMPLEMENTATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ICLOUD_SYNC_IMPLEMENTATION.md; sourceTree = "<group>"; };
+		9782BF532EF0FC61007BE2CE /* BundledAirportDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundledAirportDatabase.swift; sourceTree = "<group>"; };
+		9782BF552EF240AF007BE2CE /* AddLegsToTripSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLegsToTripSheet.swift; sourceTree = "<group>"; };
+		9782BF572EF240D3007BE2CE /* PendingTripCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingTripCard.swift; sourceTree = "<group>"; };
+		9782BF592EF24114007BE2CE /* MANUAL_TRIP_GROUPING_DOCS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = MANUAL_TRIP_GROUPING_DOCS.md; sourceTree = "<group>"; };
+		9782BF5B2EF2412F007BE2CE /* QUICK_START_MANUAL_MODE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = QUICK_START_MANUAL_MODE.md; sourceTree = "<group>"; };
+		9782BF6A2EF25B3F007BE2CE /* FlightScheduleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightScheduleService.swift; sourceTree = "<group>"; };
+		9782BF6C2EF25B88007BE2CE /* JumpseatFinderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JumpseatFinderView.swift; sourceTree = "<group>"; };
+		9782BF6E2EF25BCF007BE2CE /* JUMPSEAT_INTEGRATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = JUMPSEAT_INTEGRATION.md; sourceTree = "<group>"; };
+		9782BF702EF25BFE007BE2CE /* SubscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionService.swift; sourceTree = "<group>"; };
+		9782BF722EF25C19007BE2CE /* JumpseatFinderView+Subscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "JumpseatFinderView+Subscription.swift"; sourceTree = "<group>"; };
+		9782BF742EF25C53007BE2CE /* INTEGRATION_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = INTEGRATION_SUMMARY.md; sourceTree = "<group>"; };
+		9782BF762EF25C6D007BE2CE /* QUICK_REFERENCE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = QUICK_REFERENCE.md; sourceTree = "<group>"; };
+		9782BF782EF25D39007BE2CE /* NAMING_CONFLICT_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NAMING_CONFLICT_FIX.md; sourceTree = "<group>"; };
+		9782BF7A2EF25D95007BE2CE /* JUMPSEAT_ERRORS_FIXED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = JUMPSEAT_ERRORS_FIXED.md; sourceTree = "<group>"; };
+		9782BF7C2EF25EF3007BE2CE /* MONETIZATION_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = MONETIZATION_GUIDE.md; sourceTree = "<group>"; };
+		9782BF7E2EF26017007BE2CE /* ATS_ERROR_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ATS_ERROR_FIX.md; sourceTree = "<group>"; };
+		9782BF802EF261EB007BE2CE /* CRASH_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CRASH_FIX.md; sourceTree = "<group>"; };
+		9782BF822EF26249007BE2CE /* API_ERROR_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = API_ERROR_GUIDE.md; sourceTree = "<group>"; };
+		9782BFF72EF39A16007BE2CE /* CloudKitDiagnosticView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitDiagnosticView.swift; sourceTree = "<group>"; };
+		9782BFF92EF39A56007BE2CE /* CLOUDKIT_DIAGNOSTIC_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLOUDKIT_DIAGNOSTIC_GUIDE.md; sourceTree = "<group>"; };
+		978DB39E2EFEBE5800552684 /* SubscriptionPromptBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromptBanner.swift; sourceTree = "<group>"; };
+		978DB3A02EFEBE7D00552684 /* SUBSCRIPTION_BANNER_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SUBSCRIPTION_BANNER_GUIDE.md; sourceTree = "<group>"; };
 		9799E73F2EAE5B8600F0FADE /* TripFolderBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripFolderBrowserView.swift; sourceTree = "<group>"; };
 		9799E7412EAE68ED00F0FADE /* PDFThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailView.swift; sourceTree = "<group>"; };
 		9799E7432EAE6A0500F0FADE /* PDFThumbnailGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFThumbnailGenerator.swift; sourceTree = "<group>"; };
@@ -452,6 +554,7 @@
 		97C37E132EE1F9F900975E84 /* schema.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = schema.json; sourceTree = "<group>"; };
 		97C759AC2E2A69210048549B /* OPSCallingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OPSCallingManager.swift; sourceTree = "<group>"; };
 		97C759B32E2ABB0A0048549B /* AppIcon.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AppIcon.xcassets; sourceTree = "<group>"; };
+		97D696DC2EF3A56B004675D0 /* AirportDatabaseTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportDatabaseTestView.swift; sourceTree = "<group>"; };
 		97D69EBD2E3D735600FFF195 /* UserDefaults+AppGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+AppGroup.swift"; sourceTree = "<group>"; };
 		97D69EBF2E3D954C00FFF195 /* DutyTimerLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DutyTimerLiveActivity.swift; sourceTree = "<group>"; };
 		97D75B7E2E50C15F00EF6DB3 /* ProPilotWatchApp Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ProPilotWatchApp Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -474,13 +577,127 @@
 		97F2C3F52EDE5020002B9BD6 /* ContinuationPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinuationPrompt.swift; sourceTree = "<group>"; };
 		97F2C3F72EDE5039002B9BD6 /* ContinuationPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinuationPromptView.swift; sourceTree = "<group>"; };
 		97F2C3FB2EDE5096002B9BD6 /* TripGenerationServiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripGenerationServiceSettingsView.swift; sourceTree = "<group>"; };
+		97F93D1C2EF98B4F00855419 /* DutyTimeSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DutyTimeSettingsStore.swift; sourceTree = "<group>"; };
+		97F93D1E2EFA2F6B00855419 /* LogbookWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogbookWelcomeView.swift; sourceTree = "<group>"; };
+		97F93D202EFA30F500855419 /* WelcomeScreenDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeScreenDebugView.swift; sourceTree = "<group>"; };
+		97F93D222EFA311D00855419 /* WELCOME_SCREEN_INTEGRATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WELCOME_SCREEN_INTEGRATION.md; sourceTree = "<group>"; };
+		97F93D242EFA312F00855419 /* INTEGRATION_SUMMARY 2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "INTEGRATION_SUMMARY 2.md"; sourceTree = "<group>"; };
+		97F93D262EFA315E00855419 /* WELCOME_INTEGRATION_VISUAL_GUIDE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WELCOME_INTEGRATION_VISUAL_GUIDE.swift; sourceTree = "<group>"; };
+		97F93D282EFA341A00855419 /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
+		97F93D2A2EFA342800855419 /* LogbookSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogbookSearchView.swift; sourceTree = "<group>"; };
+		97F93D2C2EFA351400855419 /* SEARCH_INTEGRATION_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SEARCH_INTEGRATION_GUIDE.md; sourceTree = "<group>"; };
+		97F93D2E2EFA356200855419 /* COMPLETE_INTEGRATION_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = COMPLETE_INTEGRATION_GUIDE.md; sourceTree = "<group>"; };
+		97F93D302EFA357F00855419 /* HELP_AND_SEARCH_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = HELP_AND_SEARCH_SUMMARY.md; sourceTree = "<group>"; };
+		97F93D342EFA367900855419 /* INTEGRATION_CODE_SNIPPETS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = INTEGRATION_CODE_SNIPPETS.swift; sourceTree = "<group>"; };
+		97F93D362EFA3CE300855419 /* ProPilot_App_Function_and_File_Index.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ProPilot_App_Function_and_File_Index.md; sourceTree = "<group>"; };
+		97F93D392EFAC19300855419 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
+		97F93D3A2EFAC1A000855419 /* SubscriptionStatusChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionStatusChecker.swift; sourceTree = "<group>"; };
+		97F93D3B2EFAC1AC00855419 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		97F93D3C2EFAC1BB00855419 /* SubscriptionGateModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionGateModifier.swift; sourceTree = "<group>"; };
+		97F93D3D2EFAC32500855419 /* PAYWALL_INTEGRATION_COMPLETE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PAYWALL_INTEGRATION_COMPLETE.md; sourceTree = "<group>"; };
+		97F93D3E2EFAC34F00855419 /* PAYWALL_TESTING_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PAYWALL_TESTING_GUIDE.md; sourceTree = "<group>"; };
+		97F93D3F2EFAC3C600855419 /* PAYWALL_ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PAYWALL_ARCHITECTURE.md; sourceTree = "<group>"; };
+		97F93D402EFAC40800855419 /* README_PAYWALL.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README_PAYWALL.md; sourceTree = "<group>"; };
+		97F93D452EFAC63A00855419 /* PAYWALL_SWIFT6_FIXES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PAYWALL_SWIFT6_FIXES.md; sourceTree = "<group>"; };
+		97F93D472EFAC6C700855419 /* SWIFT6_FIXES_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SWIFT6_FIXES_SUMMARY.md; sourceTree = "<group>"; };
+		97F93D492EFAC79600855419 /* INFINITE_LOOP_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = INFINITE_LOOP_FIX.md; sourceTree = "<group>"; };
+		97F93D4B2EFAC85D00855419 /* LOOP_FIX_FINAL.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LOOP_FIX_FINAL.md; sourceTree = "<group>"; };
+		97F93D4F2EFAF1E000855419 /* propilot_airports.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = propilot_airports.csv; sourceTree = "<group>"; };
+		97F93D542EFB17B200855419 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
+		97F93D562EFB17CA00855419 /* AirportReviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportReviewSheet.swift; sourceTree = "<group>"; };
+		97F93D5A2EFB181B00855419 /* AirportDatabaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportDatabaseView.swift; sourceTree = "<group>"; };
+		97F93D5C2EFB183500855419 /* PilotReview.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PilotReview.md; sourceTree = "<group>"; };
+		97F93D602EFB199600855419 /* SettingsIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsIntegration.swift; sourceTree = "<group>"; };
+		97F93D622EFB19CD00855419 /* FIXES_APPLIED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FIXES_APPLIED.md; sourceTree = "<group>"; };
+		97F93D642EFB19F400855419 /* WEATHER_SERVICES_ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WEATHER_SERVICES_ARCHITECTURE.md; sourceTree = "<group>"; };
+		97F93D662EFB1B8900855419 /* AIRPORTDETAILVIEW_FIXES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORTDETAILVIEW_FIXES.md; sourceTree = "<group>"; };
+		97F93D682EFB201F00855419 /* AIRPORTREVIEWSHEET_FIXES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORTREVIEWSHEET_FIXES.md; sourceTree = "<group>"; };
+		97F93D6A2EFB209900855419 /* AIRPORTREVIEWSHEET_COMPATIBILITY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORTREVIEWSHEET_COMPATIBILITY.md; sourceTree = "<group>"; };
+		97F93D6C2EFB21BA00855419 /* AIRPORT_DATABASE_WIRING_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORT_DATABASE_WIRING_FIX.md; sourceTree = "<group>"; };
+		97F93D6E2EFB228400855419 /* AIRPORT_DETAIL_VIEW_NAMING_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORT_DETAIL_VIEW_NAMING_FIX.md; sourceTree = "<group>"; };
+		97F93D702EFB23BF00855419 /* COMPLETE_AIRPORT_DATABASE_FIXES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = COMPLETE_AIRPORT_DATABASE_FIXES.md; sourceTree = "<group>"; };
+		97F93D742EFB331A00855419 /* NEXT_STEPS_COMPLETE_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NEXT_STEPS_COMPLETE_GUIDE.md; sourceTree = "<group>"; };
+		97F93D752EFB331A00855419 /* AIRPORT_DB_MIGRATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORT_DB_MIGRATION.md; sourceTree = "<group>"; };
+		97F93D762EFB331A00855419 /* AIRPORT_DATABASE_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORT_DATABASE_FIX.md; sourceTree = "<group>"; };
+		97F93D772EFB331A00855419 /* INFINITE_PRINT_LOOP_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = INFINITE_PRINT_LOOP_FIX.md; sourceTree = "<group>"; };
+		97F93D782EFB331A00855419 /* CLOUDKIT_AIRPORT_QUERY_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLOUDKIT_AIRPORT_QUERY_FIX.md; sourceTree = "<group>"; };
+		97F93D792EFB332500855419 /* NEXT_STEPS_COMPLETE_GUIDE 2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "NEXT_STEPS_COMPLETE_GUIDE 2.md"; sourceTree = "<group>"; };
+		97F93D7A2EFB332500855419 /* AIRPORT_DB_MIGRATION 2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "AIRPORT_DB_MIGRATION 2.md"; sourceTree = "<group>"; };
+		97F93D7B2EFB332500855419 /* AIRPORT_DATABASE_FIX 2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "AIRPORT_DATABASE_FIX 2.md"; sourceTree = "<group>"; };
+		97F93D7C2EFB332500855419 /* INFINITE_PRINT_LOOP_FIX 2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "INFINITE_PRINT_LOOP_FIX 2.md"; sourceTree = "<group>"; };
+		97F93D7D2EFB332500855419 /* CLOUDKIT_AIRPORT_QUERY_FIX 2.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "CLOUDKIT_AIRPORT_QUERY_FIX 2.md"; sourceTree = "<group>"; };
+		97F93D7E2EFB353200855419 /* WeatherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherView.swift; sourceTree = "<group>"; };
+		97F93D802EFB443A00855419 /* WEATHER_FIXES_APPLIED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WEATHER_FIXES_APPLIED.md; sourceTree = "<group>"; };
+		97F93D822EFB464400855419 /* DATIS_UI_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DATIS_UI_IMPROVEMENTS.md; sourceTree = "<group>"; };
+		97F93D852EFB78CF00855419 /* TimezonePreference.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TimezonePreference.md; sourceTree = "<group>"; };
+		97F93D872EFB78F500855419 /* ICalendarImportExample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICalendarImportExample.swift; sourceTree = "<group>"; };
+		97F93D892EFB790800855419 /* ICalendarImportWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICalendarImportWizardView.swift; sourceTree = "<group>"; };
+		97F93D8B2EFB791C00855419 /* ICalendarImportEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICalendarImportEngine.swift; sourceTree = "<group>"; };
+		97F93D8D2EFB792D00855419 /* ICalendarParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICalendarParser.swift; sourceTree = "<group>"; };
+		97F93D8F2EFB794000855419 /* ImportMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportMapping.swift; sourceTree = "<group>"; };
+		97F93D912EFB7BAB00855419 /* ImportMappingStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportMappingStore.swift; sourceTree = "<group>"; };
+		97F93D932EFB7C2800855419 /* ImportMappingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportMappingSettingsView.swift; sourceTree = "<group>"; };
+		97F93D992EFB7C9D00855419 /* ICAL_INTEGRATION_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ICAL_INTEGRATION_SUMMARY.md; sourceTree = "<group>"; };
+		97F93D9B2EFB7D3200855419 /* NEXT_STEPS_COMPLETE_GUIDE 3.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "NEXT_STEPS_COMPLETE_GUIDE 3.md"; sourceTree = "<group>"; };
+		97F93D9C2EFB7D3200855419 /* AIRPORT_DB_MIGRATION 3.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "AIRPORT_DB_MIGRATION 3.md"; sourceTree = "<group>"; };
+		97F93D9D2EFB7D3200855419 /* AIRPORT_DATABASE_FIX 3.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "AIRPORT_DATABASE_FIX 3.md"; sourceTree = "<group>"; };
+		97F93D9E2EFB7D3200855419 /* INFINITE_PRINT_LOOP_FIX 3.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "INFINITE_PRINT_LOOP_FIX 3.md"; sourceTree = "<group>"; };
+		97F93D9F2EFB7D3200855419 /* CLOUDKIT_AIRPORT_QUERY_FIX 3.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "CLOUDKIT_AIRPORT_QUERY_FIX 3.md"; sourceTree = "<group>"; };
+		97F93DA02EFB7D3900855419 /* NEXT_STEPS_COMPLETE_GUIDE 4.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "NEXT_STEPS_COMPLETE_GUIDE 4.md"; sourceTree = "<group>"; };
+		97F93DA12EFB7D3900855419 /* AIRPORT_DB_MIGRATION 4.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "AIRPORT_DB_MIGRATION 4.md"; sourceTree = "<group>"; };
+		97F93DA22EFB7D3900855419 /* AIRPORT_DATABASE_FIX 4.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "AIRPORT_DATABASE_FIX 4.md"; sourceTree = "<group>"; };
+		97F93DA32EFB7D3900855419 /* INFINITE_PRINT_LOOP_FIX 4.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "INFINITE_PRINT_LOOP_FIX 4.md"; sourceTree = "<group>"; };
+		97F93DA42EFB7D3900855419 /* CLOUDKIT_AIRPORT_QUERY_FIX 4.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "CLOUDKIT_AIRPORT_QUERY_FIX 4.md"; sourceTree = "<group>"; };
+		97F93DA52EFB83B200855419 /* ICAL_INTEGRATION_SUMMARY_REVISED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ICAL_INTEGRATION_SUMMARY_REVISED.md; sourceTree = "<group>"; };
+		97F93DA92EFC1D5000855419 /* WeatherModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModels.swift; sourceTree = "<group>"; };
+		97F93DAB2EFC1E1100855419 /* WEATHER_IMPROVEMENTS_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WEATHER_IMPROVEMENTS_SUMMARY.md; sourceTree = "<group>"; };
+		97F93DAD2EFC1E2A00855419 /* WeatherSettingsView_EXAMPLE.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherSettingsView_EXAMPLE.swift; sourceTree = "<group>"; };
+		97F93DAF2EFC1E5C00855419 /* WEATHER_COMPLETE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WEATHER_COMPLETE.md; sourceTree = "<group>"; };
+		97F93DB12EFC1E7600855419 /* WEATHER_QUICK_REF.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WEATHER_QUICK_REF.md; sourceTree = "<group>"; };
+		97F93DB32EFC208200855419 /* WEATHER_UNITS_UPDATE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WEATHER_UNITS_UPDATE.md; sourceTree = "<group>"; };
+		97F93DB42EFC23D100855419 /* AirportDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportDetailView.swift; sourceTree = "<group>"; };
+		97F93DB62EFC28FF00855419 /* DUPLICATE_TYPES_FIXED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = DUPLICATE_TYPES_FIXED.md; sourceTree = "<group>"; };
+		97F93DB82EFC297B00855419 /* AIRPORT_DETAIL_VIEW_NAME_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORT_DETAIL_VIEW_NAME_FIX.md; sourceTree = "<group>"; };
+		97F93DB92EFC2A7500855419 /* AIRPORT_DETAIL_VIEWS_WIRING_MAP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORT_DETAIL_VIEWS_WIRING_MAP.md; sourceTree = "<group>"; };
+		97F93DBA2EFC2B4B00855419 /* AIRPORT_REVIEWS_CLARIFICATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORT_REVIEWS_CLARIFICATION.md; sourceTree = "<group>"; };
+		97F93DBB2EFC2BC100855419 /* AIRPORT_REVIEW_TAB_RENAMED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORT_REVIEW_TAB_RENAMED.md; sourceTree = "<group>"; };
+		97F93DBC2EFC2D4900855419 /* AIRPORT_DETAIL_NAMING_CONFLICT_FIXED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORT_DETAIL_NAMING_CONFLICT_FIXED.md; sourceTree = "<group>"; };
+		97F93DBE2EFC2EE100855419 /* AIRPORT_DATABASE_UI_IMPROVEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORT_DATABASE_UI_IMPROVEMENTS.md; sourceTree = "<group>"; };
+		97F93E1F2EFC584F00855419 /* GPSSpoofingAlertLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSSpoofingAlertLevel.swift; sourceTree = "<group>"; };
+		97F93E202EFC586100855419 /* GPSSpoofingStatusPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GPSSpoofingStatusPill.swift; sourceTree = "<group>"; };
+		97F93E232EFC65B000855419 /* WEATHER_CONDITION_ICON.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WEATHER_CONDITION_ICON.md; sourceTree = "<group>"; };
+		97F93E252EFC683B00855419 /* WeatherIconHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherIconHelper.swift; sourceTree = "<group>"; };
+		97F93E272EFC689300855419 /* WEATHER_ICON_SYSTEM.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WEATHER_ICON_SYSTEM.md; sourceTree = "<group>"; };
+		97F93E292EFC68B500855419 /* WEATHER_ICON_REFERENCE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WEATHER_ICON_REFERENCE.md; sourceTree = "<group>"; };
+		97F93E2B2EFC68E200855419 /* WeatherIconHelper_Examples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherIconHelper_Examples.swift; sourceTree = "<group>"; };
+		97F93E2D2EFCD25900855419 /* SCHEDULE_VIEW_REORDER_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SCHEDULE_VIEW_REORDER_SUMMARY.md; sourceTree = "<group>"; };
+		97F93E2F2EFCD27C00855419 /* SCHEDULE_VIEW_REORDER_UI_GUIDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SCHEDULE_VIEW_REORDER_UI_GUIDE.md; sourceTree = "<group>"; };
+		97F93E312EFCD57500855419 /* MONTH_VIEW_NAVIGATION_UPDATE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = MONTH_VIEW_NAVIGATION_UPDATE.md; sourceTree = "<group>"; };
+		97F93E332EFCD5EB00855419 /* BUG_FIX_SPLIT_VIEW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = BUG_FIX_SPLIT_VIEW.md; sourceTree = "<group>"; };
+		97F93E352EFCD72F00855419 /* REMOVED_SPLIT_VIEW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = REMOVED_SPLIT_VIEW.md; sourceTree = "<group>"; };
+		97F93E3B2EFD7C3C00855419 /* airplaneseat.svg */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = airplaneseat.svg; sourceTree = "<group>"; };
+		97FB7C2E2EF07DFF0050C5E4 /* WeatherBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherBannerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		971975332ED5677D00CC1511 /* Exceptions for "ProPilotWatchApp Watch App" folder in "ProPilotWatchApp Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				CHANGES_SUMMARY.md,
+				COLOR_SCHEME_GUIDE.md,
+				DUTY_TIMER_WATCH_FIXES.md,
+				FINAL_TWO_ERRORS_FIXED.md,
+				GPX_TESTING_SUMMARY.md,
 				Info.plist,
+				PHONE_WATCH_SYNC_IMPROVEMENTS.md,
+				PILOT_WATCH_APP_FIXES.md,
+				QUICK_REFERENCE.md,
+				QUICK_START.md,
+				README_WATCH_FIXES.md,
+				WATCH_INTEGRATION_COMPLETE.md,
+				WATCH_MAIN_VIEW_FIXES.md,
+				WATCH_SYNC_FIXES.md,
+				WATCH_VIEW_IMPROVEMENTS.md,
 			);
 			target = 97DE533F2E315A03007D6475 /* ProPilotWatchApp Watch App */;
 		};
@@ -505,11 +722,21 @@
 			);
 			target = 9772E6602E4028C400B5A0B4 /* ProPilotWidgetsExtension */;
 		};
+		97F93E1D2EFC4CC800855419 /* Exceptions for "New Group" folder in "TheProPilotApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				flow.txt,
+			);
+			target = 9770D6612E07A62500D18769 /* TheProPilotApp */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		97418DD22EE306AE00560D71 /* New Group */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				97F93E1D2EFC4CC800855419 /* Exceptions for "New Group" folder in "TheProPilotApp" target */,
+			);
 			path = "New Group";
 			sourceTree = "<group>";
 		};
@@ -563,25 +790,42 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		97366B292EFED52000C1A7A0 /* SwiftDataModels */ = {
+			isa = PBXGroup;
+			children = (
+				97366B222EFED52000C1A7A0 /* MigrationManager.swift */,
+				97366B232EFED52000C1A7A0 /* SDCrewMember.swift */,
+				97366B242EFED52000C1A7A0 /* SDFlightLeg.swift */,
+				97366B252EFED52000C1A7A0 /* SDLogpage.swift */,
+				97366B262EFED52000C1A7A0 /* SDTrip.swift */,
+				97366B272EFED52000C1A7A0 /* SwiftDataConfiguration.swift */,
+				97366B282EFED52000C1A7A0 /* SwiftDataLogBookStore.swift */,
+			);
+			path = SwiftDataModels;
+			sourceTree = "<group>";
+		};
 		9770D6592E07A62500D18769 = {
 			isa = PBXGroup;
 			children = (
 				97AFBB902EE6558100C63E38 /* Jumpseat */,
 				975C77D12EE21BEE0060728C /* EAPIS */,
-				97046B152ECD4D880066DC9F /* KDTW_KCLE.gpx */,
 				97C37E132EE1F9F900975E84 /* schema.json */,
 				976A7D592E8C7B3D00E2676E /* YIP_DTW.gpx */,
 				9772E6642E4028C500B5A0B4 /* ProPilotWidgets */,
 				976052982ECA59E1007CB9C5 /* ActiveTripBannerView.swift */,
+				97F93DB42EFC23D100855419 /* AirportDetailView.swift */,
 				977C7BD62E1E9B9F0040362B /* AircraftManagementView.swift */,
+				97F93D4F2EFAF1E000855419 /* propilot_airports.csv */,
 				976052942ECA11BF007CB9C5 /* AirlineConfigurationView.swift */,
-				9777E2FC2EEFABFA000AF7C4 /* privacy.txt.swift */,
+				97F93D7E2EFB353200855419 /* WeatherView.swift */,
 				977C7BD72E1E9B9F0040362B /* AirlineSettings.swift */,
 				977C7BD82E1E9B9F0040362B /* AirlineSettingsView.swift */,
-				97EC0B3C2E2431FB00EFE8F5 /* AirportDatabaseManager.swift */,
+				97F93D532EFB178800855419 /* AirportDatabase */,
 				976052922ECA112A007CB9C5 /* AllLegsView.swift */,
 				977D00732EEA5C560036EAD0 /* AircraftDefinition.swift */,
+				97D696DC2EF3A56B004675D0 /* AirportDatabaseTestView.swift */,
 				977D00792EEA63180036EAD0 /* UnifiedAircraftDatabase.swift */,
+				97F93D1E2EFA2F6B00855419 /* LogbookWelcomeView.swift */,
 				977D007A2EEA63180036EAD0 /* UnifiedAircraftView.swift */,
 				977D00742EEA5C560036EAD0 /* AircraftLibraryStore.swift */,
 				977D00752EEA5C560036EAD0 /* AircraftLibraryView.swift */,
@@ -601,6 +845,7 @@
 				97D75BB02E50E6FE00EF6DB3 /* AuthenticatedExcelViewer.swift */,
 				97747C8C2ED7D3CB00126113 /* BackupFileHandler.swift */,
 				9760529A2ECA6C02007CB9C5 /* BottomSheetTripsView.swift */,
+				9782BF532EF0FC61007BE2CE /* BundledAirportDatabase.swift */,
 				97111C4A2E3A4F1300850DA5 /* ChainRouteDisplay.swift */,
 				977C7BDB2E1E9B9F0040362B /* ClocksView.swift */,
 				97747CE22ED8DDDD00126113 /* ClocksAndTimersView.swift */,
@@ -624,6 +869,7 @@
 				976BC3F72EDCBE4000056B92 /* DismissedRosterItem.swift */,
 				976BC3F92EDCBE5500056B92 /* DismissedRosterItemsView.swift */,
 				97D69EBF2E3D954C00FFF195 /* DutyTimerLiveActivity.swift */,
+				97F93D1C2EF98B4F00855419 /* DutyTimeSettingsStore.swift */,
 				9703AF7E2EAEE0C5002E9E26 /* DocumentCropProcessor.swift */,
 				971975382ED76B9900CC1511 /* DocumentEmailConfig.swift */,
 				9703AF802EAEE0D3002E9E26 /* DocumentCropSettingsView.swift */,
@@ -661,17 +907,16 @@
 				97747CE82ED8E73800126113 /* ForeFlightStyleTimerView.swift */,
 				977C7BEB2E1E9B9F0040362B /* FlightTrackingUtility.swift */,
 				977C7BEC2E1E9B9F0040362B /* ForeFlightLogBookRow.swift */,
-				97EC0B172E229FFF00EFE8F5 /* GPSRAIMManager.swift */,
-				97A4F79D2E8291F400EBE49E /* GPSSpeedMonitor.swift */,
-				9747C2532ECC0DCA00953014 /* GPXTestIntegration.swift */,
-				97126E0F2EEF4E5300D6D150 /* CLE_to_YIP.gpx */,
+				97F93E1E2EFC583500855419 /* GPS */,
 				97126E102EEF4E5300D6D150 /* NOCTestView.swift */,
-				9747C2512ECC0DBE00953014 /* GPXTestPlayer.swift */,
 				97046B112ECD344A0066DC9F /* GradientGlowButton.swift */,
 				977C7BED2E1E9B9F0040362B /* Helpers.swift */,
+				97F93D282EFA341A00855419 /* HelpView.swift */,
+				97F93D2A2EFA342800855419 /* LogbookSearchView.swift */,
 				971461082EE4809F00751961 /* TripTimelineGanttChart.swift */,
 				977C7BEE2E1E9B9F0040362B /* HomeBaseConfigurationView.swift */,
 				977C7BEF2E1E9B9F0040362B /* HorizontalLogView.swift */,
+				97F93D842EFB789800855419 /* iCal Parser */,
 				9763B30D2EE3DB39003865D6 /* Info.plist */,
 				976D54692EDA894700A7D60C /* iPhoneWatchSettingsView.swift */,
 				977C7BF02E1E9B9F0040362B /* LandscapeDataEntryView.swift */,
@@ -706,6 +951,7 @@
 				9799E7412EAE68ED00F0FADE /* PDFThumbnailView.swift */,
 				977C7BFB2E1E9B9F0040362B /* PerDiemTabView.swift */,
 				9738A2892EE8E35200C6CA28 /* RestStatusManager.swift */,
+				97366B442EFF36B300C1A7A0 /* SettingsView.swift */,
 				975582312EE8B88A0009D2CF /* DutyLimitSettingsView.swift */,
 				9755822F2EE8B80C0009D2CF /* DutyLimitSettings.swift */,
 				97006EA22EEB563F00319FF0 /* OffDutyStatusManager.swift */,
@@ -719,13 +965,12 @@
 				97A7C8552ECD04B4009E4A5E /* ProximitySettingsView.swift */,
 				977C7BFD2E1E9B9F0040362B /* RosterModels.swift */,
 				973AFA0A2EE0954900CDF4AB /* RosterToTripHelper.swift */,
+				97366B292EFED52000C1A7A0 /* SwiftDataModels */,
 				976052962ECA124C007CB9C5 /* ScannerEmailConfigView.swift */,
 				97DC6EE82E3323890002F472 /* ScannerIntegrationsExtensions.swift */,
 				977C7BFF2E1E9B9F0040362B /* ScheduleCalendarView.swift */,
 				97DC6F1F2E3675500002F472 /* ScheduleDataAnalyzer.swift */,
-				977C7C002E1E9B9F0040362B /* SettingsView.swift */,
 				97D75BA42E50D25A00EF6DB3 /* SharePointFile.swift */,
-				9777E2FE2EEFAC67000AF7C4 /* privacy.md */,
 				977C64ED2E81ABAA002B9552 /* ShareSheet.swift */,
 				977C7C012E1E9B9F0040362B /* SimpleGPSSignalView.swift */,
 				976F1C812E64A2ED00F15444 /* SimpleElectronicLogbookView.swift */,
@@ -738,17 +983,11 @@
 				97BCC3B22E29A81A00D36E5B /* TemplateGeneratorView.swift */,
 				97698C182EC8356D003523F6 /* TimeDisplayUtility.swift */,
 				977C7C022E1E9B9F0040362B /* Trip.swift */,
-				97126E0B2EEE062500D6D150 /* Untitled 2.txt */,
 				9719753E2ED76DBD00CC1511 /* TripType.swift */,
 				97698C162EC833C0003523F6 /* TripDateUtility.swift */,
 				9703AF842EAFC758002E9E26 /* TripDocumentListView.swift */,
 				9799E73F2EAE5B8600F0FADE /* TripFolderBrowserView.swift */,
-				976D54762EDB54EE00A7D60C /* TripGenerationAlertModifier.swift */,
-				976D546F2EDB457C00A7D60C /* TripGenerationService.swift */,
-				97F2C3FB2EDE5096002B9BD6 /* TripGenerationServiceSettingsView.swift */,
-				976D546D2EDB452300A7D60C /* TripGenerationSettings.swift */,
-				976D54742EDB513C00A7D60C /* TripGenerationSettingsRow.swift */,
-				976D54712EDB45DB00A7D60C /* TripGenerationSettingsView.swift */,
+				97B562D72EFDC2BB00FC29B3 /* Trip Generation */,
 				97690F4D2EA5A3CC00FA9775 /* TimeRoundingUtility.swift */,
 				97747C8A2ED7B19800126113 /* TripSharingManager.swift */,
 				97690F472EA45DDA00FA9775 /* TripDocumentManager.swift */,
@@ -758,11 +997,11 @@
 				976F1C7F2E64A23A00F15444 /* UnifiedLogbookManager.swift */,
 				97AFBBA42EE7812900C63E38 /* UserAirportCodeMappings.swift */,
 				97D69EBD2E3D735600FFF195 /* UserDefaults+AppGroup.swift */,
-				9756B82F2E95E92400F59538 /* WeatherData.swift */,
 				97655AF32E50BB23007F4CDB /* TheProPilotApp.app */,
 				97655AF42E50BB29007F4CDB /* ProPilotWidgetsExtension.appex */,
 				97D75B7E2E50C15F00EF6DB3 /* ProPilotWatchApp Watch App.app */,
 				976052A22ECAA448007CB9C5 /* TripCompletionSummaryView.swift */,
+				97F93D382EFAC16F00855419 /* Paywall */,
 				976052A42ECAA46B007CB9C5 /* WatchPhoneLegSyncManager.swift */,
 				976052A82ECAA5E9007CB9C5 /* WatchTripSummaryView.swift */,
 				976052AC2ECAA638007CB9C5 /* WatchTheme.swift */,
@@ -773,6 +1012,24 @@
 				973AFA0E2EE097BF00CDF4AB /* GMTClockPill.swift */,
 				973AFA102EE097BF00CDF4AB /* GMTClockOverlay.swift */,
 				973AFA122EE097BF00CDF4AB /* ClocksAndTimersSettingsView.swift */,
+				9782BF552EF240AF007BE2CE /* AddLegsToTripSheet.swift */,
+				9782BF572EF240D3007BE2CE /* PendingTripCard.swift */,
+				9782BF6A2EF25B3F007BE2CE /* FlightScheduleService.swift */,
+				9782BF6C2EF25B88007BE2CE /* JumpseatFinderView.swift */,
+				97F93E3B2EFD7C3C00855419 /* airplaneseat.svg */,
+				9782BF702EF25BFE007BE2CE /* SubscriptionService.swift */,
+				9782BF722EF25C19007BE2CE /* JumpseatFinderView+Subscription.swift */,
+				97F93D4D2EFAC86600855419 /* Documents */,
+				9782BFF72EF39A16007BE2CE /* CloudKitDiagnosticView.swift */,
+				97F93DA82EFC1AAD00855419 /* Weather */,
+				97F93D202EFA30F500855419 /* WelcomeScreenDebugView.swift */,
+				97F93D262EFA315E00855419 /* WELCOME_INTEGRATION_VISUAL_GUIDE.swift */,
+				97F93D342EFA367900855419 /* INTEGRATION_CODE_SNIPPETS.swift */,
+				97366B382EFF072700C1A7A0 /* CloudKitDataRepairUtility.swift */,
+				97366B3A2EFF091800C1A7A0 /* CloudKitErrorHandler.swift */,
+				97366B3C2EFF094700C1A7A0 /* CloudKitSettingsView.swift */,
+				97366B402EFF0AD600C1A7A0 /* CLOUDKIT_ERROR_HANDLING_SUMMARY.md */,
+				97366B422EFF25E900C1A7A0 /* SubscriptionDebugView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -782,6 +1039,179 @@
 				97AFBB872EE6558100C63E38 /* JUMPSEAT_IMPLEMENTATION_GUIDE.md */,
 			);
 			path = Jumpseat;
+			sourceTree = "<group>";
+		};
+		97B562D72EFDC2BB00FC29B3 /* Trip Generation */ = {
+			isa = PBXGroup;
+			children = (
+				976D54762EDB54EE00A7D60C /* TripGenerationAlertModifier.swift */,
+				976D546F2EDB457C00A7D60C /* TripGenerationService.swift */,
+				97F2C3FB2EDE5096002B9BD6 /* TripGenerationServiceSettingsView.swift */,
+				976D546D2EDB452300A7D60C /* TripGenerationSettings.swift */,
+				976D54742EDB513C00A7D60C /* TripGenerationSettingsRow.swift */,
+				976D54712EDB45DB00A7D60C /* TripGenerationSettingsView.swift */,
+			);
+			path = "Trip Generation";
+			sourceTree = "<group>";
+		};
+		97F93D382EFAC16F00855419 /* Paywall */ = {
+			isa = PBXGroup;
+			children = (
+				97F93D3A2EFAC1A000855419 /* SubscriptionStatusChecker.swift */,
+				97F93D3B2EFAC1AC00855419 /* PaywallView.swift */,
+				97F93D392EFAC19300855419 /* SubscriptionManager.swift */,
+				97F93D3C2EFAC1BB00855419 /* SubscriptionGateModifier.swift */,
+				97F93D3D2EFAC32500855419 /* PAYWALL_INTEGRATION_COMPLETE.md */,
+				97F93D3E2EFAC34F00855419 /* PAYWALL_TESTING_GUIDE.md */,
+				97F93D3F2EFAC3C600855419 /* PAYWALL_ARCHITECTURE.md */,
+				97F93D402EFAC40800855419 /* README_PAYWALL.md */,
+				97F93D452EFAC63A00855419 /* PAYWALL_SWIFT6_FIXES.md */,
+				97F93D492EFAC79600855419 /* INFINITE_LOOP_FIX.md */,
+			);
+			path = Paywall;
+			sourceTree = "<group>";
+		};
+		97F93D4D2EFAC86600855419 /* Documents */ = {
+			isa = PBXGroup;
+			children = (
+				9782BF742EF25C53007BE2CE /* INTEGRATION_SUMMARY.md */,
+				9782BF762EF25C6D007BE2CE /* QUICK_REFERENCE.md */,
+				9777E2FE2EEFAC67000AF7C4 /* privacy.md */,
+				9782BF782EF25D39007BE2CE /* NAMING_CONFLICT_FIX.md */,
+				9782BF7A2EF25D95007BE2CE /* JUMPSEAT_ERRORS_FIXED.md */,
+				9782BF122EF0BB87007BE2CE /* TRIP_GROUPING_FIX.md */,
+				9782BF142EF0BE80007BE2CE /* ACTIVATE_TRIP_BUTTON_UPDATE.md */,
+				9782BF162EF0BF20007BE2CE /* ACTIVATE_BUTTON_CRASH_FIX.md */,
+				9782BF182EF0BFF3007BE2CE /* PLANNING_LEG_VIEW_FIX.md */,
+				9782BF1A2EF0C33D007BE2CE /* IATA_TO_ICAO_CONVERSION_FIX.md */,
+				9782BF1C2EF0C489007BE2CE /* SMART_AIRPORT_LEARNING_SYSTEM.md */,
+				9782BF1E2EF0C590007BE2CE /* ICLOUD_SYNC_IMPLEMENTATION.md */,
+				9782BFF92EF39A56007BE2CE /* CLOUDKIT_DIAGNOSTIC_GUIDE.md */,
+				9782BF592EF24114007BE2CE /* MANUAL_TRIP_GROUPING_DOCS.md */,
+				9782BF5B2EF2412F007BE2CE /* QUICK_START_MANUAL_MODE.md */,
+				9782BF7C2EF25EF3007BE2CE /* MONETIZATION_GUIDE.md */,
+				9782BF6E2EF25BCF007BE2CE /* JUMPSEAT_INTEGRATION.md */,
+				97F93D2C2EFA351400855419 /* SEARCH_INTEGRATION_GUIDE.md */,
+				97F93D2E2EFA356200855419 /* COMPLETE_INTEGRATION_GUIDE.md */,
+				97F93D362EFA3CE300855419 /* ProPilot_App_Function_and_File_Index.md */,
+				97F93D472EFAC6C700855419 /* SWIFT6_FIXES_SUMMARY.md */,
+				97F93D4B2EFAC85D00855419 /* LOOP_FIX_FINAL.md */,
+				97F93D302EFA357F00855419 /* HELP_AND_SEARCH_SUMMARY.md */,
+				9782BF7E2EF26017007BE2CE /* ATS_ERROR_FIX.md */,
+				97F93D222EFA311D00855419 /* WELCOME_SCREEN_INTEGRATION.md */,
+				97F93D242EFA312F00855419 /* INTEGRATION_SUMMARY 2.md */,
+				97F93D792EFB332500855419 /* NEXT_STEPS_COMPLETE_GUIDE 2.md */,
+				97F93D7A2EFB332500855419 /* AIRPORT_DB_MIGRATION 2.md */,
+				97F93D7B2EFB332500855419 /* AIRPORT_DATABASE_FIX 2.md */,
+				97F93D7C2EFB332500855419 /* INFINITE_PRINT_LOOP_FIX 2.md */,
+				97F93D9B2EFB7D3200855419 /* NEXT_STEPS_COMPLETE_GUIDE 3.md */,
+				97F93D9C2EFB7D3200855419 /* AIRPORT_DB_MIGRATION 3.md */,
+				97F93D9D2EFB7D3200855419 /* AIRPORT_DATABASE_FIX 3.md */,
+				97F93D9E2EFB7D3200855419 /* INFINITE_PRINT_LOOP_FIX 3.md */,
+				97F93D9F2EFB7D3200855419 /* CLOUDKIT_AIRPORT_QUERY_FIX 3.md */,
+				97F93D7D2EFB332500855419 /* CLOUDKIT_AIRPORT_QUERY_FIX 2.md */,
+				9782BF802EF261EB007BE2CE /* CRASH_FIX.md */,
+				97F93DA02EFB7D3900855419 /* NEXT_STEPS_COMPLETE_GUIDE 4.md */,
+				97F93DA12EFB7D3900855419 /* AIRPORT_DB_MIGRATION 4.md */,
+				97F93DA22EFB7D3900855419 /* AIRPORT_DATABASE_FIX 4.md */,
+				97F93DA32EFB7D3900855419 /* INFINITE_PRINT_LOOP_FIX 4.md */,
+				97F93DA42EFB7D3900855419 /* CLOUDKIT_AIRPORT_QUERY_FIX 4.md */,
+				9782BF822EF26249007BE2CE /* API_ERROR_GUIDE.md */,
+				97F93D742EFB331A00855419 /* NEXT_STEPS_COMPLETE_GUIDE.md */,
+				97F93D752EFB331A00855419 /* AIRPORT_DB_MIGRATION.md */,
+				97F93D762EFB331A00855419 /* AIRPORT_DATABASE_FIX.md */,
+				97F93D772EFB331A00855419 /* INFINITE_PRINT_LOOP_FIX.md */,
+				97F93D782EFB331A00855419 /* CLOUDKIT_AIRPORT_QUERY_FIX.md */,
+				97F93D802EFB443A00855419 /* WEATHER_FIXES_APPLIED.md */,
+				97F93D822EFB464400855419 /* DATIS_UI_IMPROVEMENTS.md */,
+				97F93DAB2EFC1E1100855419 /* WEATHER_IMPROVEMENTS_SUMMARY.md */,
+				97F93DAF2EFC1E5C00855419 /* WEATHER_COMPLETE.md */,
+				97F93DB12EFC1E7600855419 /* WEATHER_QUICK_REF.md */,
+				97F93DB62EFC28FF00855419 /* DUPLICATE_TYPES_FIXED.md */,
+				97F93DBC2EFC2D4900855419 /* AIRPORT_DETAIL_NAMING_CONFLICT_FIXED.md */,
+				97F93DBE2EFC2EE100855419 /* AIRPORT_DATABASE_UI_IMPROVEMENTS.md */,
+				97F93E232EFC65B000855419 /* WEATHER_CONDITION_ICON.md */,
+				97F93E272EFC689300855419 /* WEATHER_ICON_SYSTEM.md */,
+				97F93E292EFC68B500855419 /* WEATHER_ICON_REFERENCE.md */,
+				97F93E332EFCD5EB00855419 /* BUG_FIX_SPLIT_VIEW.md */,
+				97F93E352EFCD72F00855419 /* REMOVED_SPLIT_VIEW.md */,
+			);
+			path = Documents;
+			sourceTree = "<group>";
+		};
+		97F93D532EFB178800855419 /* AirportDatabase */ = {
+			isa = PBXGroup;
+			children = (
+				97EC0B3C2E2431FB00EFE8F5 /* AirportDatabaseManager.swift */,
+				97F93D542EFB17B200855419 /* WeatherService.swift */,
+				97F93D5A2EFB181B00855419 /* AirportDatabaseView.swift */,
+				97F93D562EFB17CA00855419 /* AirportReviewSheet.swift */,
+				97F93D602EFB199600855419 /* SettingsIntegration.swift */,
+				97F93D5C2EFB183500855419 /* PilotReview.md */,
+				97F93D622EFB19CD00855419 /* FIXES_APPLIED.md */,
+				97F93D642EFB19F400855419 /* WEATHER_SERVICES_ARCHITECTURE.md */,
+				97F93D662EFB1B8900855419 /* AIRPORTDETAILVIEW_FIXES.md */,
+				97F93D682EFB201F00855419 /* AIRPORTREVIEWSHEET_FIXES.md */,
+				97F93D6A2EFB209900855419 /* AIRPORTREVIEWSHEET_COMPATIBILITY.md */,
+				97F93D6C2EFB21BA00855419 /* AIRPORT_DATABASE_WIRING_FIX.md */,
+				97F93D6E2EFB228400855419 /* AIRPORT_DETAIL_VIEW_NAMING_FIX.md */,
+				97F93D702EFB23BF00855419 /* COMPLETE_AIRPORT_DATABASE_FIXES.md */,
+				97F93DB32EFC208200855419 /* WEATHER_UNITS_UPDATE.md */,
+				97F93DB82EFC297B00855419 /* AIRPORT_DETAIL_VIEW_NAME_FIX.md */,
+				97F93DB92EFC2A7500855419 /* AIRPORT_DETAIL_VIEWS_WIRING_MAP.md */,
+				97F93DBA2EFC2B4B00855419 /* AIRPORT_REVIEWS_CLARIFICATION.md */,
+				97F93DBB2EFC2BC100855419 /* AIRPORT_REVIEW_TAB_RENAMED.md */,
+			);
+			path = AirportDatabase;
+			sourceTree = "<group>";
+		};
+		97F93D842EFB789800855419 /* iCal Parser */ = {
+			isa = PBXGroup;
+			children = (
+				97F93D8B2EFB791C00855419 /* ICalendarImportEngine.swift */,
+				97F93D892EFB790800855419 /* ICalendarImportWizardView.swift */,
+				97F93D8F2EFB794000855419 /* ImportMapping.swift */,
+				97F93D8D2EFB792D00855419 /* ICalendarParser.swift */,
+				97F93D872EFB78F500855419 /* ICalendarImportExample.swift */,
+				97F93D912EFB7BAB00855419 /* ImportMappingStore.swift */,
+				97F93D932EFB7C2800855419 /* ImportMappingSettingsView.swift */,
+				97F93D852EFB78CF00855419 /* TimezonePreference.md */,
+				97F93D992EFB7C9D00855419 /* ICAL_INTEGRATION_SUMMARY.md */,
+				97F93DA52EFB83B200855419 /* ICAL_INTEGRATION_SUMMARY_REVISED.md */,
+			);
+			path = "iCal Parser";
+			sourceTree = "<group>";
+		};
+		97F93DA82EFC1AAD00855419 /* Weather */ = {
+			isa = PBXGroup;
+			children = (
+				97FB7C2E2EF07DFF0050C5E4 /* WeatherBannerView.swift */,
+				97F93DAD2EFC1E2A00855419 /* WeatherSettingsView_EXAMPLE.swift */,
+				97F93E252EFC683B00855419 /* WeatherIconHelper.swift */,
+				97F93E2B2EFC68E200855419 /* WeatherIconHelper_Examples.swift */,
+				97F93DA92EFC1D5000855419 /* WeatherModels.swift */,
+				97F93E2D2EFCD25900855419 /* SCHEDULE_VIEW_REORDER_SUMMARY.md */,
+				97F93E2F2EFCD27C00855419 /* SCHEDULE_VIEW_REORDER_UI_GUIDE.md */,
+				97F93E312EFCD57500855419 /* MONTH_VIEW_NAVIGATION_UPDATE.md */,
+				978DB39E2EFEBE5800552684 /* SubscriptionPromptBanner.swift */,
+				978DB3A02EFEBE7D00552684 /* SUBSCRIPTION_BANNER_GUIDE.md */,
+			);
+			path = Weather;
+			sourceTree = "<group>";
+		};
+		97F93E1E2EFC583500855419 /* GPS */ = {
+			isa = PBXGroup;
+			children = (
+				97046B152ECD4D880066DC9F /* KDTW_KCLE.gpx */,
+				97126E0F2EEF4E5300D6D150 /* CLE_to_YIP.gpx */,
+				97EC0B172E229FFF00EFE8F5 /* GPSRAIMManager.swift */,
+				97A4F79D2E8291F400EBE49E /* GPSSpeedMonitor.swift */,
+				9747C2532ECC0DCA00953014 /* GPXTestIntegration.swift */,
+				9747C2512ECC0DBE00953014 /* GPXTestPlayer.swift */,
+				97F93E1F2EFC584F00855419 /* GPSSpoofingAlertLevel.swift */,
+				97F93E202EFC586100855419 /* GPSSpoofingStatusPill.swift */,
+			);
+			path = GPS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -910,14 +1340,23 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				97F93E282EFC689300855419 /* WEATHER_ICON_SYSTEM.md in Resources */,
+				97F93E342EFCD5EB00855419 /* BUG_FIX_SPLIT_VIEW.md in Resources */,
+				97F93E302EFCD27C00855419 /* SCHEDULE_VIEW_REORDER_UI_GUIDE.md in Resources */,
+				97366B412EFF0AD600C1A7A0 /* CLOUDKIT_ERROR_HANDLING_SUMMARY.md in Resources */,
 				975C23C32ECD4F2D0092249D /* YIP_DTW.gpx in Resources */,
-				97AFBB912EE6558100C63E38 /* JUMPSEAT_IMPLEMENTATION_GUIDE.md in Resources */,
+				97F93E2E2EFCD25900855419 /* SCHEDULE_VIEW_REORDER_SUMMARY.md in Resources */,
 				97046B162ECD4D880066DC9F /* KDTW_KCLE.gpx in Resources */,
-				97126E0C2EEE062C00D6D150 /* Untitled 2.txt in Resources */,
+				97F93E3C2EFD7C3C00855419 /* airplaneseat.svg in Resources */,
 				97C37E142EE1F9F900975E84 /* schema.json in Resources */,
-				9777E2FF2EEFAC76000AF7C4 /* privacy.md in Resources */,
+				978DB3A12EFEBE7D00552684 /* SUBSCRIPTION_BANNER_GUIDE.md in Resources */,
+				97F93E362EFCD72F00855419 /* REMOVED_SPLIT_VIEW.md in Resources */,
 				97126E122EEF4E5300D6D150 /* CLE_to_YIP.gpx in Resources */,
 				97D75BB52E528F6900EF6DB3 /* AppIcon.xcassets in Resources */,
+				97F93E242EFC65B000855419 /* WEATHER_CONDITION_ICON.md in Resources */,
+				97F93E2A2EFC68B500855419 /* WEATHER_ICON_REFERENCE.md in Resources */,
+				97F93D502EFAF1E000855419 /* propilot_airports.csv in Resources */,
+				97F93E322EFCD57500855419 /* MONTH_VIEW_NAVIGATION_UPDATE.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -942,22 +1381,30 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				97F93D8A2EFB790800855419 /* ICalendarImportWizardView.swift in Sources */,
 				973AFA112EE097BF00CDF4AB /* GMTClockOverlay.swift in Sources */,
 				977C7C052E1E9B9F0040362B /* AircraftManagementView.swift in Sources */,
 				97747CE32ED8DDDD00126113 /* ClocksAndTimersView.swift in Sources */,
+				97F93DB52EFC23D100855419 /* AirportDetailView.swift in Sources */,
 				976052BA2ECAB442007CB9C5 /* WatchConnectivityStatusView.swift in Sources */,
 				9799E7402EAE5B8600F0FADE /* TripFolderBrowserView.swift in Sources */,
 				977C7C072E1E9B9F0040362B /* NOCSettingsView.swift in Sources */,
 				971461092EE4809F00751961 /* TripTimelineGanttChart.swift in Sources */,
 				976D54752EDB513C00A7D60C /* TripGenerationSettingsRow.swift in Sources */,
+				97F93DAE2EFC1E2A00855419 /* WeatherSettingsView_EXAMPLE.swift in Sources */,
 				97AFBB852EE5466600C63E38 /* PendingTripsHelperView.swift in Sources */,
 				97F2C3E32EDDE3DC002B9BD6 /* LiveActivityDebugView.swift in Sources */,
 				977C7C082E1E9B9F0040362B /* ScheduleCalendarView.swift in Sources */,
+				9782BF6D2EF25B88007BE2CE /* JumpseatFinderView.swift in Sources */,
+				97F93D942EFB7C2800855419 /* ImportMappingSettingsView.swift in Sources */,
 				977C7C092E1E9B9F0040362B /* CrewMember.swift in Sources */,
+				97F93D352EFA367900855419 /* INTEGRATION_CODE_SNIPPETS.swift in Sources */,
 				97A4F7A72E83878E00EBE49E /* AutoTimeSettings.swift in Sources */,
 				97A617DA2E7F335800BAE84A /* EmailComposerView.swift in Sources */,
 				9747C2522ECC0DBE00953014 /* GPXTestPlayer.swift in Sources */,
+				97FB7C2F2EF07DFF0050C5E4 /* WeatherBannerView.swift in Sources */,
 				9703AF852EAFC758002E9E26 /* TripDocumentListView.swift in Sources */,
+				97F93E212EFC5CDA00855419 /* GPSSpoofingAlertLevel.swift in Sources */,
 				977C7C0A2E1E9B9F0040362B /* LegsReportView.swift in Sources */,
 				973AFA0B2EE0954900CDF4AB /* RosterToTripHelper.swift in Sources */,
 				977C64EC2E81A663002B9552 /* AppBackupData.swift in Sources */,
@@ -967,12 +1414,16 @@
 				97AFBBA92EE78CB300C63E38 /* EnhancedAircraftManagementView.swift in Sources */,
 				97AFBBAA2EE78CB300C63E38 /* AircraftDatabase.swift in Sources */,
 				97AFBBAB2EE78CB300C63E38 /* EnhancedAirportCodeManager.swift in Sources */,
+				97F93D1F2EFA2F6B00855419 /* LogbookWelcomeView.swift in Sources */,
+				9782BF542EF0FC61007BE2CE /* BundledAirportDatabase.swift in Sources */,
 				97747CED2ED9137B00126113 /* FlexibleTimerView 2.swift in Sources */,
 				97747CD92ED8BBE900126113 /* DutyTimerManager.swift in Sources */,
 				973AFA132EE097BF00CDF4AB /* ClocksAndTimersSettingsView.swift in Sources */,
 				9760529D2ECA81E6007CB9C5 /* CloudKitManager.swift in Sources */,
+				97F93D552EFB17B600855419 /* WeatherService.swift in Sources */,
 				975C23DA2ECE00F70092249D /* NOC_WEBVIEW_QUICK_START.swift in Sources */,
 				9703AF8B2EAFEE9F002E9E26 /* FlightCalculatorView.swift in Sources */,
+				9782BF6B2EF25B3F007BE2CE /* FlightScheduleService.swift in Sources */,
 				97BCC3B72E29A83500D36E5B /* DataValidatorView.swift in Sources */,
 				977C7C0C2E1E9B9F0040362B /* FlightAwareCredentials.swift in Sources */,
 				97DC6F202E3675500002F472 /* ScheduleDataAnalyzer.swift in Sources */,
@@ -980,20 +1431,30 @@
 				977C7C0E2E1E9B9F0040362B /* HorizontalLogView.swift in Sources */,
 				977C7C0F2E1E9B9F0040362B /* NOCWebView.swift in Sources */,
 				97BCC3A72E29263E00D36E5B /* PhoneWatchConnectivity.swift in Sources */,
+				97F93D272EFA315E00855419 /* WELCOME_INTEGRATION_VISUAL_GUIDE.swift in Sources */,
 				976D54702EDB457C00A7D60C /* TripGenerationService.swift in Sources */,
 				976D546A2EDA894700A7D60C /* iPhoneWatchSettingsView.swift in Sources */,
 				975C23D82ECE00A40092249D /* NOCQuickAccessButton.swift in Sources */,
 				976F1C802E64A23A00F15444 /* UnifiedLogbookManager.swift in Sources */,
 				9714610D2EE4AFD100751961 /* ParsedFlightData.swift in Sources */,
 				977C7C102E1E9B9F0040362B /* SimpleGPSSignalView.swift in Sources */,
-				9756B8302E95E92400F59538 /* WeatherData.swift in Sources */,
 				97AFBBA52EE7812900C63E38 /* UserAirportCodeMappings.swift in Sources */,
+				97F93E222EFC5CDE00855419 /* GPSSpoofingStatusPill.swift in Sources */,
 				976A7D5D2E8D658600E2676E /* TripCreationSettings.swift in Sources */,
+				97F93D572EFB17CA00855419 /* AirportReviewSheet.swift in Sources */,
 				977992F42EC91A7C00A8CA39 /* SmartTimeEntryField.swift in Sources */,
+				97366B2A2EFED52000C1A7A0 /* SDTrip.swift in Sources */,
+				97366B2B2EFED52000C1A7A0 /* SwiftDataLogBookStore.swift in Sources */,
+				97366B2C2EFED52000C1A7A0 /* SDFlightLeg.swift in Sources */,
+				97366B2D2EFED52000C1A7A0 /* SDCrewMember.swift in Sources */,
+				97366B2E2EFED52000C1A7A0 /* SwiftDataConfiguration.swift in Sources */,
+				97366B2F2EFED52000C1A7A0 /* SDLogpage.swift in Sources */,
+				97366B302EFED52000C1A7A0 /* MigrationManager.swift in Sources */,
 				97126E142EEF4E5300D6D150 /* NOCTestView.swift in Sources */,
 				977C7C112E1E9B9F0040362B /* LandscapeDataEntryView.swift in Sources */,
 				977C7C122E1E9B9F0040362B /* PerDiemTabView.swift in Sources */,
 				97690F482EA45DDA00FA9775 /* TripDocumentManager.swift in Sources */,
+				97366B432EFF25E900C1A7A0 /* SubscriptionDebugView.swift in Sources */,
 				97111C4B2E3A4F1300850DA5 /* ChainRouteDisplay.swift in Sources */,
 				976BC3F82EDCBE4100056B92 /* DismissedRosterItem.swift in Sources */,
 				977C7C132E1E9B9F0040362B /* EnhancedICAOTextField.swift in Sources */,
@@ -1002,7 +1463,11 @@
 				97F2C3F82EDE5039002B9BD6 /* ContinuationPromptView.swift in Sources */,
 				977D007B2EEA63180036EAD0 /* UnifiedAircraftDatabase.swift in Sources */,
 				977D007C2EEA63180036EAD0 /* UnifiedAircraftView.swift in Sources */,
+				97366B3D2EFF094700C1A7A0 /* CloudKitSettingsView.swift in Sources */,
+				97F93D7F2EFB353200855419 /* WeatherView.swift in Sources */,
 				97747CDD2ED8C8FB00126113 /* DataBackupSettingsView.swift in Sources */,
+				97F93D922EFB7BAB00855419 /* ImportMappingStore.swift in Sources */,
+				97F93D292EFA341A00855419 /* HelpView.swift in Sources */,
 				977C7C142E1E9B9F0040362B /* Helpers.swift in Sources */,
 				97A4F79E2E8291F400EBE49E /* GPSSpeedMonitor.swift in Sources */,
 				978B5C222EED9FDE00316AE1 /* WatchTheme.swift in Sources */,
@@ -1013,6 +1478,7 @@
 				9719753F2ED76DBD00CC1511 /* TripType.swift in Sources */,
 				974ED3532E2BC4B200901DA7 /* PilotActivityManager.swift in Sources */,
 				9762A6A02EDE7EC800764AFC /* NOCRevisionAlertBanner.swift in Sources */,
+				97F93E262EFC683B00855419 /* WeatherIconHelper.swift in Sources */,
 				977D00762EEA5C560036EAD0 /* AircraftLibraryView.swift in Sources */,
 				977D00772EEA5C560036EAD0 /* AircraftLibraryStore.swift in Sources */,
 				977D00782EEA5C560036EAD0 /* AircraftDefinition.swift in Sources */,
@@ -1022,11 +1488,14 @@
 				977C7C182E1E9B9F0040362B /* FlightLeg.swift in Sources */,
 				977C64EE2E81ABAA002B9552 /* ShareSheet.swift in Sources */,
 				97698C132EC82EF8003523F6 /* TimerSettingsView.swift in Sources */,
+				97F93D2B2EFA342800855419 /* LogbookSearchView.swift in Sources */,
+				97F93DAA2EFC1D5000855419 /* WeatherModels.swift in Sources */,
 				975C23D02ECD70F50092249D /* NOCSettingsStore.swift in Sources */,
 				975C6D902E5F250A00830C35 /* FlightDataField.swift in Sources */,
 				977C7C192E1E9B9F0040362B /* LogbookView.swift in Sources */,
 				97A7C8562ECD04B4009E4A5E /* ProximitySettingsView.swift in Sources */,
 				977C7C1A2E1E9B9F0040362B /* ForeFlightLogBookRow.swift in Sources */,
+				97366B3B2EFF091800C1A7A0 /* CloudKitErrorHandler.swift in Sources */,
 				977D007F2EEAFD1A0036EAD0 /* FAR117StatusBanner.swift in Sources */,
 				976052DD2ECB9AF3007CB9C5 /* TranslucentTimePicker.swift in Sources */,
 				97449E862EDA3E3200CB038A /* FAR117SettingsView.swift in Sources */,
@@ -1039,16 +1508,18 @@
 				97690F4A2EA45F2600FA9775 /* AircraftHistoryManager.swift in Sources */,
 				97BCC3AD2E29549600D36E5B /* TripScannerView.swift in Sources */,
 				97D69EBE2E3D735600FFF195 /* UserDefaults+AppGroup.swift in Sources */,
+				9782BF582EF240D3007BE2CE /* PendingTripCard.swift in Sources */,
 				97D75BB12E50E6FE00EF6DB3 /* AuthenticatedExcelViewer.swift in Sources */,
 				97A4F7A52E8380E900EBE49E /* AutoTimeSettingsView.swift in Sources */,
+				97F93D212EFA30F500855419 /* WelcomeScreenDebugView.swift in Sources */,
 				97747CE12ED8D68E00126113 /* AppleWatchStatusView.swift in Sources */,
 				977D00812EEAFD590036EAD0 /* GroupedRosterDisplay.swift in Sources */,
 				97EC0B392E242CFF00EFE8F5 /* ComprehensiveLogbookStore.swift in Sources */,
 				977C7C1D2E1E9B9F0040362B /* FlightAwareManager.swift in Sources */,
-				977C7C1E2E1E9B9F0040362B /* SettingsView.swift in Sources */,
 				977C7C1F2E1E9B9F0040362B /* AirlineSettingsView.swift in Sources */,
 				97D69EC02E3D954C00FFF195 /* DutyTimerLiveActivity.swift in Sources */,
 				977C7C212E1E9B9F0040362B /* AutoCompleteTestView.swift in Sources */,
+				97F93D882EFB78F500855419 /* ICalendarImportExample.swift in Sources */,
 				976D54722EDB45DB00A7D60C /* TripGenerationSettingsView.swift in Sources */,
 				9703AF7F2EAEE0C5002E9E26 /* DocumentCropProcessor.swift in Sources */,
 				97747CEF2ED9318600126113 /* ElectronicLogbookViewer.swift in Sources */,
@@ -1064,7 +1535,9 @@
 				9738A28A2EE8E35200C6CA28 /* RestStatusManager.swift in Sources */,
 				9799E7422EAE68ED00F0FADE /* PDFThumbnailView.swift in Sources */,
 				974ED3A52E2C3A7600901DA7 /* ProPilotApp.swift in Sources */,
+				97F93E2C2EFC68E200855419 /* WeatherIconHelper_Examples.swift in Sources */,
 				9703AF812EAEE0D3002E9E26 /* DocumentCropSettingsView.swift in Sources */,
+				97D696DD2EF3A56B004675D0 /* AirportDatabaseTestView.swift in Sources */,
 				97EC0B452E243CC800EFE8F5 /* LogbookFormat.swift in Sources */,
 				9799E7442EAE6A0500F0FADE /* PDFThumbnailGenerator.swift in Sources */,
 				973AFA0D2EE097BF00CDF4AB /* GMTClockSettings.swift in Sources */,
@@ -1074,26 +1547,34 @@
 				976D54772EDB54EE00A7D60C /* TripGenerationAlertModifier.swift in Sources */,
 				975582322EE8B88A0009D2CF /* DutyLimitSettingsView.swift in Sources */,
 				97698C172EC833C0003523F6 /* TripDateUtility.swift in Sources */,
+				97F93D612EFB199600855419 /* SettingsIntegration.swift in Sources */,
 				976052A32ECAA448007CB9C5 /* TripCompletionSummaryView.swift in Sources */,
 				9703AF952EB07357002E9E26 /* FlightLegsView.swift in Sources */,
 				9703AF892EAFEE8E002E9E26 /* ProPilotDocument.swift in Sources */,
+				978DB39F2EFEBE5800552684 /* SubscriptionPromptBanner.swift in Sources */,
+				97F93D1D2EF98B4F00855419 /* DutyTimeSettingsStore.swift in Sources */,
+				97F93D902EFB794000855419 /* ImportMapping.swift in Sources */,
 				976052952ECA11BF007CB9C5 /* AirlineConfigurationView.swift in Sources */,
 				976F1C822E64A2ED00F15444 /* SimpleElectronicLogbookView.swift in Sources */,
+				97366B452EFF36B300C1A7A0 /* SettingsView.swift in Sources */,
 				977C7C282E1E9B9F0040362B /* FlightAwareViews.swift in Sources */,
 				97BCC3AB2E294A4200D36E5B /* MoreRowItem.swift in Sources */,
-				9777E2FD2EEFAC02000AF7C4 /* privacy.txt.swift in Sources */,
 				976BC3FC2EDCBE6400056B92 /* SwipeableRosterItemRow.swift in Sources */,
 				97698C152EC82F4F003523F6 /* FlexibleTimerManager.swift in Sources */,
 				977C7C292E1E9B9F0040362B /* LogBookStore.swift in Sources */,
 				97AFBB832EE4C1A700C63E38 /* Rolling30DayComplianceView.swift in Sources */,
 				9770689D2E64D39D005A674D /* LogbookUIComponents.swift in Sources */,
 				9703AF872EAFEE74002E9E26 /* PilotNote.swift in Sources */,
+				9782BFF82EF39A16007BE2CE /* CloudKitDiagnosticView.swift in Sources */,
 				9747C2542ECC0DCA00953014 /* GPXTestIntegration.swift in Sources */,
 				97747CE92ED8E73800126113 /* ForeFlightStyleTimerView.swift in Sources */,
 				97698C192EC8356D003523F6 /* TimeDisplayUtility.swift in Sources */,
 				976052972ECA124C007CB9C5 /* ScannerEmailConfigView.swift in Sources */,
+				9782BF732EF25C19007BE2CE /* JumpseatFinderView+Subscription.swift in Sources */,
+				97F93D8C2EFB791C00855419 /* ICalendarImportEngine.swift in Sources */,
 				977C7C2B2E1E9B9F0040362B /* Trip.swift in Sources */,
 				976D546E2EDB452300A7D60C /* TripGenerationSettings.swift in Sources */,
+				97F93D5B2EFB181B00855419 /* AirportDatabaseView.swift in Sources */,
 				977C7C2C2E1E9B9F0040362B /* FlightTrackingUtility.swift in Sources */,
 				977C7C2D2E1E9B9F0040362B /* AirlineSettings.swift in Sources */,
 				97EC0B3D2E2431FB00EFE8F5 /* AirportDatabaseManager.swift in Sources */,
@@ -1102,15 +1583,22 @@
 				972D01932ECBF2850064BD51 /* TimeFormattingUtilities.swift in Sources */,
 				976BC3FA2EDCBE5500056B92 /* DismissedRosterItemsView.swift in Sources */,
 				97449E882EDA3E4700CB038A /* NotificationSettingsView.swift in Sources */,
+				9782BF562EF240AF007BE2CE /* AddLegsToTripSheet.swift in Sources */,
 				977056FC2E5CCA54000C607C /* DataManagementView.swift in Sources */,
 				977992EC2EC8D76F00A8CA39 /* SnappingScrollView.swift in Sources */,
 				97747CDB2ED8C56E00126113 /* AutoTimeLoggingSettingsView.swift in Sources */,
 				976052992ECA59E1007CB9C5 /* ActiveTripBannerView.swift in Sources */,
+				97366B392EFF072700C1A7A0 /* CloudKitDataRepairUtility.swift in Sources */,
+				97F93D8E2EFB792E00855419 /* ICalendarParser.swift in Sources */,
 				97EC0B372E242CED00EFE8F5 /* FlightEntry.swift in Sources */,
 				977C7C2E2E1E9B9F0040362B /* FlightAwareModels.swift in Sources */,
 				975C23D22ECDF6460092249D /* NOCRosterGanttView.swift in Sources */,
 				977C7C2F2E1E9B9F0040362B /* EmailSettings.swift in Sources */,
 				975582302EE8B80C0009D2CF /* DutyLimitSettings.swift in Sources */,
+				97F93D412EFAC4DB00855419 /* SubscriptionManager.swift in Sources */,
+				97F93D422EFAC4DB00855419 /* SubscriptionGateModifier.swift in Sources */,
+				97F93D432EFAC4DB00855419 /* PaywallView.swift in Sources */,
+				97F93D442EFAC4DB00855419 /* SubscriptionStatusChecker.swift in Sources */,
 				975493892E92E68700C80B17 /* CrewContactManager.swift in Sources */,
 				977C7C302E1E9B9F0040362B /* ExportView.swift in Sources */,
 				977C7C312E1E9B9F0040362B /* FlightAwareIntegration.swift in Sources */,
@@ -1129,6 +1617,7 @@
 				9703AF932EB0606B002E9E26 /* LegsExportView.swift in Sources */,
 				97747C8B2ED7B19800126113 /* TripSharingManager.swift in Sources */,
 				9760529B2ECA6C02007CB9C5 /* BottomSheetTripsView.swift in Sources */,
+				9782BF712EF25BFE007BE2CE /* SubscriptionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1144,14 +1633,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				976A7D5F2E8D661300E2676E /* FlightLeg.swift in Sources */,
+				97366B342EFED65200C1A7A0 /* SDTrip.swift in Sources */,
 				971975402ED772CF00CC1511 /* TripType.swift in Sources */,
 				976A7D602E8D669C00E2676E /* CrewMember.swift in Sources */,
 				97690F4F2EA5A6C800FA9775 /* TimeRoundingUtility.swift in Sources */,
 				97698C1A2EC83A55003523F6 /* AutoTimeSettings.swift in Sources */,
+				97366B312EFED62D00C1A7A0 /* SDCrewMember.swift in Sources */,
 				976D54732EDB4B7800A7D60C /* Trip.swift in Sources */,
 				97698C1B2EC83A6F003523F6 /* TimeDisplayUtility.swift in Sources */,
 				97690F522EA5A82600FA9775 /* UserDefaults+AppGroup.swift in Sources */,
+				97366B322EFED63F00C1A7A0 /* SDFlightLeg.swift in Sources */,
 				976052B62ECAB1C4007CB9C5 /* WatchTripSummaryView.swift in Sources */,
+				97366B332EFED64600C1A7A0 /* SDLogpage.swift in Sources */,
+				97366B352EFED65900C1A7A0 /* SwiftDataConfiguration.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1334,7 +1828,7 @@
 				CODE_SIGN_ENTITLEMENTS = ProPilotApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"$(SRCROOT)/Preview Content\"";
 				DEVELOPMENT_TEAM = 8B38D6N4YM;
 				ENABLE_APP_SANDBOX = YES;
@@ -1359,7 +1853,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0;
+				MARKETING_VERSION = 3.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1385,7 +1879,7 @@
 				CODE_SIGN_ENTITLEMENTS = ProPilotApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"$(SRCROOT)/Preview Content\"";
 				DEVELOPMENT_TEAM = 8B38D6N4YM;
 				ENABLE_APP_SANDBOX = YES;
@@ -1410,7 +1904,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0;
+				MARKETING_VERSION = 3.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1432,7 +1926,7 @@
 				CODE_SIGN_ENTITLEMENTS = ProPilotWidgets/ProPilotWidgets.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 8B38D6N4YM;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1455,7 +1949,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 3.0;
+				MARKETING_VERSION = 3.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.ProPilotWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1478,7 +1972,7 @@
 				CODE_SIGN_ENTITLEMENTS = ProPilotWidgets/ProPilotWidgets.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 8B38D6N4YM;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1501,7 +1995,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 3.0;
+				MARKETING_VERSION = 3.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.ProPilotWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1526,7 +2020,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "ProPilotWatchApp Watch App/ProPilotWatchApp Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8B38D6N4YM;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1539,7 +2033,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0;
+				MARKETING_VERSION = 3.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -1562,7 +2056,7 @@
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "ProPilotWatchApp Watch App/ProPilotWatchApp Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8B38D6N4YM;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -1575,7 +2069,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0;
+				MARKETING_VERSION = 3.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;

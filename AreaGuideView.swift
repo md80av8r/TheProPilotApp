@@ -8,7 +8,7 @@
 import SwiftUI
 import MapKit
 
-// MARK: - UI Data Models (NOT CloudKit models)
+// MARK: - UI Data Models
 
 struct AirportExperience: Identifiable {
     let id = UUID()
@@ -45,14 +45,38 @@ enum ReviewTag: String, CaseIterable {
     }
 }
 
-struct PilotReview: Identifiable {
+struct NearbyPlace: Identifiable {
     let id = UUID()
-    let pilotName: String
-    let rating: Int
-    let date: Date
-    let title: String
-    let content: String
-    let tags: [ReviewTag]
+    let name: String
+    let address: String
+    let coordinate: CLLocationCoordinate2D
+    let rating: Double
+    let isOpen: Bool?
+}
+
+struct GooglePlacesResponse: Codable {
+    let results: [GooglePlace]
+}
+
+struct GooglePlace: Codable {
+    let name: String
+    let vicinity: String?
+    let geometry: GoogleGeometry
+    let rating: Double?
+    let opening_hours: GoogleOpeningHours?
+}
+
+struct GoogleGeometry: Codable {
+    let location: GoogleLocation
+}
+
+struct GoogleLocation: Codable {
+    let lat: Double
+    let lng: Double
+}
+
+struct GoogleOpeningHours: Codable {
+    let open_now: Bool?
 }
 
 // MARK: - Main View
@@ -70,7 +94,6 @@ struct AreaGuideView: View {
                 LogbookTheme.navy.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Search Bar
                     HStack {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(.gray)
@@ -88,13 +111,11 @@ struct AreaGuideView: View {
                     .cornerRadius(10)
                     .padding()
                     
-                    // List
                     ScrollView {
                         LazyVStack(spacing: 16) {
                             let filtered = viewModel.filteredAirports(text: searchText)
                             
                             if filtered.isEmpty && !searchText.isEmpty && isValidAirportCode(searchText) {
-                                // Valid code format but not found - show Add Airport
                                 VStack(spacing: 16) {
                                     Image(systemName: "airplane.circle")
                                         .font(.system(size: 60))
@@ -140,7 +161,6 @@ struct AreaGuideView: View {
                                 }
                                 .padding(.top, 60)
                             } else if filtered.isEmpty && !searchText.isEmpty {
-                                // No results
                                 VStack(spacing: 16) {
                                     Image(systemName: "magnifyingglass")
                                         .font(.system(size: 60))
@@ -158,9 +178,8 @@ struct AreaGuideView: View {
                                 }
                                 .padding(.top, 60)
                             } else {
-                                // Show results
                                 ForEach(filtered) { airport in
-                                    NavigationLink(destination: AirportDetailView(airport: airport)) {
+                                    NavigationLink(destination: AreaGuideAirportDetailView(airport: airport)) {
                                         AirportCardRow(airport: airport)
                                     }
                                 }
@@ -173,11 +192,9 @@ struct AreaGuideView: View {
             .onAppear { recentTab = "Area Guide" }
             .navigationTitle("Area Guide")
             .navigationBarTitleDisplayMode(.large)
-            .task { await viewModel.loadAirportsFromCloud(matching: nil) }
+            .task { await viewModel.loadAirportsFromBundle(matching: nil) }
         }
     }
-    
-    // MARK: - Helper Methods
     
     private func isValidAirportCode(_ code: String) -> Bool {
         let cleaned = code.trimmingCharacters(in: .whitespaces).uppercased()
@@ -185,43 +202,23 @@ struct AreaGuideView: View {
     }
     
     private func addAirport(code: String) {
-        isAddingAirport = true
-        addAirportError = nil
-        
-        Task {
-            do {
-                let airport = try await AreaGuideCloudKit.shared.fetchOrCreateAirport(code: code)
-                
-                await MainActor.run {
-                    let experience = AirportExperience(
-                        code: airport.code,
-                        name: airport.name,
-                        city: airport.city,
-                        state: airport.state,
-                        elevation: airport.elevation,
-                        coordinate: airport.coordinate,
-                        reviews: []
-                    )
-                    viewModel.airports.append(experience)
-                    searchText = ""
-                    isAddingAirport = false
-                }
-            } catch {
-                await MainActor.run {
-                    addAirportError = error.localizedDescription
-                    isAddingAirport = false
-                }
-            }
-        }
+        // Bundled database - cannot add airports dynamically
+        isAddingAirport = false
+        addAirportError = "Airport not found in database. Only pre-loaded airports are available."
     }
 }
+// MARK: - Area Guide Airport Detail View (Places/Layover Guide)
 
-// MARK: - Airport Detail View
-
-struct AirportDetailView: View {
+struct AreaGuideAirportDetailView: View {
     @State var airport: AirportExperience
     @State private var showingWriteReview = false
     @State private var isLoading = false
+    @State private var restaurants: [NearbyPlace] = []
+    @State private var hotels: [NearbyPlace] = []
+    @State private var isLoadingPlaces = false
+    
+    // 🔑 Your Google Places API Key
+    private let googlePlacesAPIKey = "AIzaSyCqM6b8bD8lRdDsRHkLzlu2gA4y-uWqjXU"
     
     var body: some View {
         ZStack {
@@ -229,7 +226,6 @@ struct AirportDetailView: View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Header
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text(airport.code)
@@ -262,7 +258,6 @@ struct AirportDetailView: View {
                     .background(LogbookTheme.navyLight)
                     .cornerRadius(12)
                     
-                    // Map
                     Map {
                         Marker(airport.code, coordinate: airport.coordinate)
                             .tint(.blue)
@@ -271,7 +266,109 @@ struct AirportDetailView: View {
                     .frame(height: 200)
                     .cornerRadius(12)
                     
-                    // Write Review Button
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "fork.knife")
+                                .foregroundColor(LogbookTheme.accentBlue)
+                            Text("Nearby Restaurants")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                        }
+                        
+                        if isLoadingPlaces {
+                            HStack {
+                                ProgressView()
+                                    .tint(.white)
+                                Text("Loading...")
+                                    .foregroundColor(.gray)
+                            }
+                            .padding()
+                        } else if !restaurants.isEmpty {
+                            ForEach(restaurants.prefix(5)) { place in
+                                PlaceRow(place: place, from: airport.coordinate)
+                            }
+                        } else {
+                            Text("No restaurants found nearby")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                                .padding()
+                        }
+                    }
+                    .padding()
+                    .background(LogbookTheme.navyLight)
+                    .cornerRadius(12)
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "bed.double.fill")
+                                .foregroundColor(LogbookTheme.accentBlue)
+                            Text("Nearby Hotels")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                        }
+                        
+                        if isLoadingPlaces {
+                            HStack {
+                                ProgressView()
+                                    .tint(.white)
+                                Text("Loading...")
+                                    .foregroundColor(.gray)
+                            }
+                            .padding()
+                        } else if !hotels.isEmpty {
+                            ForEach(hotels.prefix(5)) { place in
+                                PlaceRow(place: place, from: airport.coordinate)
+                            }
+                        } else {
+                            Text("No hotels found nearby")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                                .padding()
+                        }
+                    }
+                    .padding()
+                    .background(LogbookTheme.navyLight)
+                    .cornerRadius(12)
+                    
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "car.fill")
+                                .foregroundColor(LogbookTheme.accentBlue)
+                            Text("Transportation")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button(action: openUber) {
+                            HStack {
+                                Image(systemName: "figure.walk")
+                                Text("Request Uber/Lyft")
+                                Spacer()
+                                Image(systemName: "arrow.right.circle")
+                            }
+                            .foregroundColor(.white)
+                            .padding(12)
+                            .background(LogbookTheme.fieldBackground)
+                            .cornerRadius(8)
+                        }
+                        
+                        Button(action: searchRentalCars) {
+                            HStack {
+                                Image(systemName: "car.2.fill")
+                                Text("Find Rental Cars")
+                                Spacer()
+                                Image(systemName: "arrow.right.circle")
+                            }
+                            .foregroundColor(.white)
+                            .padding(12)
+                            .background(LogbookTheme.fieldBackground)
+                            .cornerRadius(8)
+                        }
+                    }
+                    .padding()
+                    .background(LogbookTheme.navyLight)
+                    .cornerRadius(12)
+                    
                     Button(action: { showingWriteReview = true }) {
                         HStack {
                             Image(systemName: "square.and.pencil")
@@ -285,7 +382,6 @@ struct AirportDetailView: View {
                         .cornerRadius(12)
                     }
                     
-                    // Reviews Section
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Pilot Reviews (\(airport.reviews.count))")
                             .font(.title2)
@@ -315,6 +411,7 @@ struct AirportDetailView: View {
         }
         .task {
             await loadReviews()
+            await loadNearbyPlaces()
         }
     }
     
@@ -326,12 +423,12 @@ struct AirportDetailView: View {
             await MainActor.run {
                 airport.reviews = cloudReviews.map { cr in
                     PilotReview(
+                        airportCode: airport.code,
                         pilotName: cr.pilotName,
                         rating: cr.rating,
-                        date: cr.date,
-                        title: cr.title,
                         content: cr.content,
-                        tags: cr.tags.compactMap { ReviewTag(rawValue: $0) }
+                        title: cr.title,
+                        date: cr.date
                     )
                 }
                 isLoading = false
@@ -342,6 +439,46 @@ struct AirportDetailView: View {
         }
     }
     
+    private func loadNearbyPlaces() async {
+        isLoadingPlaces = true
+        
+        async let restaurantsTask = fetchNearbyPlaces(type: "restaurant")
+        async let hotelsTask = fetchNearbyPlaces(type: "lodging")
+        
+        let (fetchedRestaurants, fetchedHotels) = await (restaurantsTask, hotelsTask)
+        
+        restaurants = fetchedRestaurants
+        hotels = fetchedHotels
+        isLoadingPlaces = false
+    }
+    
+    private func fetchNearbyPlaces(type: String) async -> [NearbyPlace] {
+        let urlString = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=\(airport.coordinate.latitude),\(airport.coordinate.longitude)&radius=8000&type=\(type)&key=\(googlePlacesAPIKey)"
+        
+        guard let url = URL(string: urlString) else { return [] }
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let response = try JSONDecoder().decode(GooglePlacesResponse.self, from: data)
+            
+            return response.results.map { result in
+                NearbyPlace(
+                    name: result.name,
+                    address: result.vicinity ?? "",
+                    coordinate: CLLocationCoordinate2D(
+                        latitude: result.geometry.location.lat,
+                        longitude: result.geometry.location.lng
+                    ),
+                    rating: result.rating ?? 0,
+                    isOpen: result.opening_hours?.open_now
+                )
+            }
+        } catch {
+            print("Error fetching places: \(error)")
+            return []
+        }
+    }
+    
     private func saveReview(_ review: PilotReview) {
         Task {
             do {
@@ -349,9 +486,9 @@ struct AirportDetailView: View {
                     pilotName: review.pilotName,
                     rating: review.rating,
                     date: review.date,
-                    title: review.title,
+                    title: review.title ?? "",
                     content: review.content,
-                    tags: review.tags.map { $0.rawValue }
+                    tags: review.tags ?? []
                 )
                 
                 try await AreaGuideCloudKit.shared.saveReview(cloudReview, for: airport.code)
@@ -360,6 +497,90 @@ struct AirportDetailView: View {
                 print("Failed to save review: \(error)")
             }
         }
+    }
+    
+    private func openUber() {
+        let uberURL = "uber://?client_id=&action=setPickup&pickup[latitude]=\(airport.coordinate.latitude)&pickup[longitude]=\(airport.coordinate.longitude)"
+        
+        if let url = URL(string: uberURL), UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        } else {
+            if let url = URL(string: "https://apps.apple.com/us/app/uber/id368677368") {
+                UIApplication.shared.open(url)
+            }
+        }
+    }
+    
+    private func searchRentalCars() {
+        let query = "rental+cars+near+\(airport.code)+airport"
+        if let url = URL(string: "https://www.google.com/search?q=\(query)") {
+            UIApplication.shared.open(url)
+        }
+    }
+}
+
+// MARK: - Place Row
+
+struct PlaceRow: View {
+    let place: NearbyPlace
+    let from: CLLocationCoordinate2D
+    
+    var distance: String {
+        let airportLocation = CLLocation(latitude: from.latitude, longitude: from.longitude)
+        let placeLocation = CLLocation(latitude: place.coordinate.latitude, longitude: place.coordinate.longitude)
+        let distanceMeters = airportLocation.distance(from: placeLocation)
+        let distanceMiles = distanceMeters / 1609.34
+        return String(format: "%.1f mi", distanceMiles)
+    }
+    
+    var body: some View {
+        Button(action: openInMaps) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(place.name)
+                        .font(.subheadline.bold())
+                        .foregroundColor(.white)
+                    
+                    HStack(spacing: 8) {
+                        if place.rating > 0 {
+                            HStack(spacing: 2) {
+                                Image(systemName: "star.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(.yellow)
+                                Text(String(format: "%.1f", place.rating))
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                        
+                        Text(distance)
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        
+                        if let isOpen = place.isOpen {
+                            Text(isOpen ? "Open" : "Closed")
+                                .font(.caption)
+                                .foregroundColor(isOpen ? .green : .red)
+                        }
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "arrow.right.circle.fill")
+                    .foregroundColor(LogbookTheme.accentBlue)
+            }
+            .padding(12)
+            .background(LogbookTheme.fieldBackground)
+            .cornerRadius(8)
+        }
+    }
+    
+    func openInMaps() {
+        let placemark = MKPlacemark(coordinate: place.coordinate)
+        let mapItem = MKMapItem(placemark: placemark)
+        mapItem.name = place.name
+        mapItem.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving])
     }
 }
 
@@ -370,7 +591,6 @@ struct AirportCardRow: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Airport Code Badge
             ZStack {
                 Circle()
                     .fill(LogbookTheme.accentBlue)
@@ -380,7 +600,6 @@ struct AirportCardRow: View {
                     .foregroundColor(.white)
             }
             
-            // Airport Info
             VStack(alignment: .leading, spacing: 4) {
                 Text(airport.name)
                     .font(.headline)
@@ -445,26 +664,30 @@ struct ReviewCard: View {
                 }
             }
             
-            Text(review.title)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
+            if let title = review.title {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+            }
             
             Text(review.content)
                 .font(.body)
                 .foregroundColor(.white.opacity(0.9))
             
-            if !review.tags.isEmpty {
+            if let tags = review.tags, !tags.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(review.tags, id: \.self) { tag in
-                            Text(tag.rawValue)
-                                .font(.caption2)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(tag.color.opacity(0.3))
-                                .foregroundColor(tag.color)
-                                .cornerRadius(8)
+                        ForEach(tags, id: \.self) { tagString in
+                            if let reviewTag = ReviewTag(rawValue: tagString) {
+                                Text(reviewTag.rawValue)
+                                    .font(.caption2)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(reviewTag.color.opacity(0.3))
+                                    .foregroundColor(reviewTag.color)
+                                    .cornerRadius(8)
+                            }
                         }
                     }
                 }
@@ -488,8 +711,6 @@ struct WriteReviewSheet: View {
     @State private var title = ""
     @State private var content = ""
     @State private var selectedTags: Set<ReviewTag> = []
-    @State private var fboName = ""
-    @State private var crewCarAvailable = false
     
     var body: some View {
         NavigationView {
@@ -533,11 +754,6 @@ struct WriteReviewSheet: View {
                         }
                     }
                 }
-                
-                Section(header: Text("Additional Info")) {
-                    TextField("FBO Name (optional)", text: $fboName)
-                    Toggle("Crew Car Available", isOn: $crewCarAvailable)
-                }
             }
             .navigationTitle("Write Review")
             .navigationBarTitleDisplayMode(.inline)
@@ -562,14 +778,16 @@ struct WriteReviewSheet: View {
     }
     
     private func saveReview() {
-        let review = PilotReview(
+        var review = PilotReview(
+            airportCode: airportCode,
             pilotName: pilotName,
             rating: rating,
-            date: Date(),
-            title: title,
             content: content,
-            tags: Array(selectedTags)
+            title: title,
+            date: Date()
         )
+        // Convert ReviewTag enum to string array for storage
+        review.tags = selectedTags.map { $0.rawValue }
         onSave(review)
         dismiss()
     }
@@ -581,50 +799,17 @@ class AreaGuideViewModel: ObservableObject {
     @Published var airports: [AirportExperience] = []
     
     func filteredAirports(text: String) -> [AirportExperience] {
-        if text.isEmpty { return airports }
-        return airports.filter {
-            $0.code.localizedCaseInsensitiveContains(text) ||
-            $0.city.localizedCaseInsensitiveContains(text) ||
-            $0.name.localizedCaseInsensitiveContains(text)
-        }
+        return BundledAirportDatabase.shared.searchAirports(query: text)
     }
     
     @MainActor
     func refreshSearch(_ text: String) async {
-        await loadAirportsFromCloud(matching: text)
+        await loadAirportsFromBundle(matching: text)
     }
     
     @MainActor
-    func loadAirportsFromCloud(matching text: String? = nil) async {
-        do {
-            // Fetch all airports from CloudKit
-            let cloudAirports = try await AreaGuideCloudKit.shared.fetchAllAirports()
-            
-            // Convert to AirportExperience
-            let allAirports = cloudAirports.map { ca in
-                AirportExperience(
-                    code: ca.code,
-                    name: ca.name,
-                    city: ca.city,
-                    state: ca.state,
-                    elevation: ca.elevation,
-                    coordinate: ca.coordinate,
-                    reviews: []
-                )
-            }
-            
-            // Filter client-side by code, city, or name
-            if let searchText = text, !searchText.isEmpty {
-                self.airports = allAirports.filter {
-                    $0.code.localizedCaseInsensitiveContains(searchText) ||
-                    $0.city.localizedCaseInsensitiveContains(searchText) ||
-                    $0.name.localizedCaseInsensitiveContains(searchText)
-                }
-            } else {
-                self.airports = allAirports
-            }
-        } catch {
-            print("Failed to load airports from CloudKit: \(error)")
-        }
+    func loadAirportsFromBundle(matching text: String? = nil) async {
+        // Load from bundled CSV file (instant, offline)
+        airports = BundledAirportDatabase.shared.searchAirports(query: text ?? "")
     }
 }

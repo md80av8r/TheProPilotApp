@@ -13,7 +13,7 @@
 	<array>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>ProPilot Trip</string>
+			<string>ProPilot Trip File</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
@@ -25,7 +25,7 @@
 		</dict>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>JSON File</string>
+			<string>ProPilot Backup (JSON)</string>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>LSHandlerRank</key>
@@ -33,6 +33,18 @@
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>public.json</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>ProPilot Backup (ZIP)</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.zip-archive</string>
 			</array>
 		</dict>
 		<dict>
@@ -112,19 +124,6 @@
 				<string>public.text</string>
 			</array>
 		</dict>
-		<dict>
-			<key>CFBundleTypeName</key>
-			<string>ProPilot Backup</string>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSHandlerRank</key>
-			<string>Owner</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>public.json</string>
-				<string>public.zip-archive</string>
-			</array>
-		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
@@ -202,6 +201,13 @@
 				<true/>
 				<key>NSExceptionRequiresForwardSecrecy</key>
 				<false/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>api.aviationstack.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>

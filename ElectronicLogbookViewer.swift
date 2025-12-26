@@ -3,7 +3,7 @@
 import SwiftUI
 
 struct ElectronicLogbookViewer: View {
-    @ObservedObject var store: LogBookStore
+    @ObservedObject var store: SwiftDataLogBookStore
     @Environment(\.dismiss) private var dismiss
     
     @State private var searchText = ""
@@ -412,7 +412,7 @@ struct ELogFlightRowView: View {
 #if DEBUG
 struct ElectronicLogbookViewer_Previews: PreviewProvider {
     static var previews: some View {
-        ElectronicLogbookViewer(store: LogBookStore())
+        ElectronicLogbookViewer(store: SwiftDataLogBookStore.preview)
     }
 }
 #endif

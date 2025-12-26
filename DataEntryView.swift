@@ -655,97 +655,113 @@ struct DataEntryView: View {
     }
 
     private func legView(for legIndex: Int) -> some View {
-        VStack(spacing: 8) {
-            HStack {
-                Text("\(tripType == .deadhead ? "Segment" : "Leg") \(legIndex + 1)")
-                    .font(.subheadline.bold())
-                    .foregroundColor(.white)
-                
-                // Show continuation indicator for subsequent legs
-                if legIndex > 0 && !legs[legIndex].departure.isEmpty {
-                    Image(systemName: "arrow.right.circle.fill")
-                        .foregroundColor(LogbookTheme.accentBlue)
-                        .font(.caption)
-                }
-                
-                Spacer()
-                
-                if legs.count > 1 {
-                    Button("Delete") {
-                        showDeleteConfirmation(for: legIndex)
+        // Add bounds checking to prevent crashes
+        guard legIndex < legs.count else {
+            return AnyView(EmptyView())
+        }
+        
+        return AnyView(
+            VStack(spacing: 8) {
+                HStack {
+                    Text("\(tripType == .deadhead ? "Segment" : "Leg") \(legIndex + 1)")
+                        .font(.subheadline.bold())
+                        .foregroundColor(.white)
+                    
+                    // Show continuation indicator for subsequent legs
+                    if legIndex > 0 && !legs[legIndex].departure.isEmpty {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .foregroundColor(LogbookTheme.accentBlue)
+                            .font(.caption)
                     }
-                    .foregroundColor(.red)
-                    .font(.caption)
+                    
+                    Spacer()
+                    
+                    if legs.count > 1 {
+                        Button("Delete") {
+                            showDeleteConfirmation(for: legIndex)
+                        }
+                        .foregroundColor(.red)
+                        .font(.caption)
+                    }
+                }
+                
+                // Flight Number Field
+                if tripType != .deadhead {
+                    flightNumberField(for: legIndex)
+                }
+                
+                // Route with ICAO auto-complete and smart auto-fill
+                routeFields(for: legIndex)
+                
+                if tripType == .deadhead {
+                    deadheadTimeEntry(for: legIndex)
+                } else {
+                    regularTimeEntry(for: legIndex)
+                }
+                
+                // Enhanced Calculated Times Display
+                if legs[legIndex].isValid {
+                    calculatedTimesDisplay(for: legIndex)
                 }
             }
-            
-            // Flight Number Field
-            if tripType != .deadhead {
-                flightNumberField(for: legIndex)
+            .padding()
+            .background(tripType == .deadhead ? LogbookTheme.accentOrange.opacity(0.15) : LogbookTheme.fieldBackground)
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(tripType == .deadhead ? LogbookTheme.accentOrange.opacity(0.4) : LogbookTheme.fieldBackground, lineWidth: 1)
+            )
+            .onChange(of: legs[safe: legIndex]?.arrival ?? "") { _, newArrival in
+                // When arrival changes, update next leg's departure if it exists
+                guard legIndex < legs.count else { return }
+                let nextLegIndex = legIndex + 1
+                if nextLegIndex < legs.count && !newArrival.isEmpty {
+                    legs[nextLegIndex].departure = newArrival
+                }
+                
+                // ✅ Sync to watch when arrival changes
+                if lastArrivalSync[legIndex] != newArrival {
+                    lastArrivalSync[legIndex] = newArrival
+                    syncLegToWatch(legIndex: legIndex)
+                }
             }
-            
-            // Route with ICAO auto-complete and smart auto-fill
-            routeFields(for: legIndex)
-            
-            if tripType == .deadhead {
-                deadheadTimeEntry(for: legIndex)
-            } else {
-                regularTimeEntry(for: legIndex)
-            }
-            
-            // Enhanced Calculated Times Display
-            if legs[legIndex].isValid {
-                calculatedTimesDisplay(for: legIndex)
-            }
-        }
-        .padding()
-        .background(tripType == .deadhead ? LogbookTheme.accentOrange.opacity(0.15) : LogbookTheme.fieldBackground)
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(tripType == .deadhead ? LogbookTheme.accentOrange.opacity(0.4) : LogbookTheme.fieldBackground, lineWidth: 1)
         )
-        .onChange(of: legs[legIndex].arrival) { _, newArrival in
-            // When arrival changes, update next leg's departure if it exists
-            let nextLegIndex = legIndex + 1
-            if nextLegIndex < legs.count && !newArrival.isEmpty {
-                legs[nextLegIndex].departure = newArrival
-            }
-            
-            // ✅ Sync to watch when arrival changes
-            if lastArrivalSync[legIndex] != newArrival {
-                lastArrivalSync[legIndex] = newArrival
-                syncLegToWatch(legIndex: legIndex)
-            }
-        }
     }
     
     // MARK: - NEW: Flight Number Field Component
     @ViewBuilder
     private func flightNumberField(for legIndex: Int) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Flight Number")
-                .font(.caption2)
-                .foregroundColor(.gray)
-            
-            TextField("1234 or UAL1234", text: Binding(
-                get: { legs[legIndex].flightNumber },
-                set: { newValue in
-                    legs[legIndex].flightNumber = newValue.uppercased()
-                    
-                    // Auto-populate next leg's flight number if it's empty and this field is being committed
-                    if legIndex + 1 < legs.count && legs[legIndex + 1].flightNumber.isEmpty && !newValue.isEmpty {
-                        legs[legIndex + 1].flightNumber = newValue.uppercased()
+        // Add bounds checking to prevent crashes
+        if legIndex < legs.count {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Flight Number")
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+                
+                TextField("1234 or UAL1234", text: Binding(
+                    get: { 
+                        guard legIndex < legs.count else { return "" }
+                        return legs[legIndex].flightNumber
+                    },
+                    set: { newValue in
+                        guard legIndex < legs.count else { return }
+                        legs[legIndex].flightNumber = newValue.uppercased()
+                        
+                        // Auto-populate next leg's flight number if it's empty and this field is being committed
+                        if legIndex + 1 < legs.count && legs[legIndex + 1].flightNumber.isEmpty && !newValue.isEmpty {
+                            legs[legIndex + 1].flightNumber = newValue.uppercased()
+                        }
                     }
-                }
-            ))
-            .textFieldStyle(LogbookTextFieldStyle())
-            .textInputAutocapitalization(.characters)
-            .focused($focusedField, equals: .legField(legIndex, .flightNumber))
-            .onSubmit {
-                // Auto-populate next leg's flight number when user hits return
-                if legIndex + 1 < legs.count && legs[legIndex + 1].flightNumber.isEmpty {
-                    legs[legIndex + 1].flightNumber = legs[legIndex].flightNumber
+                ))
+                .textFieldStyle(LogbookTextFieldStyle())
+                .textInputAutocapitalization(.characters)
+                .focused($focusedField, equals: .legField(legIndex, .flightNumber))
+                .onSubmit {
+                    // Auto-populate next leg's flight number when user hits return
+                    guard legIndex < legs.count else { return }
+                    if legIndex + 1 < legs.count && legs[legIndex + 1].flightNumber.isEmpty {
+                        legs[legIndex + 1].flightNumber = legs[legIndex].flightNumber
+                    }
                 }
             }
         }
@@ -759,12 +775,18 @@ struct DataEntryView: View {
                     .foregroundColor(.gray)
                 EnhancedICAOTextField(
                     text: Binding(
-                        get: { legs[legIndex].departure },
-                        set: { legs[legIndex].departure = $0 }
+                        get: { 
+                            guard legIndex < legs.count else { return "" }
+                            return legs[legIndex].departure
+                        },
+                        set: { 
+                            guard legIndex < legs.count else { return }
+                            legs[legIndex].departure = $0
+                        }
                     ),
                     placeholder: "ICAO"
                 )
-                .onChange(of: legs[legIndex].departure) { _, _ in
+                .onChange(of: legs[safe: legIndex]?.departure ?? "") { _, _ in
                     syncLegToWatch(legIndex: legIndex)
                 }
             }
@@ -780,8 +802,14 @@ struct DataEntryView: View {
                     .foregroundColor(.gray)
                 EnhancedICAOTextField(
                     text: Binding(
-                        get: { legs[legIndex].arrival },
-                        set: { legs[legIndex].arrival = $0 }
+                        get: { 
+                            guard legIndex < legs.count else { return "" }
+                            return legs[legIndex].arrival
+                        },
+                        set: { 
+                            guard legIndex < legs.count else { return }
+                            legs[legIndex].arrival = $0
+                        }
                     ),
                     placeholder: "ICAO"
                 )
@@ -792,178 +820,241 @@ struct DataEntryView: View {
     }
     
     private func deadheadTimeEntry(for legIndex: Int) -> some View {
-        VStack(spacing: 12) {
-            // OUT/IN Times Row (Preferred method)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("OUT/IN Times (Preferred)")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
+        guard legIndex < legs.count else {
+            return AnyView(EmptyView())
+        }
+        
+        return AnyView(
+            VStack(spacing: 12) {
+                // OUT/IN Times Row (Preferred method)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("OUT/IN Times (Preferred)")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                    
+                    HStack(spacing: 12) {
+                        TimeEntryField(
+                            label: "OUT",
+                            icon: "arrow.up.circle.fill",
+                            color: .blue,
+                            timeString: Binding(
+                                get: { legs[safe: legIndex]?.deadheadOutTime ?? "" },
+                                set: { 
+                                    guard legIndex < legs.count else { return }
+                                    legs[legIndex].deadheadOutTime = $0
+                                }
+                            ),
+                            activePickerConfig: $activeTimePickerConfig
+                        )
+                        .onChange(of: legs[safe: legIndex]?.deadheadOutTime ?? "") { oldValue, newValue in
+                            print("🔵 DataEntry: Deadhead OUT changed from '\(oldValue)' to '\(newValue)'")
+                            // Clear manual hours if using OUT/IN times
+                            guard legIndex < legs.count else { return }
+                            if !legs[legIndex].deadheadOutTime.isEmpty && !legs[legIndex].deadheadInTime.isEmpty {
+                                legs[legIndex].deadheadFlightHours = 0.0
+                            }
+                        }
+                        
+                        TimeEntryField(
+                            label: "IN",
+                            icon: "arrow.down.circle.fill",
+                            color: .blue,
+                            timeString: Binding(
+                                get: { legs[safe: legIndex]?.deadheadInTime ?? "" },
+                                set: { 
+                                    guard legIndex < legs.count else { return }
+                                    legs[legIndex].deadheadInTime = $0
+                                }
+                            ),
+                            activePickerConfig: $activeTimePickerConfig
+                        )
+                        .onChange(of: legs[safe: legIndex]?.deadheadInTime ?? "") { oldValue, newValue in
+                            print("🔵 DataEntry: Deadhead IN changed from '\(oldValue)' to '\(newValue)'")
+                            // Clear manual hours if using OUT/IN times
+                            guard legIndex < legs.count else { return }
+                            if !legs[legIndex].deadheadOutTime.isEmpty && !legs[legIndex].deadheadInTime.isEmpty {
+                                legs[legIndex].deadheadFlightHours = 0.0
+                            }
+                        }
+                    }
+                }
                 
+                // Divider with OR
+                HStack {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(height: 1)
+                    
+                    Text("OR")
+                        .foregroundColor(.gray)
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                    
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(height: 1)
+                }
+                
+                // Total Hours Row (Backup method)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Total Hours")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                    
+                    TextField("2.5", value: Binding(
+                        get: { legs[safe: legIndex]?.deadheadFlightHours ?? 0.0 },
+                        set: { 
+                            guard legIndex < legs.count else { return }
+                            legs[legIndex].deadheadFlightHours = $0
+                        }
+                    ), format: .number.precision(.fractionLength(1)))
+                        .textFieldStyle(LogbookTextFieldStyle())
+                        .keyboardType(.decimalPad)
+                        .frame(width: 100)
+                        .onChange(of: legs[safe: legIndex]?.deadheadFlightHours ?? 0.0) { oldValue, newValue in
+                            // Clear OUT/IN times if using manual hours
+                            guard legIndex < legs.count, newValue > 0 else { return }
+                            legs[legIndex].deadheadOutTime = ""
+                            legs[legIndex].deadheadInTime = ""
+                        }
+                }
+                
+                // Show calculated block time if OUT/IN times are entered
+                if let leg = legs[safe: legIndex], !leg.deadheadOutTime.isEmpty && !leg.deadheadInTime.isEmpty {
+                    let blockMins = leg.blockMinutes()
+                    if blockMins > 0 {
+                        HStack {
+                            Image(systemName: "clock.fill")
+                                .font(.caption2)
+                                .foregroundColor(LogbookTheme.accentGreen)
+                            Text("Block Time: \(blockMins.asLogbookTotal)")
+                                .font(.caption)
+                                .foregroundColor(LogbookTheme.accentGreen)
+                            Spacer()
+                        }
+                    }
+                }
+            }
+        )
+    }
+    
+    private func regularTimeEntry(for legIndex: Int) -> some View {
+        guard legIndex < legs.count else {
+            return AnyView(EmptyView())
+        }
+        
+        return AnyView(
+            VStack(spacing: 8) {
                 HStack(spacing: 12) {
                     TimeEntryField(
                         label: "OUT",
                         icon: "arrow.up.circle.fill",
                         color: .blue,
-                        timeString: $legs[legIndex].deadheadOutTime,
+                        timeString: Binding(
+                            get: { legs[safe: legIndex]?.outTime ?? "" },
+                            set: { 
+                                guard legIndex < legs.count else { return }
+                                legs[legIndex].outTime = $0
+                            }
+                        ),
                         activePickerConfig: $activeTimePickerConfig
                     )
-                    .onChange(of: legs[legIndex].deadheadOutTime) { oldValue, newValue in
-                        print("🔵 DataEntry: Deadhead OUT changed from '\(oldValue)' to '\(newValue)'")
-                        // Clear manual hours if using OUT/IN times
-                        if !legs[legIndex].deadheadOutTime.isEmpty && !legs[legIndex].deadheadInTime.isEmpty {
-                            legs[legIndex].deadheadFlightHours = 0.0
-                        }
-                    }
+                    
+                    TimeEntryField(
+                        label: "OFF",
+                        icon: "airplane.departure",
+                        color: .green,
+                        timeString: Binding(
+                            get: { legs[safe: legIndex]?.offTime ?? "" },
+                            set: { 
+                                guard legIndex < legs.count else { return }
+                                legs[legIndex].offTime = $0
+                            }
+                        ),
+                        activePickerConfig: $activeTimePickerConfig
+                    )
+                }
+
+                HStack(spacing: 12) {
+                    TimeEntryField(
+                        label: "ON",
+                        icon: "airplane.arrival",
+                        color: .orange,
+                        timeString: Binding(
+                            get: { legs[safe: legIndex]?.onTime ?? "" },
+                            set: { 
+                                guard legIndex < legs.count else { return }
+                                legs[legIndex].onTime = $0
+                            }
+                        ),
+                        activePickerConfig: $activeTimePickerConfig
+                    )
                     
                     TimeEntryField(
                         label: "IN",
                         icon: "arrow.down.circle.fill",
                         color: .blue,
-                        timeString: $legs[legIndex].deadheadInTime,
+                        timeString: Binding(
+                            get: { legs[safe: legIndex]?.inTime ?? "" },
+                            set: { 
+                                guard legIndex < legs.count else { return }
+                                legs[legIndex].inTime = $0
+                            }
+                        ),
                         activePickerConfig: $activeTimePickerConfig
                     )
-                    .onChange(of: legs[legIndex].deadheadInTime) { oldValue, newValue in
-                        print("🔵 DataEntry: Deadhead IN changed from '\(oldValue)' to '\(newValue)'")
-                        // Clear manual hours if using OUT/IN times
-                        if !legs[legIndex].deadheadOutTime.isEmpty && !legs[legIndex].deadheadInTime.isEmpty {
-                            legs[legIndex].deadheadFlightHours = 0.0
-                        }
-                    }
                 }
             }
-            
-            // Divider with OR
-            HStack {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(height: 1)
-                
-                Text("OR")
-                    .foregroundColor(.gray)
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(height: 1)
-            }
-            
-            // Total Hours Row (Backup method)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Total Hours")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
-                
-                TextField("2.5", value: $legs[legIndex].deadheadFlightHours, format: .number.precision(.fractionLength(1)))
-                    .textFieldStyle(LogbookTextFieldStyle())
-                    .keyboardType(.decimalPad)
-                    .frame(width: 100)
-                    .onChange(of: legs[legIndex].deadheadFlightHours) { oldValue, newValue in
-                        // Clear OUT/IN times if using manual hours
-                        if newValue > 0 {
-                            legs[legIndex].deadheadOutTime = ""
-                            legs[legIndex].deadheadInTime = ""
-                        }
-                    }
-            }
-            
-            // Show calculated block time if OUT/IN times are entered
-            if !legs[legIndex].deadheadOutTime.isEmpty && !legs[legIndex].deadheadInTime.isEmpty {
-                let blockMins = legs[legIndex].blockMinutes()
-                if blockMins > 0 {
-                    HStack {
-                        Image(systemName: "clock.fill")
-                            .font(.caption2)
-                            .foregroundColor(LogbookTheme.accentGreen)
-                        Text("Block Time: \(blockMins.asLogbookTotal)")
-                            .font(.caption)
-                            .foregroundColor(LogbookTheme.accentGreen)
-                        Spacer()
-                    }
-                }
-            }
-        }
-    }
-    
-    private func regularTimeEntry(for legIndex: Int) -> some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 12) {
-                TimeEntryField(
-                    label: "OUT",
-                    icon: "arrow.up.circle.fill",
-                    color: .blue,
-                    timeString: $legs[legIndex].outTime,
-                    activePickerConfig: $activeTimePickerConfig
-                )
-                
-                TimeEntryField(
-                    label: "OFF",
-                    icon: "airplane.departure",
-                    color: .green,
-                    timeString: $legs[legIndex].offTime,
-                    activePickerConfig: $activeTimePickerConfig
-                )
-            }
-
-            HStack(spacing: 12) {
-                TimeEntryField(
-                    label: "ON",
-                    icon: "airplane.arrival",
-                    color: .orange,
-                    timeString: $legs[legIndex].onTime,
-                    activePickerConfig: $activeTimePickerConfig
-                )
-                
-                TimeEntryField(
-                    label: "IN",
-                    icon: "arrow.down.circle.fill",
-                    color: .blue,
-                    timeString: $legs[legIndex].inTime,
-                    activePickerConfig: $activeTimePickerConfig
-                )
-            }
-        }
+        )
     }
     
     private func calculatedTimesDisplay(for legIndex: Int) -> some View {
-        VStack(spacing: 6) {
-            // Primary times (Flight and Block)
-            HStack {
-                if tripType != .deadhead {
-                    Text("Flight: \(legs[legIndex].formattedFlightTime)")
-                        .font(.caption)
-                        .foregroundColor(LogbookTheme.accentBlue)
-                }
-                Spacer()
-                Text("Block: \(legs[legIndex].formattedBlockTime)")
-                    .font(.caption)
-                    .foregroundColor(LogbookTheme.accentGreen)
-            }
-            
-            // Night hours display (if any)
-            if let nightMins = nightMinutesCache[legs[legIndex].id], nightMins > 0 {
+        guard legIndex < legs.count else {
+            return AnyView(EmptyView())
+        }
+        
+        let leg = legs[legIndex]
+        
+        return AnyView(
+            VStack(spacing: 6) {
+                // Primary times (Flight and Block)
                 HStack {
-                    HStack(spacing: 4) {
-                        Image(systemName: "moon.stars.fill")
-                            .font(.caption2)
-                            .foregroundColor(LogbookTheme.accentOrange)
-                        Text("Night: \(String(format: "%.1f", Double(nightMins) / 60.0))")
+                    if tripType != .deadhead {
+                        Text("Flight: \(leg.formattedFlightTime)")
                             .font(.caption)
-                            .foregroundColor(LogbookTheme.accentOrange)
+                            .foregroundColor(LogbookTheme.accentBlue)
                     }
                     Spacer()
-                    Text("(\(formatLogbookTotal(minutes: nightMins)))")
-                        .font(.caption2)
-                        .foregroundColor(LogbookTheme.accentOrange.opacity(0.8))
+                    Text("Block: \(leg.formattedBlockTime)")
+                        .font(.caption)
+                        .foregroundColor(LogbookTheme.accentGreen)
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(LogbookTheme.accentOrange.opacity(0.1))
-                )
+                
+                // Night hours display (if any)
+                if let nightMins = nightMinutesCache[leg.id], nightMins > 0 {
+                    HStack {
+                        HStack(spacing: 4) {
+                            Image(systemName: "moon.stars.fill")
+                                .font(.caption2)
+                                .foregroundColor(LogbookTheme.accentOrange)
+                            Text("Night: \(String(format: "%.1f", Double(nightMins) / 60.0))")
+                                .font(.caption)
+                                .foregroundColor(LogbookTheme.accentOrange)
+                        }
+                        Spacer()
+                        Text("(\(formatLogbookTotal(minutes: nightMins)))")
+                            .font(.caption2)
+                            .foregroundColor(LogbookTheme.accentOrange.opacity(0.8))
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(LogbookTheme.accentOrange.opacity(0.1))
+                    )
+                }
             }
-        }
+        )
     }
     
     // MARK: - Simulator Time Section
@@ -1736,5 +1827,12 @@ struct LogbookTextFieldStyle: TextFieldStyle {
             .background(LogbookTheme.fieldBackground)
             .cornerRadius(6)
             .foregroundColor(.white)
+    }
+}
+
+// MARK: - Array Safe Subscript Extension
+extension Array {
+    subscript(safe index: Int) -> Element? {
+        return indices.contains(index) ? self[index] : nil
     }
 }

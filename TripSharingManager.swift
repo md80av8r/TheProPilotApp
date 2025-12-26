@@ -122,7 +122,8 @@ class TripSharingManager: ObservableObject {
     }
     
     /// Confirms import and adds trip to store
-    func confirmImport(to store: LogBookStore) {
+    @MainActor
+    func confirmImport(to store: SwiftDataLogBookStore) {
         guard let trip = importedTrip else { return }
         
         // Create a new trip with fresh ID to avoid conflicts
@@ -349,7 +350,7 @@ struct TripImportConfirmationView: View {
 // MARK: - Import Handler View Modifier
 struct TripImportHandlerModifier: ViewModifier {
     @ObservedObject var sharingManager = TripSharingManager.shared
-    @ObservedObject var logbookStore: LogBookStore
+    @ObservedObject var logbookStore: SwiftDataLogBookStore
     
     func body(content: Content) -> some View {
         content
@@ -378,7 +379,7 @@ struct TripImportHandlerModifier: ViewModifier {
 
 extension View {
     /// Adds trip import handling to any view
-    func tripImportHandler(store: LogBookStore) -> some View {
+    func tripImportHandler(store: SwiftDataLogBookStore) -> some View {
         modifier(TripImportHandlerModifier(logbookStore: store))
     }
 }
