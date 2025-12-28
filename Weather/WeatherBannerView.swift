@@ -178,6 +178,9 @@ class BannerWeatherService: ObservableObject {
     private var lastRunwayFetchTime: [String: Date] = [:]
     private let cacheTimeout: TimeInterval = 30 * 60 // 30 minutes
     private let runwayCacheTimeout: TimeInterval = 24 * 60 * 60 // 24 hours (runways don't change often)
+    private var cachedRunwayCSV: String? = nil  // Cache the CSV to avoid re-downloading
+    private var csvLastFetchTime: Date? = nil
+    private let csvCacheTimeout: TimeInterval = 24 * 60 * 60 // 24 hours
     
     // ✅ Cache version to invalidate old data
     private let cacheVersion = "v2" // Increment when RawMETAR structure changes
@@ -300,6 +303,156 @@ class BannerWeatherService: ObservableObject {
                 ("25R", 11095, 150, "ASPH", 250),
                 ("07R", 12091, 200, "ASPH", 70),
                 ("25L", 12091, 200, "ASPH", 250)
+            ],
+            "KLRD": [
+                ("18", 8502, 150, "ASPH", 180),
+                ("36", 8502, 150, "ASPH", 360),
+                ("14", 5851, 100, "ASPH", 140),
+                ("32", 5851, 100, "ASPH", 320)
+            ],
+            "KORD": [
+                ("09L", 7500, 150, "CONC", 90),
+                ("27R", 7500, 150, "CONC", 270),
+                ("09R", 7967, 150, "CONC", 90),
+                ("27L", 7967, 150, "CONC", 270),
+                ("09C", 10801, 200, "CONC", 90),
+                ("27C", 10801, 200, "CONC", 270),
+                ("10L", 10801, 200, "CONC", 100),
+                ("28R", 10801, 200, "CONC", 280),
+                ("10C", 10801, 200, "CONC", 100),
+                ("28C", 10801, 200, "CONC", 280),
+                ("10R", 13000, 200, "CONC", 100),
+                ("28L", 13000, 200, "CONC", 280)
+            ],
+            "KDFW": [
+                ("13L", 9000, 200, "CONC", 130),
+                ("31R", 9000, 200, "CONC", 310),
+                ("13R", 9301, 200, "CONC", 130),
+                ("31L", 9301, 200, "CONC", 310),
+                ("17C", 13401, 200, "CONC", 170),
+                ("35C", 13401, 200, "CONC", 350),
+                ("17L", 8500, 150, "CONC", 170),
+                ("35R", 8500, 150, "CONC", 350),
+                ("17R", 9000, 200, "CONC", 170),
+                ("35L", 9000, 200, "CONC", 350),
+                ("18L", 13400, 200, "CONC", 180),
+                ("36R", 13400, 200, "CONC", 360),
+                ("18R", 13401, 200, "CONC", 180),
+                ("36L", 13401, 200, "CONC", 360)
+            ],
+            "KDEN": [
+                ("07", 9000, 150, "CONC", 70),
+                ("25", 9000, 150, "CONC", 250),
+                ("08", 12000, 150, "CONC", 80),
+                ("26", 12000, 150, "CONC", 260),
+                ("16L", 16000, 200, "CONC", 160),
+                ("34R", 16000, 200, "CONC", 340),
+                ("16R", 12000, 200, "CONC", 160),
+                ("34L", 12000, 200, "CONC", 340),
+                ("17L", 12000, 150, "CONC", 170),
+                ("35R", 12000, 150, "CONC", 350),
+                ("17R", 12000, 150, "CONC", 170),
+                ("35L", 12000, 150, "CONC", 350)
+            ],
+            "KMIA": [
+                ("08L", 10506, 200, "ASPH", 80),
+                ("26R", 10506, 200, "ASPH", 260),
+                ("08R", 13016, 200, "ASPH", 80),
+                ("26L", 13016, 200, "ASPH", 260),
+                ("09", 13000, 200, "ASPH", 90),
+                ("27", 13000, 200, "ASPH", 270),
+                ("12", 9354, 150, "ASPH", 120),
+                ("30", 9354, 150, "ASPH", 300)
+            ],
+            "KSFO": [
+                ("01L", 7650, 200, "ASPH", 10),
+                ("19R", 7650, 200, "ASPH", 190),
+                ("01R", 8650, 200, "ASPH", 10),
+                ("19L", 8650, 200, "ASPH", 190),
+                ("10L", 10602, 200, "ASPH", 100),
+                ("28R", 10602, 200, "ASPH", 280),
+                ("10R", 11870, 200, "ASPH", 100),
+                ("28L", 11870, 200, "ASPH", 280)
+            ],
+            "KLAS": [
+                ("01L", 10527, 150, "ASPH", 10),
+                ("19R", 10527, 150, "ASPH", 190),
+                ("01R", 14510, 150, "ASPH", 10),
+                ("19L", 14510, 150, "ASPH", 190),
+                ("08L", 9775, 150, "ASPH", 80),
+                ("26R", 9775, 150, "ASPH", 260),
+                ("08R", 10527, 150, "ASPH", 80),
+                ("26L", 10527, 150, "ASPH", 260)
+            ],
+            "KPHX": [
+                ("07L", 10300, 150, "ASPH", 70),
+                ("25R", 10300, 150, "ASPH", 250),
+                ("07R", 11489, 150, "ASPH", 70),
+                ("25L", 11489, 150, "ASPH", 250),
+                ("08", 7800, 150, "ASPH", 80),
+                ("26", 7800, 150, "ASPH", 260)
+            ],
+            "KMSP": [
+                ("04", 8000, 150, "CONC", 40),
+                ("22", 8000, 150, "CONC", 220),
+                ("12L", 8200, 200, "CONC", 120),
+                ("30R", 8200, 200, "CONC", 300),
+                ("12R", 10000, 200, "CONC", 120),
+                ("30L", 10000, 200, "CONC", 300),
+                ("17", 11006, 200, "CONC", 170),
+                ("35", 11006, 200, "CONC", 350)
+            ],
+            "KBOS": [
+                ("04L", 7861, 150, "ASPH", 40),
+                ("22R", 7861, 150, "ASPH", 220),
+                ("04R", 10005, 150, "ASPH", 40),
+                ("22L", 10005, 150, "ASPH", 220),
+                ("09", 7000, 150, "ASPH", 90),
+                ("27", 7000, 150, "ASPH", 270),
+                ("15R", 10083, 150, "ASPH", 150),
+                ("33L", 10083, 150, "ASPH", 330)
+            ],
+            "KEWR": [
+                ("04L", 11000, 150, "ASPH", 40),
+                ("22R", 11000, 150, "ASPH", 220),
+                ("04R", 10000, 150, "ASPH", 40),
+                ("22L", 10000, 150, "ASPH", 220),
+                ("11", 9300, 150, "ASPH", 110),
+                ("29", 9300, 150, "ASPH", 290)
+            ],
+            "KLGA": [
+                ("04", 7001, 150, "ASPH", 40),
+                ("22", 7001, 150, "ASPH", 220),
+                ("13", 7000, 150, "ASPH", 130),
+                ("31", 7000, 150, "ASPH", 310)
+            ],
+            "KSEA": [
+                ("16L", 11901, 200, "CONC", 160),
+                ("34R", 11901, 200, "CONC", 340),
+                ("16C", 9426, 150, "CONC", 160),
+                ("34C", 9426, 150, "CONC", 340),
+                ("16R", 8500, 150, "CONC", 160),
+                ("34L", 8500, 150, "CONC", 340)
+            ],
+            "KPHL": [
+                ("08", 5000, 150, "ASPH", 80),
+                ("26", 5000, 150, "ASPH", 260),
+                ("09L", 10506, 200, "ASPH", 90),
+                ("27R", 10506, 200, "ASPH", 270),
+                ("09R", 9500, 150, "ASPH", 90),
+                ("27L", 9500, 150, "ASPH", 270),
+                ("17", 6500, 150, "ASPH", 170),
+                ("35", 6500, 150, "ASPH", 350)
+            ],
+            "KCLT": [
+                ("18L", 10000, 150, "CONC", 180),
+                ("36R", 10000, 150, "CONC", 360),
+                ("18C", 10000, 150, "CONC", 180),
+                ("36C", 10000, 150, "CONC", 360),
+                ("18R", 9000, 150, "CONC", 180),
+                ("36L", 9000, 150, "CONC", 360),
+                ("05", 7502, 150, "CONC", 50),
+                ("23", 7502, 150, "CONC", 230)
             ]
         ]
         
@@ -313,30 +466,149 @@ class BannerWeatherService: ObservableObject {
             return runways
         }
 
-        // Try OurAirports API as fallback
+        // Try OurAirports CSV data from GitHub
         do {
-            let urlString = "https://ourairports.com/airports/\(icao)/runways.json"
-            guard let url = URL(string: urlString) else {
-                throw WeatherBannerError.invalidURL
+            // Check if we have cached CSV data
+            let csvString: String
+            if let cached = cachedRunwayCSV,
+               let lastFetch = csvLastFetchTime,
+               Date().timeIntervalSince(lastFetch) < csvCacheTimeout {
+                csvString = cached
+                print("📋 Using cached runway CSV data")
+            } else {
+                // Download fresh CSV
+                let urlString = "https://davidmegginson.github.io/ourairports-data/runways.csv"
+                guard let url = URL(string: urlString) else {
+                    throw WeatherBannerError.invalidURL
+                }
+
+                print("📥 Downloading runway CSV data...")
+                let (data, _) = try await URLSession.shared.data(from: url)
+
+                guard let downloaded = String(data: data, encoding: .utf8) else {
+                    throw WeatherBannerError.noData
+                }
+
+                csvString = downloaded
+                cachedRunwayCSV = downloaded
+                csvLastFetchTime = Date()
+                print("✅ Downloaded and cached runway CSV (\(downloaded.count) bytes)")
             }
 
-            let (data, _) = try await URLSession.shared.data(from: url)
+            // Parse CSV to find runways for this airport
+            let runways = parseRunwaysFromCSV(csvString, airportIdent: icao)
 
-            // Check for HTML response
-            if let dataString = String(data: data, encoding: .utf8), dataString.starts(with: "<") {
-                print("⚠️ OurAirports returned HTML for \(icao)")
+            if runways.isEmpty {
+                print("⚠️ No runway data found in CSV for \(icao)")
                 throw WeatherBannerError.noData
             }
 
-            let runways = try JSONDecoder().decode([RunwayInfo].self, from: data)
-            // Safe - we're on MainActor
+            print("✅ Parsed \(runways.count) runways from CSV for \(icao)")
             self.cachedRunways[icao] = runways
             self.lastRunwayFetchTime[icao] = Date()
             return runways
         } catch {
-            print("⚠️ No runway data available for \(icao)")
+            print("⚠️ No runway data available for \(icao): \(error)")
             throw WeatherBannerError.noData
         }
+    }
+
+    // MARK: - CSV Parsing
+    private func parseRunwaysFromCSV(_ csv: String, airportIdent: String) -> [RunwayInfo] {
+        var runways: [RunwayInfo] = []
+        let lines = csv.components(separatedBy: "\n")
+
+        // CSV columns: id, airport_ref, airport_ident, length_ft, width_ft, surface, lighted, closed,
+        // le_ident, le_latitude_deg, le_longitude_deg, le_elevation_ft, le_heading_degT, le_displaced_threshold_ft,
+        // he_ident, he_latitude_deg, he_longitude_deg, he_elevation_ft, he_heading_degT, he_displaced_threshold_ft
+
+        for line in lines {
+            // Skip if not our airport
+            guard line.contains(",\"\(airportIdent)\",") || line.contains(",\(airportIdent),") else {
+                continue
+            }
+
+            let columns = parseCSVLine(line)
+            guard columns.count >= 13 else { continue }
+
+            // Check if runway is closed (column 7)
+            let isClosed = columns[7] == "1"
+            if isClosed { continue }
+
+            // Get runway data
+            let lengthStr = columns[3].replacingOccurrences(of: "\"", with: "")
+            let widthStr = columns[4].replacingOccurrences(of: "\"", with: "")
+            let surface = columns[5].replacingOccurrences(of: "\"", with: "")
+            let leIdent = columns[8].replacingOccurrences(of: "\"", with: "")
+            let leHeadingStr = columns[12].replacingOccurrences(of: "\"", with: "")
+
+            guard let length = Int(lengthStr),
+                  let width = Int(widthStr),
+                  !leIdent.isEmpty else {
+                continue
+            }
+
+            // Parse heading - may be empty or decimal
+            let heading: Int
+            if let headingDouble = Double(leHeadingStr) {
+                heading = Int(headingDouble.rounded())
+            } else {
+                // Derive heading from runway number
+                let cleanNum = leIdent.filter { $0.isNumber }
+                if let num = Int(cleanNum) {
+                    heading = num * 10
+                } else {
+                    continue
+                }
+            }
+
+            // Normalize surface names
+            let normalizedSurface: String
+            switch surface.uppercased() {
+            case let s where s.contains("ASP") || s.contains("ASPHALT"):
+                normalizedSurface = "ASPH"
+            case let s where s.contains("CON") || s.contains("CONCRETE"):
+                normalizedSurface = "CONC"
+            case let s where s.contains("GRV") || s.contains("GRAVEL"):
+                normalizedSurface = "GRVL"
+            case let s where s.contains("TURF") || s.contains("GRASS"):
+                normalizedSurface = "TURF"
+            default:
+                normalizedSurface = surface.uppercased().prefix(4).description
+            }
+
+            let runway = RunwayInfo(
+                ident: leIdent,
+                length: length,
+                width: width,
+                surface: normalizedSurface,
+                heading: heading == 0 ? 360 : heading
+            )
+            runways.append(runway)
+        }
+
+        // Sort by runway length (longest first)
+        return runways.sorted { $0.length > $1.length }
+    }
+
+    private func parseCSVLine(_ line: String) -> [String] {
+        var columns: [String] = []
+        var current = ""
+        var inQuotes = false
+
+        for char in line {
+            if char == "\"" {
+                inQuotes.toggle()
+            } else if char == "," && !inQuotes {
+                columns.append(current)
+                current = ""
+            } else {
+                current.append(char)
+            }
+        }
+        columns.append(current)
+
+        return columns
     }
     
     // MARK: - Wind Component Calculation
@@ -1574,11 +1846,10 @@ struct WeatherBannerView: View {
                 weatherTableRow(label: "RVR", value: rvrString)
             }
 
-            // Clouds (AGL) - parse from raw METAR for full cloud layer data
-            if let cloudsFromRaw = parseCloudsFromRawMetar(weather.rawOb) {
-                weatherTableRow(label: "Clouds (AGL)", value: cloudsFromRaw)
-            } else if let clouds = weather.cover, !clouds.isEmpty {
-                weatherTableRow(label: "Clouds (AGL)", value: formatCloudLayers(clouds))
+            // Clouds (AGL) - parse from raw METAR for accurate VV (vertical visibility) display
+            let cloudDisplay = parseCloudsFromRawMetar(weather.rawOb) ?? formatCloudLayers(weather.cover ?? "")
+            if !cloudDisplay.isEmpty {
+                weatherTableRow(label: "Clouds (AGL)", value: cloudDisplay)
             }
 
             // Weather Phenomena
@@ -2949,8 +3220,7 @@ struct WeatherBannerView: View {
 
     // MARK: - Helper: Parse Clouds from Raw METAR
     private func parseCloudsFromRawMetar(_ rawMetar: String) -> String? {
-        // Parse cloud layers directly from raw METAR for full layer info
-        // Cloud format: FEW009, SCT015, BKN025, OVC035, VV002
+        // Parse cloud layers directly from raw METAR text for accurate VV display
         let components = rawMetar.uppercased().components(separatedBy: " ")
         var cloudLayers: [String] = []
 
@@ -2958,7 +3228,7 @@ struct WeatherBannerView: View {
             if component == "SKC" || component == "CLR" || component == "CAVOK" {
                 return "Clear"
             } else if component.hasPrefix("VV") {
-                // Vertical Visibility
+                // Vertical Visibility (indefinite ceiling)
                 let altitude = String(component.dropFirst(2))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
                     cloudLayers.append("Vertical Vis \(altNum * 100)'")
@@ -3503,6 +3773,9 @@ struct WeatherDetailSheet: View {
     @State private var isLoadingDaily = false
     @State private var isLoadingDATIS = false
     @State private var isLoadingTAF = false
+    @State private var showAddAirportAlert = false
+    @State private var newAirportCode = ""
+    @State private var selectedRunwayIndex = 0
     @Environment(\.dismiss) private var dismiss
 
     private var currentAirport: String {
@@ -3519,10 +3792,8 @@ struct WeatherDetailSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Airport Selector (if multiple airports)
-                if routeAirports.count > 1 {
-                    airportSelector
-                }
+                // Airport Selector (always show - allows adding airports)
+                airportSelector
 
                 // Weather Tab Selector
                 weatherTabSelector
@@ -3609,11 +3880,80 @@ struct WeatherDetailSheet: View {
                         .cornerRadius(8)
                     }
                 }
+
+                // Add Airport Button
+                Button {
+                    newAirportCode = ""
+                    showAddAirportAlert = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(LogbookTheme.accentGreen)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(LogbookTheme.accentGreen.opacity(0.15))
+                        .cornerRadius(8)
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
         .background(LogbookTheme.navyDark)
+        .alert("Add Airport", isPresented: $showAddAirportAlert) {
+            TextField("ICAO Code (e.g. KJFK)", text: $newAirportCode)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+            Button("Cancel", role: .cancel) { }
+            Button("Add") {
+                addAirport()
+            }
+        } message: {
+            Text("Enter an ICAO airport code to check weather")
+        }
+    }
+
+    // MARK: - Add Airport
+    private func addAirport() {
+        let code = newAirportCode.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard code.count >= 3, code.count <= 4 else { return }
+
+        // Don't add duplicates
+        if routeAirports.contains(code) {
+            // Just select the existing one
+            if let index = routeAirports.firstIndex(of: code) {
+                withAnimation {
+                    selectedAirportIndex = index
+                }
+            }
+            return
+        }
+
+        // Add the new airport and select it
+        routeAirports.append(code)
+        withAnimation {
+            selectedAirportIndex = routeAirports.count - 1
+        }
+
+        // Fetch METAR and Runway data for the new airport
+        Task {
+            // Fetch METAR
+            do {
+                let metar = try await weatherService.fetchMETAR(for: code)
+                await MainActor.run {
+                    weatherData[code] = metar
+                }
+            } catch {
+                print("⚠️ Failed to fetch METAR for \(code): \(error)")
+            }
+
+            // Fetch Runways
+            do {
+                let runways = try await weatherService.fetchRunways(for: code)
+                print("✅ Loaded \(runways.count) runways for added airport \(code)")
+            } catch {
+                print("⚠️ Failed to fetch runways for \(code): \(error)")
+            }
+        }
     }
 
     // MARK: - Weather Tab Selector
@@ -3649,10 +3989,11 @@ struct WeatherDetailSheet: View {
     private var enhancedMETARView: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let weather = currentWeather {
-                // Flight Category Header with Badge - use API category or calculate from raw METAR
-                let category = weather.flightCategory ?? calculateFlightCategory(from: weather)
+                // Flight Category Header
                 HStack {
-                    flightCategoryBadge(category)
+                    if let category = weather.flightCategory {
+                        flightCategoryBadge(category)
+                    }
 
                     Spacer()
 
@@ -3667,10 +4008,10 @@ struct WeatherDetailSheet: View {
                 .padding(.horizontal, 12)
                 .padding(.top, 12)
 
-                // Raw METAR - colored by flight category
+                // Raw METAR
                 Text(weather.rawOb)
                     .font(.system(size: 14, weight: .medium, design: .monospaced))
-                    .foregroundColor(categoryColor(category))
+                    .foregroundColor(categoryColor(weather.flightCategory))
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.black.opacity(0.3))
@@ -4614,11 +4955,10 @@ struct WeatherDetailSheet: View {
                 weatherTableRow(label: "RVR", value: rvrString)
             }
 
-            // Clouds (AGL) - parse from raw METAR for full cloud layer data
-            if let cloudsFromRaw = parseCloudsFromRawMetar(weather.rawOb) {
-                weatherTableRow(label: "Clouds (AGL)", value: cloudsFromRaw)
-            } else if let clouds = weather.cover, !clouds.isEmpty {
-                weatherTableRow(label: "Clouds (AGL)", value: formatCloudLayers(clouds))
+            // Clouds (AGL) - parse from raw METAR for accurate VV display
+            let cloudDisplay = parseCloudsFromRawMetar(weather.rawOb) ?? formatCloudLayers(weather.cover ?? "")
+            if !cloudDisplay.isEmpty {
+                weatherTableRow(label: "Clouds (AGL)", value: cloudDisplay)
             }
 
             // Weather Phenomena
@@ -4678,36 +5018,23 @@ struct WeatherDetailSheet: View {
     // MARK: - Runway Analysis Section
     private func runwayAnalysisSection(_ weather: RawMETAR) -> some View {
         Group {
-            if let windDir = weather.windDirection,
-               let windSpeed = weather.wspd,
-               let runways = weatherService.cachedRunways[currentAirport],
+            if let runways = weatherService.cachedRunways[currentAirport],
                !runways.isEmpty {
+                // Use wind data if available, default to calm (0) if not
+                let windDir = weather.windDirection ?? 0
+                let windSpeed = weather.wspd ?? 0
 
                 Divider()
                     .background(Color.white.opacity(0.1))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
 
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Runway Analysis")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white)
-
-                        Text("Wind: \(String(format: "%03d", windDir))° at \(windSpeed)kt")
-                            .font(.system(size: 11))
-                            .foregroundColor(.gray)
-                    }
-
-                    Spacer()
-
-                    CompactRunwayWind(
-                        windDirection: windDir,
-                        windSpeed: windSpeed,
-                        runways: runways.map { $0.ident }
-                    )
-                }
-                .padding(.horizontal, 12)
+                // Runway Wind Compass View
+                runwayWindCompassView(
+                    windDirection: windDir,
+                    windSpeed: windSpeed,
+                    runways: runways
+                )
 
             } else if isLoadingRunways {
                 HStack {
@@ -4719,6 +5046,205 @@ struct WeatherDetailSheet: View {
                 }
                 .padding()
             }
+        }
+    }
+
+    // MARK: - Runway Wind Compass View (HSI Style - Runway Up)
+    private func runwayWindCompassView(windDirection: Int, windSpeed: Int, runways: [RunwayInfo]) -> some View {
+        let safeIndex = min(selectedRunwayIndex, runways.count - 1)
+        let currentRunway = runways[max(0, safeIndex)]
+        let runwayHeading = Double(currentRunway.heading)
+        let windDir = Double(windDirection)
+        let windSpd = Double(windSpeed)
+
+        // Calculate wind components
+        let angleDiff = (windDir - runwayHeading) * .pi / 180
+        let headwind = Int(round(cos(angleDiff) * windSpd))
+        let crosswind = Int(round(sin(angleDiff) * windSpd))
+
+        // For HSI style: rotate compass so runway heading points UP
+        // Wind arrow position relative to runway (not compass north)
+        let compassRotation = -runwayHeading  // Rotate compass opposite to runway heading
+        let windRelativeToRunway = windDir - runwayHeading  // Wind position relative to runway
+
+        return VStack(spacing: 12) {
+            // Section Header
+            HStack {
+                Text("Runway Analysis")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                Spacer()
+                Text("Wind: \(String(format: "%03d", windDirection))° @ \(windSpeed)kt")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal, 12)
+
+            // Runway selector with chevrons
+            HStack {
+                // Left chevron
+                Button {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        if selectedRunwayIndex > 0 {
+                            selectedRunwayIndex -= 1
+                        } else {
+                            selectedRunwayIndex = runways.count - 1
+                        }
+                    }
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(LogbookTheme.accentGreen)
+                        .frame(width: 44, height: 44)
+                }
+
+                Spacer()
+
+                // Runway identifier
+                VStack(spacing: 2) {
+                    Text("RWY \(currentRunway.ident)")
+                        .font(.system(size: 18, weight: .bold, design: .monospaced))
+                        .foregroundColor(.white)
+                    Text("\(currentRunway.length)ft × \(currentRunway.width)ft")
+                        .font(.system(size: 11))
+                        .foregroundColor(.gray)
+                }
+
+                Spacer()
+
+                // Right chevron
+                Button {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        if selectedRunwayIndex < runways.count - 1 {
+                            selectedRunwayIndex += 1
+                        } else {
+                            selectedRunwayIndex = 0
+                        }
+                    }
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(LogbookTheme.accentGreen)
+                        .frame(width: 44, height: 44)
+                }
+            }
+            .padding(.horizontal, 12)
+
+            // HSI-Style Compass visualization (Runway always UP)
+            ZStack {
+                // Background Compass Rose - ROTATES so runway heading points UP
+                HSICompassRoseView()
+                    .frame(width: 240, height: 240)
+                    .rotationEffect(.degrees(compassRotation))
+                    .animation(.easeInOut(duration: 0.3), value: runwayHeading)
+
+                // Wind Particles - rotate relative to runway
+                WindParticlesView(speed: windSpd)
+                    .id("wind-\(windDirection)-\(windSpeed)-\(Int(runwayHeading))")
+                    .mask(Circle().padding(4))
+                    .rotationEffect(.degrees(windRelativeToRunway))
+                    .frame(width: 240, height: 240)
+                    .opacity(windSpd > 0 ? 1.0 : 0)
+
+                // Runway Graphic - FIXED pointing UP (no rotation)
+                HSIRunwayGraphic(runwayIdent: currentRunway.ident)
+                    .frame(width: 160, height: 160)
+                    .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
+
+                // Wind Arrow - positioned relative to runway
+                HSIWindArrowGraphic(relativeDirection: windRelativeToRunway, speed: windSpd)
+                    .frame(width: 200, height: 200)
+            }
+            .frame(height: 260)
+            .gesture(
+                DragGesture(minimumDistance: 30)
+                    .onEnded { value in
+                        if value.translation.width < 0 {
+                            // Swipe left - next runway
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                if selectedRunwayIndex < runways.count - 1 {
+                                    selectedRunwayIndex += 1
+                                } else {
+                                    selectedRunwayIndex = 0
+                                }
+                            }
+                        } else if value.translation.width > 0 {
+                            // Swipe right - previous runway
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                if selectedRunwayIndex > 0 {
+                                    selectedRunwayIndex -= 1
+                                } else {
+                                    selectedRunwayIndex = runways.count - 1
+                                }
+                            }
+                        }
+                    }
+            )
+
+            // Wind component cards
+            HStack(spacing: 16) {
+                // Headwind/Tailwind
+                VStack(spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: headwind >= 0 ? "arrow.down" : "arrow.up")
+                            .font(.system(size: 12, weight: .bold))
+                        Text("\(abs(headwind))")
+                            .font(.system(size: 24, weight: .bold, design: .monospaced))
+                        Text("kt")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                    }
+                    .foregroundColor(headwind >= 0 ? LogbookTheme.accentGreen : .red)
+
+                    Text(headwind >= 0 ? "HEADWIND" : "TAILWIND")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color.black.opacity(0.3))
+                .cornerRadius(10)
+
+                // Crosswind
+                VStack(spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: crosswind > 0 ? "arrow.right" : (crosswind < 0 ? "arrow.left" : "minus"))
+                            .font(.system(size: 12, weight: .bold))
+                        Text("\(abs(crosswind))")
+                            .font(.system(size: 24, weight: .bold, design: .monospaced))
+                        Text("kt")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                    }
+                    .foregroundColor(abs(crosswind) <= 10 ? LogbookTheme.accentGreen : (abs(crosswind) <= 20 ? .orange : .red))
+
+                    Text("CROSSWIND")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Color.black.opacity(0.3))
+                .cornerRadius(10)
+            }
+            .padding(.horizontal, 12)
+
+            // Page indicator dots
+            if runways.count > 1 {
+                HStack(spacing: 6) {
+                    ForEach(0..<runways.count, id: \.self) { index in
+                        Circle()
+                            .fill(index == safeIndex ? LogbookTheme.accentGreen : Color.gray.opacity(0.4))
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding(.vertical, 12)
+        .onChange(of: currentAirport) { _, _ in
+            // Reset runway selection when airport changes
+            selectedRunwayIndex = 0
         }
     }
 
@@ -4796,17 +5322,22 @@ struct WeatherDetailSheet: View {
 
     private func windString(for weather: RawMETAR) -> String {
         if let dir = weather.windDirection, let speed = weather.wspd {
-            if let gust = weather.wgst {
-                return "\(String(format: "%03d", dir))@\(speed)G\(gust)kt"
+            // Calm winds (speed 0)
+            if speed == 0 {
+                return "Winds calm"
             }
-            return "\(String(format: "%03d", dir))@\(speed)kt"
+            if let gust = weather.wgst {
+                return "\(String(format: "%03d", dir))° at \(speed) kts gusting \(gust)"
+            }
+            return "\(String(format: "%03d", dir))° at \(speed) kts"
         } else if let speed = weather.wspd, speed > 0 {
+            // Variable wind
             if let gust = weather.wgst {
-                return "VRB \(speed)G\(gust)kt"
+                return "Variable at \(speed) kts gusting \(gust)"
             }
-            return "VRB \(speed)kt"
+            return "Variable at \(speed) kts"
         }
-        return "Calm"
+        return "Winds calm"
     }
 
     private func visibilityString(for vis: Double) -> String {
@@ -4850,74 +5381,9 @@ struct WeatherDetailSheet: View {
         return Int(densityAlt)
     }
 
-    // MARK: - Calculate Flight Category from Raw METAR
-    private func calculateFlightCategory(from weather: RawMETAR) -> String {
-        // FAA Flight Category criteria:
-        // LIFR: ceiling < 500ft OR visibility < 1 SM
-        // IFR: ceiling 500-999ft OR visibility 1-3 SM
-        // MVFR: ceiling 1000-3000ft OR visibility 3-5 SM
-        // VFR: ceiling > 3000ft AND visibility > 5 SM
-
-        let vis = weather.visibility ?? 10.0
-        let ceiling = parseCeilingFromCover(weather.cover) ?? parseCeilingFromRaw(weather.rawOb)
-
-        // Determine category based on the WORST of ceiling or visibility
-        var visCategory = "VFR"
-        if vis < 1 { visCategory = "LIFR" }
-        else if vis < 3 { visCategory = "IFR" }
-        else if vis <= 5 { visCategory = "MVFR" }
-
-        var ceilingCategory = "VFR"
-        if let ceil = ceiling {
-            if ceil < 500 { ceilingCategory = "LIFR" }
-            else if ceil < 1000 { ceilingCategory = "IFR" }
-            else if ceil <= 3000 { ceilingCategory = "MVFR" }
-        }
-
-        // Return the worst category
-        let categoryOrder = ["LIFR": 0, "IFR": 1, "MVFR": 2, "VFR": 3]
-        let visRank = categoryOrder[visCategory] ?? 3
-        let ceilRank = categoryOrder[ceilingCategory] ?? 3
-        return visRank < ceilRank ? visCategory : ceilingCategory
-    }
-
-    private func parseCeilingFromCover(_ cover: String?) -> Int? {
-        guard let cover = cover else { return nil }
-        let layers = cover.uppercased().components(separatedBy: " ")
-
-        for layer in layers {
-            // Only BKN, OVC, and VV count as ceilings
-            var altitude: String?
-            if layer.hasPrefix("VV") {
-                altitude = String(layer.dropFirst(2))
-            } else if layer.hasPrefix("BKN") || layer.hasPrefix("OVC") {
-                altitude = String(layer.dropFirst(3))
-            }
-
-            if let alt = altitude, let altNum = Int(alt.prefix(while: { $0.isNumber })) {
-                return altNum * 100  // Return first ceiling found (lowest)
-            }
-        }
-        return nil
-    }
-
-    private func parseCeilingFromRaw(_ raw: String) -> Int? {
-        let upper = raw.uppercased()
-        let patterns = ["VV(\\d{3})", "BKN(\\d{3})", "OVC(\\d{3})"]
-
-        for pattern in patterns {
-            if let regex = try? NSRegularExpression(pattern: pattern, options: []),
-               let match = regex.firstMatch(in: upper, options: [], range: NSRange(upper.startIndex..., in: upper)),
-               let range = Range(match.range(at: 1), in: upper),
-               let altNum = Int(upper[range]) {
-                return altNum * 100
-            }
-        }
-        return nil
-    }
-
     // MARK: - Helper: Format Cloud Layers
     private func formatCloudLayers(_ clouds: String) -> String {
+        // Parse cloud string like "SCT130 BKN160 BKN250" or "VV002" into readable format
         let layers = clouds.components(separatedBy: " ")
         var formatted: [String] = []
 
@@ -4929,6 +5395,7 @@ struct WeatherDetailSheet: View {
             if upper.hasPrefix("SKC") || upper.hasPrefix("CLR") || upper == "CAVOK" {
                 return "Clear"
             } else if upper.hasPrefix("VV") {
+                // Vertical Visibility (indefinite ceiling, typically fog)
                 altitude = String(upper.dropFirst(2))
                 if let altNum = Int(altitude) {
                     formatted.append("Vertical Vis \(altNum * 100)'")
@@ -4948,6 +5415,7 @@ struct WeatherDetailSheet: View {
                 altitude = String(upper.dropFirst(3))
             }
 
+            // Handle altitude with possible CB/TCU suffix (e.g., "025CB")
             let altDigits = altitude.prefix(while: { $0.isNumber })
             if let altNum = Int(altDigits), !cover.isEmpty {
                 formatted.append("\(cover) \(altNum * 100)'")
@@ -4959,6 +5427,7 @@ struct WeatherDetailSheet: View {
 
     // MARK: - Helper: Parse Clouds from Raw METAR
     private func parseCloudsFromRawMetar(_ rawMetar: String) -> String? {
+        // Parse cloud layers directly from raw METAR text for accurate VV display
         let components = rawMetar.uppercased().components(separatedBy: " ")
         var cloudLayers: [String] = []
 
@@ -4966,6 +5435,7 @@ struct WeatherDetailSheet: View {
             if component == "SKC" || component == "CLR" || component == "CAVOK" {
                 return "Clear"
             } else if component.hasPrefix("VV") {
+                // Vertical Visibility (indefinite ceiling)
                 let altitude = String(component.dropFirst(2))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
                     cloudLayers.append("Vertical Vis \(altNum * 100)'")
@@ -4996,8 +5466,9 @@ struct WeatherDetailSheet: View {
         return cloudLayers.isEmpty ? nil : cloudLayers.joined(separator: "\n")
     }
 
-    // MARK: - Helper: Parse RVR from raw METAR
+    // MARK: - Helper: Parse RVR (Runway Visual Range) from raw METAR
     private func parseRVR(from rawMetar: String) -> String? {
+        // RVR format: R09R/5500VP6000FT or R09L/2000V4000FT
         let pattern = "R(\\d{2}[LRC]?)/([\\dPM]+)(?:V([\\dPM]+))?FT"
         guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return nil }
 
@@ -5029,6 +5500,7 @@ struct WeatherDetailSheet: View {
     }
 
     private func formatRVRValue(_ value: String) -> String {
+        // Handle P (plus/greater than) and M (minus/less than) prefixes
         if value.hasPrefix("P") {
             return ">\(value.dropFirst())"
         } else if value.hasPrefix("M") {
@@ -5039,6 +5511,7 @@ struct WeatherDetailSheet: View {
 
     // MARK: - Helper: Format Weather Phenomena
     private func formatWeatherPhenomena(_ wxString: String) -> String {
+        // Parse weather phenomena codes from wxString
         let codes = wxString.components(separatedBy: " ")
         var phenomena: [String] = []
 
@@ -5052,6 +5525,7 @@ struct WeatherDetailSheet: View {
     }
 
     private func decodeWeatherPhenomenon(_ code: String) -> String? {
+        // Intensity prefixes
         var intensity = ""
         var workingCode = code
 
@@ -5066,29 +5540,65 @@ struct WeatherDetailSheet: View {
             workingCode = String(workingCode.dropFirst(2))
         }
 
+        // Weather phenomena codes
         let phenomenaMap: [String: String] = [
-            "RA": "Rain", "SN": "Snow", "DZ": "Drizzle", "PL": "Ice Pellets",
-            "GR": "Hail", "GS": "Small Hail", "SG": "Snow Grains", "IC": "Ice Crystals",
-            "UP": "Unknown Precip", "FG": "Fog", "BR": "Mist", "HZ": "Haze",
-            "FU": "Smoke", "SA": "Sand", "DU": "Dust", "VA": "Volcanic Ash",
-            "PY": "Spray", "TS": "Thunderstorm", "SQ": "Squall", "FC": "Funnel Cloud",
-            "SS": "Sandstorm", "DS": "Duststorm", "PO": "Dust Devils", "SH": "Showers",
-            "BLSN": "Blowing Snow", "BLDU": "Blowing Dust", "BLSA": "Blowing Sand",
-            "DRSN": "Drifting Snow", "DRDU": "Drifting Dust", "DRSA": "Drifting Sand",
-            "FZRA": "Freezing Rain", "FZDZ": "Freezing Drizzle", "FZFG": "Freezing Fog",
-            "TSRA": "Thunderstorm Rain", "TSSN": "Thunderstorm Snow",
-            "SHRA": "Rain Showers", "SHSN": "Snow Showers", "SHGR": "Hail Showers",
-            "PRFG": "Partial Fog", "BCFG": "Patches of Fog", "MIFG": "Shallow Fog",
+            // Precipitation
+            "RA": "Rain",
+            "SN": "Snow",
+            "DZ": "Drizzle",
+            "PL": "Ice Pellets",
+            "GR": "Hail",
+            "GS": "Small Hail",
+            "SG": "Snow Grains",
+            "IC": "Ice Crystals",
+            "UP": "Unknown Precip",
+            // Obscurations
+            "FG": "Fog",
+            "BR": "Mist",
+            "HZ": "Haze",
+            "FU": "Smoke",
+            "SA": "Sand",
+            "DU": "Dust",
+            "VA": "Volcanic Ash",
+            "PY": "Spray",
+            // Other
+            "TS": "Thunderstorm",
+            "SQ": "Squall",
+            "FC": "Funnel Cloud",
+            "SS": "Sandstorm",
+            "DS": "Duststorm",
+            "PO": "Dust Devils",
+            "SH": "Showers",
+            "BLSN": "Blowing Snow",
+            "BLDU": "Blowing Dust",
+            "BLSA": "Blowing Sand",
+            "DRSN": "Drifting Snow",
+            "DRDU": "Drifting Dust",
+            "DRSA": "Drifting Sand",
+            "FZRA": "Freezing Rain",
+            "FZDZ": "Freezing Drizzle",
+            "FZFG": "Freezing Fog",
+            "TSRA": "Thunderstorm Rain",
+            "TSSN": "Thunderstorm Snow",
+            "SHRA": "Rain Showers",
+            "SHSN": "Snow Showers",
+            "SHGR": "Hail Showers",
+            "PRFG": "Partial Fog",
+            "BCFG": "Patches of Fog",
+            "MIFG": "Shallow Fog",
         ]
 
+        // Try compound codes first (like FZRA, TSRA)
         if let description = phenomenaMap[workingCode] {
             return intensity + description
         }
 
+        // Try parsing as combination (e.g., "RABR" = Rain + Mist)
         var parts: [String] = []
         var remaining = workingCode
         while !remaining.isEmpty {
             var found = false
+            // Try 4-char codes first, then 2-char
             for length in [4, 2] {
                 if remaining.count >= length {
                     let prefix = String(remaining.prefix(length))
@@ -5293,6 +5803,174 @@ struct WeatherDetailSheet: View {
                 await MainActor.run {
                     isLoadingWinds = false
                 }
+            }
+        }
+    }
+}
+
+// MARK: - HSI Style Compass Rose (with degree labels)
+struct HSICompassRoseView: View {
+    var body: some View {
+        ZStack {
+            // Dark Background
+            Circle()
+                .fill(LogbookTheme.navyLight)
+
+            // Ticks - every 5 degrees (72 ticks)
+            ForEach(0..<72) { tick in
+                let degrees = tick * 5
+                let isMajor = degrees % 30 == 0  // N, 3, 6, E, 12, 15, S, 21, 24, W, 30, 33
+                let isCardinal = degrees % 90 == 0  // N, E, S, W
+
+                Rectangle()
+                    .fill(isCardinal ? Color.white : (isMajor ? Color.gray : Color.gray.opacity(0.3)))
+                    .frame(width: isCardinal ? 3 : (isMajor ? 2 : 1),
+                           height: isCardinal ? 15 : (isMajor ? 12 : 5))
+                    .offset(y: -110)
+                    .rotationEffect(.degrees(Double(degrees)))
+            }
+
+            // Degree Labels: N, 3, 6, E, 12, 15, S, 21, 24, W, 30, 33
+            ForEach(0..<12) { i in
+                let degrees = i * 30
+                let label = hsiLabel(for: degrees)
+
+                Text(label)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundColor(degrees == 0 ? LogbookTheme.accentOrange : .gray)
+                    .offset(y: -92)
+                    .rotationEffect(.degrees(Double(degrees)))
+            }
+        }
+    }
+
+    private func hsiLabel(for degrees: Int) -> String {
+        switch degrees {
+        case 0: return "N"
+        case 30: return "3"
+        case 60: return "6"
+        case 90: return "E"
+        case 120: return "12"
+        case 150: return "15"
+        case 180: return "S"
+        case 210: return "21"
+        case 240: return "24"
+        case 270: return "W"
+        case 300: return "30"
+        case 330: return "33"
+        default: return ""
+        }
+    }
+}
+
+// MARK: - HSI Runway Graphic (Fixed pointing UP)
+struct HSIRunwayGraphic: View {
+    let runwayIdent: String
+
+    // Get reciprocal runway number
+    private var reciprocalIdent: String {
+        let cleanNum = runwayIdent.filter { $0.isNumber }
+        guard let num = Int(cleanNum) else { return runwayIdent }
+        var recip = num + 18
+        if recip > 36 { recip -= 36 }
+
+        // Handle L/R/C suffix
+        let suffix = runwayIdent.filter { !$0.isNumber }
+        let recipSuffix: String
+        switch suffix {
+        case "L": recipSuffix = "R"
+        case "R": recipSuffix = "L"
+        default: recipSuffix = suffix
+        }
+        return String(format: "%02d", recip) + recipSuffix
+    }
+
+    var body: some View {
+        ZStack {
+            // Runway asphalt
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(white: 0.2))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.white, lineWidth: 2)
+                )
+                .frame(width: 36, height: 180)
+
+            // Centerline (Dashed)
+            VStack(spacing: 10) {
+                ForEach(0..<5, id: \.self) { _ in
+                    Rectangle()
+                        .fill(Color.white)
+                        .frame(width: 2, height: 16)
+                }
+            }
+
+            // Threshold Markings & Numbers
+            VStack {
+                // Top (runway we're landing on)
+                VStack(spacing: 2) {
+                    HStack(spacing: 2) {
+                        ForEach(0..<4, id: \.self) { _ in
+                            Rectangle().fill(.white).frame(width: 2, height: 8)
+                        }
+                    }
+                    Text(runwayIdent)
+                        .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                        .foregroundColor(.white)
+                }
+                .padding(.top, 8)
+
+                Spacer()
+
+                // Bottom (reciprocal)
+                VStack(spacing: 2) {
+                    Text(reciprocalIdent)
+                        .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                        .foregroundColor(.white)
+                        .rotationEffect(.degrees(180))
+                    HStack(spacing: 2) {
+                        ForEach(0..<4, id: \.self) { _ in
+                            Rectangle().fill(.white).frame(width: 2, height: 8)
+                        }
+                    }
+                }
+                .padding(.bottom, 8)
+            }
+            .frame(height: 180)
+        }
+    }
+}
+
+// MARK: - HSI Wind Arrow (relative to runway)
+struct HSIWindArrowGraphic: View {
+    let relativeDirection: Double  // Wind direction relative to runway heading
+    let speed: Double
+
+    var body: some View {
+        ZStack {
+            if speed > 0 {
+                VStack(spacing: 0) {
+                    // Arrow head
+                    Image(systemName: "arrowtriangle.down.fill")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 24, height: 24)
+                        .foregroundColor(.cyan)
+
+                    // Arrow shaft
+                    Rectangle()
+                        .fill(Color.cyan)
+                        .frame(width: 3, height: 50)
+
+                    // Wind speed bubble
+                    Text("\(Int(speed))")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(5)
+                        .background(Circle().fill(Color.cyan))
+                }
+                .offset(y: -65)
+                .rotationEffect(.degrees(relativeDirection))
             }
         }
     }
