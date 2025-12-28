@@ -1574,8 +1574,10 @@ struct WeatherBannerView: View {
                 weatherTableRow(label: "RVR", value: rvrString)
             }
 
-            // Clouds (AGL)
-            if let clouds = weather.cover, !clouds.isEmpty {
+            // Clouds (AGL) - parse from raw METAR for full cloud layer data
+            if let cloudsFromRaw = parseCloudsFromRawMetar(weather.rawOb) {
+                weatherTableRow(label: "Clouds (AGL)", value: cloudsFromRaw)
+            } else if let clouds = weather.cover, !clouds.isEmpty {
                 weatherTableRow(label: "Clouds (AGL)", value: formatCloudLayers(clouds))
             }
 
@@ -2943,6 +2945,48 @@ struct WeatherBannerView: View {
         }
 
         return formatted.isEmpty ? clouds : formatted.joined(separator: "\n")
+    }
+
+    // MARK: - Helper: Parse Clouds from Raw METAR
+    private func parseCloudsFromRawMetar(_ rawMetar: String) -> String? {
+        // Parse cloud layers directly from raw METAR for full layer info
+        // Cloud format: FEW009, SCT015, BKN025, OVC035, VV002
+        let components = rawMetar.uppercased().components(separatedBy: " ")
+        var cloudLayers: [String] = []
+
+        for component in components {
+            if component == "SKC" || component == "CLR" || component == "CAVOK" {
+                return "Clear"
+            } else if component.hasPrefix("VV") {
+                // Vertical Visibility
+                let altitude = String(component.dropFirst(2))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    cloudLayers.append("Vertical Vis \(altNum * 100)'")
+                }
+            } else if component.hasPrefix("FEW") {
+                let altitude = String(component.dropFirst(3))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    cloudLayers.append("Few \(altNum * 100)'")
+                }
+            } else if component.hasPrefix("SCT") {
+                let altitude = String(component.dropFirst(3))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    cloudLayers.append("Scattered \(altNum * 100)'")
+                }
+            } else if component.hasPrefix("BKN") {
+                let altitude = String(component.dropFirst(3))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    cloudLayers.append("Broken \(altNum * 100)'")
+                }
+            } else if component.hasPrefix("OVC") {
+                let altitude = String(component.dropFirst(3))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    cloudLayers.append("Overcast \(altNum * 100)'")
+                }
+            }
+        }
+
+        return cloudLayers.isEmpty ? nil : cloudLayers.joined(separator: "\n")
     }
 
     // MARK: - Helper: Parse RVR (Runway Visual Range) from raw METAR
@@ -4570,7 +4614,10 @@ struct WeatherDetailSheet: View {
                 weatherTableRow(label: "RVR", value: rvrString)
             }
 
-            if let clouds = weather.cover, !clouds.isEmpty {
+            // Clouds (AGL) - parse from raw METAR for full cloud layer data
+            if let cloudsFromRaw = parseCloudsFromRawMetar(weather.rawOb) {
+                weatherTableRow(label: "Clouds (AGL)", value: cloudsFromRaw)
+            } else if let clouds = weather.cover, !clouds.isEmpty {
                 weatherTableRow(label: "Clouds (AGL)", value: formatCloudLayers(clouds))
             }
 
@@ -4866,6 +4913,200 @@ struct WeatherDetailSheet: View {
                 return altNum * 100
             }
         }
+        return nil
+    }
+
+    // MARK: - Helper: Format Cloud Layers
+    private func formatCloudLayers(_ clouds: String) -> String {
+        let layers = clouds.components(separatedBy: " ")
+        var formatted: [String] = []
+
+        for layer in layers {
+            let upper = layer.uppercased()
+            var cover = ""
+            var altitude = ""
+
+            if upper.hasPrefix("SKC") || upper.hasPrefix("CLR") || upper == "CAVOK" {
+                return "Clear"
+            } else if upper.hasPrefix("VV") {
+                altitude = String(upper.dropFirst(2))
+                if let altNum = Int(altitude) {
+                    formatted.append("Vertical Vis \(altNum * 100)'")
+                }
+                continue
+            } else if upper.hasPrefix("FEW") {
+                cover = "Few"
+                altitude = String(upper.dropFirst(3))
+            } else if upper.hasPrefix("SCT") {
+                cover = "Scattered"
+                altitude = String(upper.dropFirst(3))
+            } else if upper.hasPrefix("BKN") {
+                cover = "Broken"
+                altitude = String(upper.dropFirst(3))
+            } else if upper.hasPrefix("OVC") {
+                cover = "Overcast"
+                altitude = String(upper.dropFirst(3))
+            }
+
+            let altDigits = altitude.prefix(while: { $0.isNumber })
+            if let altNum = Int(altDigits), !cover.isEmpty {
+                formatted.append("\(cover) \(altNum * 100)'")
+            }
+        }
+
+        return formatted.isEmpty ? clouds : formatted.joined(separator: "\n")
+    }
+
+    // MARK: - Helper: Parse Clouds from Raw METAR
+    private func parseCloudsFromRawMetar(_ rawMetar: String) -> String? {
+        let components = rawMetar.uppercased().components(separatedBy: " ")
+        var cloudLayers: [String] = []
+
+        for component in components {
+            if component == "SKC" || component == "CLR" || component == "CAVOK" {
+                return "Clear"
+            } else if component.hasPrefix("VV") {
+                let altitude = String(component.dropFirst(2))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    cloudLayers.append("Vertical Vis \(altNum * 100)'")
+                }
+            } else if component.hasPrefix("FEW") {
+                let altitude = String(component.dropFirst(3))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    cloudLayers.append("Few \(altNum * 100)'")
+                }
+            } else if component.hasPrefix("SCT") {
+                let altitude = String(component.dropFirst(3))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    cloudLayers.append("Scattered \(altNum * 100)'")
+                }
+            } else if component.hasPrefix("BKN") {
+                let altitude = String(component.dropFirst(3))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    cloudLayers.append("Broken \(altNum * 100)'")
+                }
+            } else if component.hasPrefix("OVC") {
+                let altitude = String(component.dropFirst(3))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    cloudLayers.append("Overcast \(altNum * 100)'")
+                }
+            }
+        }
+
+        return cloudLayers.isEmpty ? nil : cloudLayers.joined(separator: "\n")
+    }
+
+    // MARK: - Helper: Parse RVR from raw METAR
+    private func parseRVR(from rawMetar: String) -> String? {
+        let pattern = "R(\\d{2}[LRC]?)/([\\dPM]+)(?:V([\\dPM]+))?FT"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return nil }
+
+        let range = NSRange(rawMetar.startIndex..., in: rawMetar)
+        let matches = regex.matches(in: rawMetar, options: [], range: range)
+
+        guard !matches.isEmpty else { return nil }
+
+        var rvrStrings: [String] = []
+        for match in matches {
+            guard let runwayRange = Range(match.range(at: 1), in: rawMetar),
+                  let valueRange = Range(match.range(at: 2), in: rawMetar) else { continue }
+
+            let runway = String(rawMetar[runwayRange])
+            let value1 = String(rawMetar[valueRange])
+
+            var rvrValue = ""
+            if match.range(at: 3).location != NSNotFound,
+               let value2Range = Range(match.range(at: 3), in: rawMetar) {
+                let value2 = String(rawMetar[value2Range])
+                rvrValue = "Rwy \(runway): \(formatRVRValue(value1))' to \(formatRVRValue(value2))'"
+            } else {
+                rvrValue = "Rwy \(runway): \(formatRVRValue(value1))'"
+            }
+            rvrStrings.append(rvrValue)
+        }
+
+        return rvrStrings.isEmpty ? nil : rvrStrings.joined(separator: "\n")
+    }
+
+    private func formatRVRValue(_ value: String) -> String {
+        if value.hasPrefix("P") {
+            return ">\(value.dropFirst())"
+        } else if value.hasPrefix("M") {
+            return "<\(value.dropFirst())"
+        }
+        return value
+    }
+
+    // MARK: - Helper: Format Weather Phenomena
+    private func formatWeatherPhenomena(_ wxString: String) -> String {
+        let codes = wxString.components(separatedBy: " ")
+        var phenomena: [String] = []
+
+        for code in codes {
+            if let description = decodeWeatherPhenomenon(code) {
+                phenomena.append(description)
+            }
+        }
+
+        return phenomena.isEmpty ? wxString : phenomena.joined(separator: "\n")
+    }
+
+    private func decodeWeatherPhenomenon(_ code: String) -> String? {
+        var intensity = ""
+        var workingCode = code
+
+        if workingCode.hasPrefix("-") {
+            intensity = "Light "
+            workingCode = String(workingCode.dropFirst())
+        } else if workingCode.hasPrefix("+") {
+            intensity = "Heavy "
+            workingCode = String(workingCode.dropFirst())
+        } else if workingCode.hasPrefix("VC") {
+            intensity = "Vicinity "
+            workingCode = String(workingCode.dropFirst(2))
+        }
+
+        let phenomenaMap: [String: String] = [
+            "RA": "Rain", "SN": "Snow", "DZ": "Drizzle", "PL": "Ice Pellets",
+            "GR": "Hail", "GS": "Small Hail", "SG": "Snow Grains", "IC": "Ice Crystals",
+            "UP": "Unknown Precip", "FG": "Fog", "BR": "Mist", "HZ": "Haze",
+            "FU": "Smoke", "SA": "Sand", "DU": "Dust", "VA": "Volcanic Ash",
+            "PY": "Spray", "TS": "Thunderstorm", "SQ": "Squall", "FC": "Funnel Cloud",
+            "SS": "Sandstorm", "DS": "Duststorm", "PO": "Dust Devils", "SH": "Showers",
+            "BLSN": "Blowing Snow", "BLDU": "Blowing Dust", "BLSA": "Blowing Sand",
+            "DRSN": "Drifting Snow", "DRDU": "Drifting Dust", "DRSA": "Drifting Sand",
+            "FZRA": "Freezing Rain", "FZDZ": "Freezing Drizzle", "FZFG": "Freezing Fog",
+            "TSRA": "Thunderstorm Rain", "TSSN": "Thunderstorm Snow",
+            "SHRA": "Rain Showers", "SHSN": "Snow Showers", "SHGR": "Hail Showers",
+            "PRFG": "Partial Fog", "BCFG": "Patches of Fog", "MIFG": "Shallow Fog",
+        ]
+
+        if let description = phenomenaMap[workingCode] {
+            return intensity + description
+        }
+
+        var parts: [String] = []
+        var remaining = workingCode
+        while !remaining.isEmpty {
+            var found = false
+            for length in [4, 2] {
+                if remaining.count >= length {
+                    let prefix = String(remaining.prefix(length))
+                    if let desc = phenomenaMap[prefix] {
+                        parts.append(desc)
+                        remaining = String(remaining.dropFirst(length))
+                        found = true
+                        break
+                    }
+                }
+            }
+            if !found { break }
+        }
+
+        if !parts.isEmpty {
+            return intensity + parts.joined(separator: ", ")
+        }
+
         return nil
     }
 

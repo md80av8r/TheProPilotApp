@@ -398,6 +398,7 @@ struct WeatherIconHelper_Previews: PreviewProvider {
             visibRaw: .number(10),
             altim: 29.90,
             slp: 1013.25,
+            elev: nil,
             cover: raw.isEmpty ? nil : raw,
             wxString: wx.isEmpty ? nil : wx,
             obsTime: Int(Date().timeIntervalSince1970),
