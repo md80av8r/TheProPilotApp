@@ -1404,10 +1404,9 @@ struct WeatherBannerView: View {
             if let weather = currentWeather {
                 // Flight Category Header with Badge
                 HStack {
-                    // Large Flight Category Badge
-                    if let category = weather.flightCategory {
-                        flightCategoryBadge(category)
-                    }
+                    // Large Flight Category Badge - use API category or calculate from raw METAR
+                    let category = weather.flightCategory ?? calculateFlightCategory(from: weather)
+                    flightCategoryBadge(category)
 
                     Spacer()
 
@@ -1449,12 +1448,22 @@ struct WeatherBannerView: View {
 
     // MARK: - Flight Category Badge (Large, Prominent)
     private func flightCategoryBadge(_ category: String) -> some View {
-        HStack(spacing: 8) {
+        // Display full name for better clarity
+        let displayName: String
+        switch category {
+        case "LIFR": displayName = "Low IFR"
+        case "IFR": displayName = "IFR"
+        case "MVFR": displayName = "Marginal VFR"
+        case "VFR": displayName = "VFR"
+        default: displayName = category
+        }
+
+        return HStack(spacing: 8) {
             Circle()
                 .fill(categoryColor(category))
                 .frame(width: 12, height: 12)
 
-            Text(category)
+            Text(displayName)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(categoryColor(category))
         }
@@ -1466,9 +1475,11 @@ struct WeatherBannerView: View {
 
     // MARK: - Color-Coded Raw METAR
     private func colorCodedRawMETAR(_ weather: RawMETAR) -> some View {
-        Text(weather.rawOb)
+        // Use API flight category if available, otherwise calculate from raw METAR
+        let category = weather.flightCategory ?? calculateFlightCategory(from: weather)
+        return Text(weather.rawOb)
             .font(.system(size: 14, weight: .medium, design: .monospaced))
-            .foregroundColor(categoryColor(weather.flightCategory))
+            .foregroundColor(categoryColor(category))
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.black.opacity(0.3))
@@ -1476,11 +1487,77 @@ struct WeatherBannerView: View {
             .textSelection(.enabled)
     }
 
+    // MARK: - Calculate Flight Category from Raw METAR
+    private func calculateFlightCategory(from weather: RawMETAR) -> String {
+        // FAA Flight Category criteria:
+        // LIFR: ceiling < 500ft OR visibility < 1 SM
+        // IFR: ceiling 500-999ft OR visibility 1-3 SM
+        // MVFR: ceiling 1000-3000ft OR visibility 3-5 SM
+        // VFR: ceiling > 3000ft AND visibility > 5 SM
+
+        let vis = weather.visibility ?? 10.0
+        let ceiling = parseCeilingFromCover(weather.cover) ?? parseCeilingFromRaw(weather.rawOb)
+
+        // Determine category based on the WORST of ceiling or visibility
+        var visCategory = "VFR"
+        if vis < 1 { visCategory = "LIFR" }
+        else if vis < 3 { visCategory = "IFR" }
+        else if vis <= 5 { visCategory = "MVFR" }
+
+        var ceilingCategory = "VFR"
+        if let ceil = ceiling {
+            if ceil < 500 { ceilingCategory = "LIFR" }
+            else if ceil < 1000 { ceilingCategory = "IFR" }
+            else if ceil <= 3000 { ceilingCategory = "MVFR" }
+        }
+
+        // Return the worst category
+        let categoryOrder = ["LIFR": 0, "IFR": 1, "MVFR": 2, "VFR": 3]
+        let visRank = categoryOrder[visCategory] ?? 3
+        let ceilRank = categoryOrder[ceilingCategory] ?? 3
+        return visRank < ceilRank ? visCategory : ceilingCategory
+    }
+
+    private func parseCeilingFromCover(_ cover: String?) -> Int? {
+        guard let cover = cover else { return nil }
+        let layers = cover.uppercased().components(separatedBy: " ")
+
+        for layer in layers {
+            // Only BKN, OVC, and VV count as ceilings
+            var altitude: String?
+            if layer.hasPrefix("VV") {
+                altitude = String(layer.dropFirst(2))
+            } else if layer.hasPrefix("BKN") || layer.hasPrefix("OVC") {
+                altitude = String(layer.dropFirst(3))
+            }
+
+            if let alt = altitude, let altNum = Int(alt.prefix(while: { $0.isNumber })) {
+                return altNum * 100  // Return first ceiling found (lowest)
+            }
+        }
+        return nil
+    }
+
+    private func parseCeilingFromRaw(_ raw: String) -> Int? {
+        let upper = raw.uppercased()
+        let patterns = ["VV(\\d{3})", "BKN(\\d{3})", "OVC(\\d{3})"]
+
+        for pattern in patterns {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: []),
+               let match = regex.firstMatch(in: upper, options: [], range: NSRange(upper.startIndex..., in: upper)),
+               let range = Range(match.range(at: 1), in: upper),
+               let altNum = Int(upper[range]) {
+                return altNum * 100
+            }
+        }
+        return nil
+    }
+
     // MARK: - Parsed Weather Table (ForeFlight Style)
     private func parsedWeatherTable(_ weather: RawMETAR) -> some View {
         VStack(spacing: 8) {
-            // Time
-            if let obsTime = weather.observationTime {
+            // Time - show local time with timezone abbreviation
+            if let obsTime = weather.observationTimeLocal {
                 weatherTableRow(label: "Time", value: obsTime)
             }
 
@@ -1492,9 +1569,19 @@ struct WeatherBannerView: View {
                 weatherTableRow(label: "Visibility", value: "\(visibilityString(for: vis)) sm")
             }
 
+            // RVR (Runway Visual Range) - parse from raw METAR
+            if let rvrString = parseRVR(from: weather.rawOb) {
+                weatherTableRow(label: "RVR", value: rvrString)
+            }
+
             // Clouds (AGL)
             if let clouds = weather.cover, !clouds.isEmpty {
                 weatherTableRow(label: "Clouds (AGL)", value: formatCloudLayers(clouds))
+            }
+
+            // Weather Phenomena
+            if let wxString = weather.wxString, !wxString.isEmpty {
+                weatherTableRow(label: "Weather", value: formatWeatherPhenomena(wxString))
             }
 
             // Temperature
@@ -1947,28 +2034,47 @@ struct WeatherBannerView: View {
             return ("MVFR", "cloud.fog.fill")
         }
 
-        // Check visibility
-        if upper.contains("1/4SM") || upper.contains("1/2SM") || upper.contains("0SM") {
+        // Check visibility - FAA flight category thresholds:
+        // LIFR: visibility < 1 SM
+        // IFR: visibility 1 SM to < 3 SM
+        // MVFR: visibility 3 SM to 5 SM
+        // VFR: visibility > 5 SM
+        if upper.contains("1/4SM") || upper.contains("1/2SM") || upper.contains("3/4SM") || upper.contains("0SM") {
             return ("LIFR", "cloud.fill")
         }
-        if upper.contains("1SM ") || upper.contains("2SM ") {
+        // Use regex to match exactly 1SM or 2SM (IFR range: 1 to <3 SM)
+        if let _ = upper.range(of: "\\b[12]SM\\b", options: .regularExpression) {
             return ("IFR", "cloud.fill")
         }
-        if upper.contains("3SM") || upper.contains("4SM") || upper.contains("5SM") {
+        // Also handle "1 1/2SM" type formats
+        if upper.contains("1 1/2SM") || upper.contains("2 1/2SM") {
+            return ("IFR", "cloud.fill")
+        }
+        // MVFR range: 3-5 SM
+        if let _ = upper.range(of: "\\b[345]SM\\b", options: .regularExpression) {
             return ("MVFR", "cloud.fill")
         }
 
-        // Check cloud cover
+        // Check cloud cover - only BKN (broken) and OVC (overcast) count as ceilings
+        // Flight category thresholds (in hundreds of feet, matching METAR format):
+        // LIFR: ceiling < 500ft (height < 5)
+        // IFR: ceiling 500-999ft (height 5-9)
+        // MVFR: ceiling 1000-3000ft (height 10-30)
+        // VFR: ceiling > 3000ft (height > 30)
         if upper.contains("OVC") {
             if let range = upper.range(of: "OVC\\d{3}", options: .regularExpression) {
                 let match = String(upper[range])
                 let heightStr = match.dropFirst(3)
-                if let height = Int(heightStr), height < 5 {
-                    return ("LIFR", "cloud.fill")
-                } else if let height = Int(heightStr), height < 10 {
-                    return ("IFR", "cloud.fill")
-                } else if let height = Int(heightStr), height < 30 {
-                    return ("MVFR", "cloud.fill")
+                if let height = Int(heightStr) {
+                    if height < 5 {
+                        return ("LIFR", "cloud.fill")
+                    } else if height < 10 {
+                        return ("IFR", "cloud.fill")
+                    } else if height <= 30 {
+                        return ("MVFR", "cloud.fill")
+                    }
+                    // height > 30 means ceiling > 3000ft = VFR
+                    return ("VFR", "cloud.fill")
                 }
             }
             return ("MVFR", "cloud.fill")
@@ -1977,12 +2083,16 @@ struct WeatherBannerView: View {
             if let range = upper.range(of: "BKN\\d{3}", options: .regularExpression) {
                 let match = String(upper[range])
                 let heightStr = match.dropFirst(3)
-                if let height = Int(heightStr), height < 5 {
-                    return ("LIFR", "cloud.fill")
-                } else if let height = Int(heightStr), height < 10 {
-                    return ("IFR", "cloud.fill")
-                } else if let height = Int(heightStr), height < 30 {
-                    return ("MVFR", "cloud.fill")
+                if let height = Int(heightStr) {
+                    if height < 5 {
+                        return ("LIFR", "cloud.fill")
+                    } else if height < 10 {
+                        return ("IFR", "cloud.fill")
+                    } else if height <= 30 {
+                        return ("MVFR", "cloud.fill")
+                    }
+                    // height > 30 means ceiling > 3000ft = VFR
+                    return ("VFR", "cloud.fill")
                 }
             }
             return ("VFR", "cloud.fill")
@@ -2791,36 +2901,200 @@ struct WeatherBannerView: View {
 
     // MARK: - Helper: Format Cloud Layers
     private func formatCloudLayers(_ clouds: String) -> String {
-        // Parse cloud string like "SCT130 BKN160 BKN250" into readable format
+        // Parse cloud string like "SCT130 BKN160 BKN250" or "VV002" into readable format
         let layers = clouds.components(separatedBy: " ")
         var formatted: [String] = []
 
         for layer in layers {
+            let upper = layer.uppercased()
             var cover = ""
             var altitude = ""
 
-            if layer.hasPrefix("SKC") || layer.hasPrefix("CLR") {
+            if upper.hasPrefix("SKC") || upper.hasPrefix("CLR") || upper == "CAVOK" {
                 return "Clear"
-            } else if layer.hasPrefix("FEW") {
+            } else if upper.hasPrefix("VV") {
+                // Vertical Visibility (indefinite ceiling, typically fog)
+                altitude = String(upper.dropFirst(2))
+                if let altNum = Int(altitude) {
+                    formatted.append("Vertical Vis \(altNum * 100)'")
+                }
+                continue
+            } else if upper.hasPrefix("FEW") {
                 cover = "Few"
-                altitude = String(layer.dropFirst(3))
-            } else if layer.hasPrefix("SCT") {
+                altitude = String(upper.dropFirst(3))
+            } else if upper.hasPrefix("SCT") {
                 cover = "Scattered"
-                altitude = String(layer.dropFirst(3))
-            } else if layer.hasPrefix("BKN") {
+                altitude = String(upper.dropFirst(3))
+            } else if upper.hasPrefix("BKN") {
                 cover = "Broken"
-                altitude = String(layer.dropFirst(3))
-            } else if layer.hasPrefix("OVC") {
+                altitude = String(upper.dropFirst(3))
+            } else if upper.hasPrefix("OVC") {
                 cover = "Overcast"
-                altitude = String(layer.dropFirst(3))
+                altitude = String(upper.dropFirst(3))
             }
 
-            if let altNum = Int(altitude) {
+            // Handle altitude with possible CB/TCU suffix (e.g., "025CB")
+            let altDigits = altitude.prefix(while: { $0.isNumber })
+            if let altNum = Int(altDigits), !cover.isEmpty {
                 formatted.append("\(cover) \(altNum * 100)'")
             }
         }
 
         return formatted.isEmpty ? clouds : formatted.joined(separator: "\n")
+    }
+
+    // MARK: - Helper: Parse RVR (Runway Visual Range) from raw METAR
+    private func parseRVR(from rawMetar: String) -> String? {
+        // RVR format: R09R/5500VP6000FT or R09L/2000V4000FT
+        let pattern = "R(\\d{2}[LRC]?)/([\\dPM]+)(?:V([\\dPM]+))?FT"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return nil }
+
+        let range = NSRange(rawMetar.startIndex..., in: rawMetar)
+        let matches = regex.matches(in: rawMetar, options: [], range: range)
+
+        guard !matches.isEmpty else { return nil }
+
+        var rvrStrings: [String] = []
+        for match in matches {
+            guard let runwayRange = Range(match.range(at: 1), in: rawMetar),
+                  let valueRange = Range(match.range(at: 2), in: rawMetar) else { continue }
+
+            let runway = String(rawMetar[runwayRange])
+            let value1 = String(rawMetar[valueRange])
+
+            var rvrValue = ""
+            if match.range(at: 3).location != NSNotFound,
+               let value2Range = Range(match.range(at: 3), in: rawMetar) {
+                let value2 = String(rawMetar[value2Range])
+                rvrValue = "Rwy \(runway): \(formatRVRValue(value1))' to \(formatRVRValue(value2))'"
+            } else {
+                rvrValue = "Rwy \(runway): \(formatRVRValue(value1))'"
+            }
+            rvrStrings.append(rvrValue)
+        }
+
+        return rvrStrings.isEmpty ? nil : rvrStrings.joined(separator: "\n")
+    }
+
+    private func formatRVRValue(_ value: String) -> String {
+        // Handle P (plus/greater than) and M (minus/less than) prefixes
+        if value.hasPrefix("P") {
+            return ">\(value.dropFirst())"
+        } else if value.hasPrefix("M") {
+            return "<\(value.dropFirst())"
+        }
+        return value
+    }
+
+    // MARK: - Helper: Format Weather Phenomena
+    private func formatWeatherPhenomena(_ wxString: String) -> String {
+        // Parse weather phenomena codes from wxString
+        let codes = wxString.components(separatedBy: " ")
+        var phenomena: [String] = []
+
+        for code in codes {
+            if let description = decodeWeatherPhenomenon(code) {
+                phenomena.append(description)
+            }
+        }
+
+        return phenomena.isEmpty ? wxString : phenomena.joined(separator: "\n")
+    }
+
+    private func decodeWeatherPhenomenon(_ code: String) -> String? {
+        // Intensity prefixes
+        var intensity = ""
+        var workingCode = code
+
+        if workingCode.hasPrefix("-") {
+            intensity = "Light "
+            workingCode = String(workingCode.dropFirst())
+        } else if workingCode.hasPrefix("+") {
+            intensity = "Heavy "
+            workingCode = String(workingCode.dropFirst())
+        } else if workingCode.hasPrefix("VC") {
+            intensity = "Vicinity "
+            workingCode = String(workingCode.dropFirst(2))
+        }
+
+        // Weather phenomena codes
+        let phenomenaMap: [String: String] = [
+            // Precipitation
+            "RA": "Rain",
+            "SN": "Snow",
+            "DZ": "Drizzle",
+            "PL": "Ice Pellets",
+            "GR": "Hail",
+            "GS": "Small Hail",
+            "SG": "Snow Grains",
+            "IC": "Ice Crystals",
+            "UP": "Unknown Precip",
+            // Obscurations
+            "FG": "Fog",
+            "BR": "Mist",
+            "HZ": "Haze",
+            "FU": "Smoke",
+            "SA": "Sand",
+            "DU": "Dust",
+            "VA": "Volcanic Ash",
+            "PY": "Spray",
+            // Other
+            "TS": "Thunderstorm",
+            "SQ": "Squall",
+            "FC": "Funnel Cloud",
+            "SS": "Sandstorm",
+            "DS": "Duststorm",
+            "PO": "Dust Devils",
+            "SH": "Showers",
+            "BLSN": "Blowing Snow",
+            "BLDU": "Blowing Dust",
+            "BLSA": "Blowing Sand",
+            "DRSN": "Drifting Snow",
+            "DRDU": "Drifting Dust",
+            "DRSA": "Drifting Sand",
+            "FZRA": "Freezing Rain",
+            "FZDZ": "Freezing Drizzle",
+            "FZFG": "Freezing Fog",
+            "TSRA": "Thunderstorm Rain",
+            "TSSN": "Thunderstorm Snow",
+            "SHRA": "Rain Showers",
+            "SHSN": "Snow Showers",
+            "SHGR": "Hail Showers",
+            "PRFG": "Partial Fog",
+            "BCFG": "Patches of Fog",
+            "MIFG": "Shallow Fog",
+        ]
+
+        // Try compound codes first (like FZRA, TSRA)
+        if let description = phenomenaMap[workingCode] {
+            return intensity + description
+        }
+
+        // Try parsing as combination (e.g., "RABR" = Rain + Mist)
+        var parts: [String] = []
+        var remaining = workingCode
+        while !remaining.isEmpty {
+            var found = false
+            // Try 4-char codes first, then 2-char
+            for length in [4, 2] {
+                if remaining.count >= length {
+                    let prefix = String(remaining.prefix(length))
+                    if let desc = phenomenaMap[prefix] {
+                        parts.append(desc)
+                        remaining = String(remaining.dropFirst(length))
+                        found = true
+                        break
+                    }
+                }
+            }
+            if !found { break }
+        }
+
+        if !parts.isEmpty {
+            return intensity + parts.joined(separator: ", ")
+        }
+
+        return nil
     }
 
     // MARK: - Helper: Calculate Density Altitude
@@ -2901,6 +3175,27 @@ struct WeatherBannerView: View {
     // MARK: - Visibility String Helper
     private func visibilityString(for vis: Double) -> String {
         if vis >= 10 { return "10+" }
+        if vis >= 6 { return "6+" }
+
+        // Convert to fractions for common aviation visibility values
+        let tolerance = 0.01
+        if abs(vis - 0.25) < tolerance { return "¼" }
+        if abs(vis - 0.5) < tolerance { return "½" }
+        if abs(vis - 0.75) < tolerance { return "¾" }
+        if abs(vis - 1.0) < tolerance { return "1" }
+        if abs(vis - 1.25) < tolerance { return "1¼" }
+        if abs(vis - 1.5) < tolerance { return "1½" }
+        if abs(vis - 1.75) < tolerance { return "1¾" }
+        if abs(vis - 2.0) < tolerance { return "2" }
+        if abs(vis - 2.5) < tolerance { return "2½" }
+        if abs(vis - 3.0) < tolerance { return "3" }
+        if abs(vis - 4.0) < tolerance { return "4" }
+        if abs(vis - 5.0) < tolerance { return "5" }
+
+        // For other values, show decimal but prefer whole numbers
+        if vis == floor(vis) {
+            return String(format: "%.0f", vis)
+        }
         return String(format: "%.1f", vis)
     }
     
@@ -2932,7 +3227,7 @@ struct WeatherBannerView: View {
         case "VFR": return .green
         case "MVFR": return .blue
         case "IFR": return .red
-        case "LIFR": return .pink
+        case "LIFR": return Color(red: 1.0, green: 0.0, blue: 1.0)  // Magenta
         default: return .gray
         }
     }
@@ -3622,25 +3917,48 @@ struct WeatherDetailSheet: View {
         if upper.contains("FZRA") || upper.contains("FZDZ") { return ("LIFR", "cloud.sleet.fill") }
         if upper.contains("FG") { return ("LIFR", "cloud.fog.fill") }
         if upper.contains("BR") || upper.contains("HZ") { return ("MVFR", "cloud.fog.fill") }
-        if upper.contains("1/4SM") || upper.contains("1/2SM") { return ("LIFR", "cloud.fill") }
-        if upper.contains("1SM ") || upper.contains("2SM ") { return ("IFR", "cloud.fill") }
-        if upper.contains("3SM") || upper.contains("4SM") || upper.contains("5SM") { return ("MVFR", "cloud.fill") }
+        // Check visibility - FAA flight category thresholds:
+        // LIFR: visibility < 1 SM
+        // IFR: visibility 1 SM to < 3 SM
+        // MVFR: visibility 3 SM to 5 SM
+        // VFR: visibility > 5 SM
+        if upper.contains("1/4SM") || upper.contains("1/2SM") || upper.contains("3/4SM") || upper.contains("0SM") { return ("LIFR", "cloud.fill") }
+        // Use regex to match exactly 1SM or 2SM (IFR range: 1 to <3 SM)
+        if let _ = upper.range(of: "\\b[12]SM\\b", options: .regularExpression) { return ("IFR", "cloud.fill") }
+        // Also handle "1 1/2SM" type formats
+        if upper.contains("1 1/2SM") || upper.contains("2 1/2SM") { return ("IFR", "cloud.fill") }
+        // MVFR range: 3-5 SM
+        if let _ = upper.range(of: "\\b[345]SM\\b", options: .regularExpression) { return ("MVFR", "cloud.fill") }
 
+        // Check cloud cover - only BKN (broken) and OVC (overcast) count as ceilings
+        // Flight category thresholds (in hundreds of feet, matching METAR format):
+        // LIFR: ceiling < 500ft (height < 5)
+        // IFR: ceiling 500-999ft (height 5-9)
+        // MVFR: ceiling 1000-3000ft (height 10-30)
+        // VFR: ceiling > 3000ft (height > 30)
         if upper.contains("OVC") {
             if let range = upper.range(of: "OVC\\d{3}", options: .regularExpression) {
                 let match = String(upper[range])
-                if let height = Int(match.dropFirst(3)), height < 5 { return ("LIFR", "cloud.fill") }
-                else if let height = Int(match.dropFirst(3)), height < 10 { return ("IFR", "cloud.fill") }
-                else if let height = Int(match.dropFirst(3)), height < 30 { return ("MVFR", "cloud.fill") }
+                if let height = Int(match.dropFirst(3)) {
+                    if height < 5 { return ("LIFR", "cloud.fill") }
+                    else if height < 10 { return ("IFR", "cloud.fill") }
+                    else if height <= 30 { return ("MVFR", "cloud.fill") }
+                    // height > 30 means ceiling > 3000ft = VFR
+                    return ("VFR", "cloud.fill")
+                }
             }
             return ("MVFR", "cloud.fill")
         }
         if upper.contains("BKN") {
             if let range = upper.range(of: "BKN\\d{3}", options: .regularExpression) {
                 let match = String(upper[range])
-                if let height = Int(match.dropFirst(3)), height < 5 { return ("LIFR", "cloud.fill") }
-                else if let height = Int(match.dropFirst(3)), height < 10 { return ("IFR", "cloud.fill") }
-                else if let height = Int(match.dropFirst(3)), height < 30 { return ("MVFR", "cloud.fill") }
+                if let height = Int(match.dropFirst(3)) {
+                    if height < 5 { return ("LIFR", "cloud.fill") }
+                    else if height < 10 { return ("IFR", "cloud.fill") }
+                    else if height <= 30 { return ("MVFR", "cloud.fill") }
+                    // height > 30 means ceiling > 3000ft = VFR
+                    return ("VFR", "cloud.fill")
+                }
             }
             return ("VFR", "cloud.fill")
         }
@@ -4235,7 +4553,8 @@ struct WeatherDetailSheet: View {
     // MARK: - Parsed Weather Table
     private func parsedWeatherTable(_ weather: RawMETAR) -> some View {
         VStack(spacing: 8) {
-            if let obsTime = weather.observationTime {
+            // Time - show local time with timezone abbreviation
+            if let obsTime = weather.observationTimeLocal {
                 weatherTableRow(label: "Time", value: obsTime)
             }
 
@@ -4245,8 +4564,18 @@ struct WeatherDetailSheet: View {
                 weatherTableRow(label: "Visibility", value: "\(visibilityString(for: vis)) sm")
             }
 
+            // RVR (Runway Visual Range) - parse from raw METAR
+            if let rvrString = parseRVR(from: weather.rawOb) {
+                weatherTableRow(label: "RVR", value: rvrString)
+            }
+
             if let clouds = weather.cover, !clouds.isEmpty {
-                weatherTableRow(label: "Clouds (AGL)", value: clouds)
+                weatherTableRow(label: "Clouds (AGL)", value: formatCloudLayers(clouds))
+            }
+
+            // Weather Phenomena
+            if let wxString = weather.wxString, !wxString.isEmpty {
+                weatherTableRow(label: "Weather", value: formatWeatherPhenomena(wxString))
             }
 
             if let temp = weather.temp {
@@ -4392,7 +4721,7 @@ struct WeatherDetailSheet: View {
         case "VFR": return .green
         case "MVFR": return .blue
         case "IFR": return .red
-        case "LIFR": return .pink
+        case "LIFR": return Color(red: 1.0, green: 0.0, blue: 1.0)  // Magenta
         default: return .gray
         }
     }
@@ -4432,6 +4761,27 @@ struct WeatherDetailSheet: View {
 
     private func visibilityString(for vis: Double) -> String {
         if vis >= 10 { return "10+" }
+        if vis >= 6 { return "6+" }
+
+        // Convert to fractions for common aviation visibility values
+        let tolerance = 0.01
+        if abs(vis - 0.25) < tolerance { return "¼" }
+        if abs(vis - 0.5) < tolerance { return "½" }
+        if abs(vis - 0.75) < tolerance { return "¾" }
+        if abs(vis - 1.0) < tolerance { return "1" }
+        if abs(vis - 1.25) < tolerance { return "1¼" }
+        if abs(vis - 1.5) < tolerance { return "1½" }
+        if abs(vis - 1.75) < tolerance { return "1¾" }
+        if abs(vis - 2.0) < tolerance { return "2" }
+        if abs(vis - 2.5) < tolerance { return "2½" }
+        if abs(vis - 3.0) < tolerance { return "3" }
+        if abs(vis - 4.0) < tolerance { return "4" }
+        if abs(vis - 5.0) < tolerance { return "5" }
+
+        // For other values, show decimal but prefer whole numbers
+        if vis == floor(vis) {
+            return String(format: "%.0f", vis)
+        }
         return String(format: "%.1f", vis)
     }
 

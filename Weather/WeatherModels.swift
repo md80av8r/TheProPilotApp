@@ -69,6 +69,21 @@ struct RawMETAR: Codable {
         }
         return nil
     }
+
+    /// Observation time formatted in local timezone with timezone abbreviation
+    var observationTimeLocal: String? {
+        guard let timestamp = obsTime else { return nil }
+
+        let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.timeZone = TimeZone.current
+        let timeString = formatter.string(from: date)
+
+        // Get timezone abbreviation (e.g., "EST", "PST", "CDT")
+        let tzAbbrev = TimeZone.current.abbreviation() ?? "Local"
+        return "\(timeString) \(tzAbbrev)"
+    }
     
     var timeAgo: String {
         guard let timestamp = obsTime else { return "Unknown" }
