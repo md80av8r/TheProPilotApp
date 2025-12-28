@@ -22,15 +22,22 @@ struct RawMETAR: Codable {
     let visibRaw: VisibilityValue?
     let altim: Double?       // Altimeter in inHg (e.g., 29.92)
     let slp: Double?         // Sea level pressure in hPa/mb (e.g., 1013.25)
+    let elev: Double?        // Station elevation in meters from API
     let cover: String?
     let wxString: String?
     let obsTime: Int?        // Unix timestamp
     let reportTime: String?
-    
+
     enum CodingKeys: String, CodingKey {
-        case icaoId, rawOb, flightCategory, temp, dewp, wspd, wgst, altim, slp, cover, wxString, obsTime, reportTime
+        case icaoId, rawOb, flightCategory, temp, dewp, wspd, wgst, altim, slp, elev, cover, wxString, obsTime, reportTime
         case wdirRaw = "wdir"
         case visibRaw = "visib"
+    }
+
+    /// Station elevation in feet (converted from meters)
+    var elevationFeet: Int? {
+        guard let elevMeters = elev else { return nil }
+        return Int(elevMeters * 3.28084)
     }
     
     // MARK: - Computed Properties

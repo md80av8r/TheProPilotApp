@@ -1613,7 +1613,9 @@ struct WeatherBannerView: View {
                 // altim from API should be in inHg (typically 28-32 range)
                 // If it's > 100, it's likely in millibars and needs conversion
                 let altimInHg = altim > 100 ? altim / 33.8639 : altim
-                let densityAlt = calculateDensityAltitude(temp: temp, altimeter: altimInHg, elevation: 0)
+                // Use station elevation from API, default to 0 if not available
+                let elevation = weather.elevationFeet ?? 0
+                let densityAlt = calculateDensityAltitude(temp: temp, altimeter: altimInHg, elevation: elevation)
                 weatherTableRow(label: "Density Altitude", value: "\(densityAlt)'")
             }
         }
@@ -3603,11 +3605,10 @@ struct WeatherDetailSheet: View {
     private var enhancedMETARView: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let weather = currentWeather {
-                // Flight Category Header
+                // Flight Category Header with Badge - use API category or calculate from raw METAR
+                let category = weather.flightCategory ?? calculateFlightCategory(from: weather)
                 HStack {
-                    if let category = weather.flightCategory {
-                        flightCategoryBadge(category)
-                    }
+                    flightCategoryBadge(category)
 
                     Spacer()
 
@@ -3622,10 +3623,10 @@ struct WeatherDetailSheet: View {
                 .padding(.horizontal, 12)
                 .padding(.top, 12)
 
-                // Raw METAR
+                // Raw METAR - colored by flight category
                 Text(weather.rawOb)
                     .font(.system(size: 14, weight: .medium, design: .monospaced))
-                    .foregroundColor(categoryColor(weather.flightCategory))
+                    .foregroundColor(categoryColor(category))
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.black.opacity(0.3))
@@ -4600,7 +4601,9 @@ struct WeatherDetailSheet: View {
 
             if let temp = weather.temp, let altim = weather.altim {
                 let altimInHg = altim > 100 ? altim / 33.8639 : altim
-                let densityAlt = calculateDensityAltitude(temp: temp, altimeter: altimInHg, elevation: 0)
+                // Use station elevation from API, default to 0 if not available
+                let elevation = Double(weather.elevationFeet ?? 0)
+                let densityAlt = calculateDensityAltitude(temp: temp, altimeter: altimInHg, elevation: elevation)
                 weatherTableRow(label: "Density Altitude", value: "\(densityAlt)'")
             }
         }
@@ -4798,6 +4801,72 @@ struct WeatherDetailSheet: View {
         let densityAlt = pressureAlt + (120 * tempDeviation)
 
         return Int(densityAlt)
+    }
+
+    // MARK: - Calculate Flight Category from Raw METAR
+    private func calculateFlightCategory(from weather: RawMETAR) -> String {
+        // FAA Flight Category criteria:
+        // LIFR: ceiling < 500ft OR visibility < 1 SM
+        // IFR: ceiling 500-999ft OR visibility 1-3 SM
+        // MVFR: ceiling 1000-3000ft OR visibility 3-5 SM
+        // VFR: ceiling > 3000ft AND visibility > 5 SM
+
+        let vis = weather.visibility ?? 10.0
+        let ceiling = parseCeilingFromCover(weather.cover) ?? parseCeilingFromRaw(weather.rawOb)
+
+        // Determine category based on the WORST of ceiling or visibility
+        var visCategory = "VFR"
+        if vis < 1 { visCategory = "LIFR" }
+        else if vis < 3 { visCategory = "IFR" }
+        else if vis <= 5 { visCategory = "MVFR" }
+
+        var ceilingCategory = "VFR"
+        if let ceil = ceiling {
+            if ceil < 500 { ceilingCategory = "LIFR" }
+            else if ceil < 1000 { ceilingCategory = "IFR" }
+            else if ceil <= 3000 { ceilingCategory = "MVFR" }
+        }
+
+        // Return the worst category
+        let categoryOrder = ["LIFR": 0, "IFR": 1, "MVFR": 2, "VFR": 3]
+        let visRank = categoryOrder[visCategory] ?? 3
+        let ceilRank = categoryOrder[ceilingCategory] ?? 3
+        return visRank < ceilRank ? visCategory : ceilingCategory
+    }
+
+    private func parseCeilingFromCover(_ cover: String?) -> Int? {
+        guard let cover = cover else { return nil }
+        let layers = cover.uppercased().components(separatedBy: " ")
+
+        for layer in layers {
+            // Only BKN, OVC, and VV count as ceilings
+            var altitude: String?
+            if layer.hasPrefix("VV") {
+                altitude = String(layer.dropFirst(2))
+            } else if layer.hasPrefix("BKN") || layer.hasPrefix("OVC") {
+                altitude = String(layer.dropFirst(3))
+            }
+
+            if let alt = altitude, let altNum = Int(alt.prefix(while: { $0.isNumber })) {
+                return altNum * 100  // Return first ceiling found (lowest)
+            }
+        }
+        return nil
+    }
+
+    private func parseCeilingFromRaw(_ raw: String) -> Int? {
+        let upper = raw.uppercased()
+        let patterns = ["VV(\\d{3})", "BKN(\\d{3})", "OVC(\\d{3})"]
+
+        for pattern in patterns {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: []),
+               let match = regex.firstMatch(in: upper, options: [], range: NSRange(upper.startIndex..., in: upper)),
+               let range = Range(match.range(at: 1), in: upper),
+               let altNum = Int(upper[range]) {
+                return altNum * 100
+            }
+        }
+        return nil
     }
 
     // MARK: - Data Loading
