@@ -21,6 +21,7 @@
 		9703AF952EB07357002E9E26 /* FlightLegsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703AF942EB07357002E9E26 /* FlightLegsView.swift */; };
 		97046B122ECD344A0066DC9F /* GradientGlowButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97046B112ECD344A0066DC9F /* GradientGlowButton.swift */; };
 		97046B162ECD4D880066DC9F /* KDTW_KCLE.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 97046B152ECD4D880066DC9F /* KDTW_KCLE.gpx */; };
+		97126E172EEF505300D6D150 /* KDTW_KORD.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 97126E162EEF505300D6D150 /* KDTW_KORD.gpx */; };
 		97111C4B2E3A4F1300850DA5 /* ChainRouteDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97111C4A2E3A4F1300850DA5 /* ChainRouteDisplay.swift */; };
 		97126E0C2EEE062C00D6D150 /* Untitled 2.txt in Resources */ = {isa = PBXBuildFile; fileRef = 97126E0B2EEE062500D6D150 /* Untitled 2.txt */; };
 		97126E122EEF4E5300D6D150 /* CLE_to_YIP.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 97126E0F2EEF4E5300D6D150 /* CLE_to_YIP.gpx */; };
@@ -285,6 +286,7 @@
 		9703AF942EB07357002E9E26 /* FlightLegsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightLegsView.swift; sourceTree = "<group>"; };
 		97046B112ECD344A0066DC9F /* GradientGlowButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientGlowButton.swift; sourceTree = "<group>"; };
 		97046B152ECD4D880066DC9F /* KDTW_KCLE.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = KDTW_KCLE.gpx; sourceTree = "<group>"; };
+		97126E162EEF505300D6D150 /* KDTW_KORD.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = KDTW_KORD.gpx; sourceTree = "<group>"; };
 		97111C4A2E3A4F1300850DA5 /* ChainRouteDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChainRouteDisplay.swift; sourceTree = "<group>"; };
 		97126E0B2EEE062500D6D150 /* Untitled 2.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Untitled 2.txt"; sourceTree = "<group>"; };
 		97126E0F2EEF4E5300D6D150 /* CLE_to_YIP.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = CLE_to_YIP.gpx; sourceTree = "<group>"; };
@@ -569,6 +571,7 @@
 				97AFBB902EE6558100C63E38 /* Jumpseat */,
 				975C77D12EE21BEE0060728C /* EAPIS */,
 				97046B152ECD4D880066DC9F /* KDTW_KCLE.gpx */,
+				97126E162EEF505300D6D150 /* KDTW_KORD.gpx */,
 				97C37E132EE1F9F900975E84 /* schema.json */,
 				976A7D592E8C7B3D00E2676E /* YIP_DTW.gpx */,
 				9772E6642E4028C500B5A0B4 /* ProPilotWidgets */,
@@ -913,6 +916,7 @@
 				975C23C32ECD4F2D0092249D /* YIP_DTW.gpx in Resources */,
 				97AFBB912EE6558100C63E38 /* JUMPSEAT_IMPLEMENTATION_GUIDE.md in Resources */,
 				97046B162ECD4D880066DC9F /* KDTW_KCLE.gpx in Resources */,
+				97126E172EEF505300D6D150 /* KDTW_KORD.gpx in Resources */,
 				97126E0C2EEE062C00D6D150 /* Untitled 2.txt in Resources */,
 				97C37E142EE1F9F900975E84 /* schema.json in Resources */,
 				9777E2FF2EEFAC76000AF7C4 /* privacy.md in Resources */,

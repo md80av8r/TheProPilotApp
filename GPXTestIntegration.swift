@@ -68,14 +68,17 @@ class GPXTestModeManager: ObservableObject {
     }
     
     private func checkAirportProximity(_ location: CLLocation) {
-        // KYIP coordinates
-        let kyip = CLLocation(latitude: 42.2379, longitude: -83.5304)
-        // KDTW coordinates
-        let kdtw = CLLocation(latitude: 42.2124, longitude: -83.3534)
-        
+        // Airport coordinates
+        let kyip = CLLocation(latitude: 42.2379, longitude: -83.5304)  // Willow Run
+        let kdtw = CLLocation(latitude: 42.2124, longitude: -83.3534)  // Detroit Metro
+        let kcle = CLLocation(latitude: 41.4117, longitude: -81.8498)  // Cleveland Hopkins
+        let kord = CLLocation(latitude: 41.9742, longitude: -87.9073)  // Chicago O'Hare
+
         let distanceToKYIP = location.distance(from: kyip)
         let distanceToKDTW = location.distance(from: kdtw)
-        
+        let distanceToKCLE = location.distance(from: kcle)
+        let distanceToKORD = location.distance(from: kord)
+
         if distanceToKYIP < 1000 {
             if locationManager?.currentAirport != "KYIP" {
                 print("🏢 Entered KYIP geofence (simulated)")
@@ -94,6 +97,26 @@ class GPXTestModeManager: ObservableObject {
                     name: .arrivedAtAirport,
                     object: nil,
                     userInfo: ["airport": "KDTW", "name": "Detroit Metropolitan Wayne County"]
+                )
+            }
+        } else if distanceToKCLE < 1000 {
+            if locationManager?.currentAirport != "KCLE" {
+                print("🏢 Entered KCLE geofence (simulated)")
+                locationManager?.currentAirport = "KCLE"
+                NotificationCenter.default.post(
+                    name: .arrivedAtAirport,
+                    object: nil,
+                    userInfo: ["airport": "KCLE", "name": "Cleveland Hopkins International"]
+                )
+            }
+        } else if distanceToKORD < 1000 {
+            if locationManager?.currentAirport != "KORD" {
+                print("🏢 Entered KORD geofence (simulated)")
+                locationManager?.currentAirport = "KORD"
+                NotificationCenter.default.post(
+                    name: .arrivedAtAirport,
+                    object: nil,
+                    userInfo: ["airport": "KORD", "name": "Chicago O'Hare International"]
                 )
             }
         }
@@ -172,6 +195,8 @@ struct GPXTestingView: View {
     @State private var takeoffDetected = false
     @State private var landingDetected = false
     @State private var lastEventMessage = ""
+    @State private var showingFilePicker = false
+    @State private var userTrackLogs: [UserGPXTrack] = []
     
     var body: some View {
         NavigationView {
@@ -271,56 +296,16 @@ struct GPXTestingView: View {
                     }
                 }
                 
-                // GPX File Loading
-                Section("GPX File") {
-                    Button {
-                        // Load the test file
-                        if player.loadGPX(from: "YIP_DTW") {
-                            testMode.enableTestMode()
-                            testMode.resetTestSession() // Reset state for new test
-                        } else {
-                            // Show error feedback
-                            let generator = UINotificationFeedbackGenerator()
-                            generator.notificationOccurred(.error)
-                        }
-                    } label: {
-                        HStack {
-                            Label("Load YIP_DTW", systemImage: "doc.fill")
-                            if player.isPlaying {
-                                Spacer()
-                                Text("Playing...")
-                                    .font(.caption)
-                                    .foregroundColor(.orange)
-                            }
-                        }
+                // Built-in Track Logs
+                Section("Built-in Track Logs") {
+                    // Two-column grid of track log buttons
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        TrackLogButton(name: "YIP → DTW", filename: "YIP_DTW", player: player, testMode: testMode)
+                        TrackLogButton(name: "DTW → CLE", filename: "KDTW_KCLE", player: player, testMode: testMode)
+                        TrackLogButton(name: "CLE → YIP", filename: "CLE_to_YIP", player: player, testMode: testMode)
+                        TrackLogButton(name: "DTW → ORD", filename: "KDTW_KORD", player: player, testMode: testMode)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(player.isPlaying) // Can't load while playing
-                    
-                    Button {
-                        // Load the test file
-                        if player.loadGPX(from: "KDTW_KCLE") {
-                            testMode.enableTestMode()
-                            testMode.resetTestSession() // Reset state for new test
-                        } else {
-                            // Show error feedback
-                            let generator = UINotificationFeedbackGenerator()
-                            generator.notificationOccurred(.error)
-                        }
-                    } label: {
-                        HStack {
-                            Label("Load KDTW_KCLE", systemImage: "doc.fill")
-                            if player.isPlaying {
-                                Spacer()
-                                Text("Playing...")
-                                    .font(.caption)
-                                    .foregroundColor(.orange)
-                            }
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(player.isPlaying) // Can't load while playing
-                    
+
                     if player.totalTrackPoints > 0 {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
@@ -329,7 +314,7 @@ struct GPXTestingView: View {
                                 Text("\(player.totalTrackPoints) track points loaded")
                                 Spacer()
                             }
-                            
+
                             HStack {
                                 Label("Duration", systemImage: "clock")
                                     .font(.caption)
@@ -347,6 +332,42 @@ struct GPXTestingView: View {
                             .font(.caption)
                             .foregroundColor(.red)
                     }
+                }
+
+                // User Track Logs
+                Section("Your Track Logs") {
+                    if userTrackLogs.isEmpty {
+                        Text("No imported track logs")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else {
+                        ForEach(userTrackLogs) { track in
+                            Button {
+                                loadUserTrack(track)
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(track.name)
+                                            .font(.subheadline)
+                                        Text(track.dateAdded, style: .date)
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "play.circle")
+                                }
+                            }
+                            .disabled(player.isPlaying)
+                        }
+                        .onDelete(perform: deleteUserTracks)
+                    }
+
+                    Button {
+                        showingFilePicker = true
+                    } label: {
+                        Label("Import GPX File", systemImage: "plus.circle.fill")
+                    }
+                    .disabled(player.isPlaying)
                 }
                 
                 // Playback Controls
@@ -595,8 +616,15 @@ struct GPXTestingView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingFilePicker) {
+                GPXFilePicker { url in
+                    importGPXFile(from: url)
+                }
+            }
         }
         .onAppear {
+            // Load user track logs
+            userTrackLogs = UserGPXTrackStore.shared.loadTracks()
             testMode.configure(with: locationManager, speedMonitor: speedMonitor)
             
             // Listen for leg completion check requests
@@ -710,6 +738,41 @@ struct GPXTestingView: View {
         )
         print("🔄 Checking leg completion and advancing if needed")
     }
+
+    // Import a GPX file from URL
+    private func importGPXFile(from url: URL) {
+        do {
+            let track = try UserGPXTrackStore.shared.importTrack(from: url)
+            userTrackLogs = UserGPXTrackStore.shared.loadTracks()
+            loadUserTrack(track)
+            print("📁 Imported GPX file: \(track.name)")
+        } catch {
+            print("❌ Failed to import GPX file: \(error.localizedDescription)")
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.error)
+        }
+    }
+
+    // Load a user track log
+    private func loadUserTrack(_ track: UserGPXTrack) {
+        if player.loadGPX(from: track.fileURL) {
+            testMode.enableTestMode()
+            testMode.resetTestSession()
+            print("📍 Loaded user track: \(track.name)")
+        } else {
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.error)
+        }
+    }
+
+    // Delete user track logs
+    private func deleteUserTracks(at offsets: IndexSet) {
+        for index in offsets {
+            let track = userTrackLogs[index]
+            UserGPXTrackStore.shared.deleteTrack(track)
+        }
+        userTrackLogs = UserGPXTrackStore.shared.loadTracks()
+    }
 }
 
 // MARK: - Preview
@@ -717,5 +780,186 @@ struct GPXTestingView_Previews: PreviewProvider {
     static var previews: some View {
         GPXTestingView()
             .environmentObject(PilotLocationManager())
+    }
+}
+
+// MARK: - Track Log Button Component
+struct TrackLogButton: View {
+    let name: String
+    let filename: String
+    @ObservedObject var player: GPXTestPlayer
+    @ObservedObject var testMode: GPXTestModeManager
+
+    var body: some View {
+        Button {
+            if player.loadGPX(from: filename) {
+                testMode.enableTestMode()
+                testMode.resetTestSession()
+            } else {
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.error)
+            }
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: "airplane")
+                    .font(.title3)
+                Text(name)
+                    .font(.caption)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(player.isPlaying)
+    }
+}
+
+// MARK: - User GPX Track Model
+struct UserGPXTrack: Identifiable, Codable {
+    let id: UUID
+    let name: String
+    let filename: String
+    let dateAdded: Date
+
+    var fileURL: URL {
+        UserGPXTrackStore.tracksDirectory.appendingPathComponent(filename)
+    }
+
+    init(id: UUID = UUID(), name: String, filename: String, dateAdded: Date = Date()) {
+        self.id = id
+        self.name = name
+        self.filename = filename
+        self.dateAdded = dateAdded
+    }
+}
+
+// MARK: - User GPX Track Store (iCloud Sync)
+class UserGPXTrackStore {
+    static let shared = UserGPXTrackStore()
+
+    // Use iCloud Documents directory for automatic sync
+    static var tracksDirectory: URL {
+        // Try iCloud first, fallback to local Documents
+        if let iCloudURL = FileManager.default.url(forUbiquityContainerIdentifier: nil)?
+            .appendingPathComponent("Documents")
+            .appendingPathComponent("GPXTracks") {
+            // Create directory if needed
+            try? FileManager.default.createDirectory(at: iCloudURL, withIntermediateDirectories: true)
+            return iCloudURL
+        } else {
+            // Fallback to local Documents
+            let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("GPXTracks")
+            try? FileManager.default.createDirectory(at: documentsURL, withIntermediateDirectories: true)
+            return documentsURL
+        }
+    }
+
+    private var metadataURL: URL {
+        Self.tracksDirectory.appendingPathComponent("tracks.json")
+    }
+
+    private init() {
+        // Create directory if needed
+        try? FileManager.default.createDirectory(at: Self.tracksDirectory, withIntermediateDirectories: true)
+    }
+
+    func loadTracks() -> [UserGPXTrack] {
+        guard FileManager.default.fileExists(atPath: metadataURL.path) else {
+            return []
+        }
+
+        do {
+            let data = try Data(contentsOf: metadataURL)
+            let tracks = try JSONDecoder().decode([UserGPXTrack].self, from: data)
+            // Filter out tracks whose files no longer exist
+            return tracks.filter { FileManager.default.fileExists(atPath: $0.fileURL.path) }
+        } catch {
+            print("❌ Failed to load track metadata: \(error)")
+            return []
+        }
+    }
+
+    func saveTracks(_ tracks: [UserGPXTrack]) {
+        do {
+            let data = try JSONEncoder().encode(tracks)
+            try data.write(to: metadataURL)
+        } catch {
+            print("❌ Failed to save track metadata: \(error)")
+        }
+    }
+
+    func importTrack(from sourceURL: URL) throws -> UserGPXTrack {
+        // Security-scoped resource access
+        let accessing = sourceURL.startAccessingSecurityScopedResource()
+        defer {
+            if accessing {
+                sourceURL.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        // Generate unique filename
+        let originalName = sourceURL.deletingPathExtension().lastPathComponent
+        let uniqueFilename = "\(UUID().uuidString).gpx"
+        let destinationURL = Self.tracksDirectory.appendingPathComponent(uniqueFilename)
+
+        // Copy file
+        try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+
+        // Create track metadata
+        let track = UserGPXTrack(name: originalName, filename: uniqueFilename)
+
+        // Save metadata
+        var tracks = loadTracks()
+        tracks.insert(track, at: 0)
+        saveTracks(tracks)
+
+        return track
+    }
+
+    func deleteTrack(_ track: UserGPXTrack) {
+        // Delete file
+        try? FileManager.default.removeItem(at: track.fileURL)
+
+        // Update metadata
+        var tracks = loadTracks()
+        tracks.removeAll { $0.id == track.id }
+        saveTracks(tracks)
+    }
+}
+
+// MARK: - GPX File Picker
+import UniformTypeIdentifiers
+
+struct GPXFilePicker: UIViewControllerRepresentable {
+    let onPick: (URL) -> Void
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        // GPX files are XML-based, use the gpx UTType or fallback to xml
+        let gpxType = UTType(filenameExtension: "gpx") ?? UTType.xml
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [gpxType, .xml])
+        picker.delegate = context.coordinator
+        picker.allowsMultipleSelection = false
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onPick: onPick)
+    }
+
+    class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onPick: (URL) -> Void
+
+        init(onPick: @escaping (URL) -> Void) {
+            self.onPick = onPick
+        }
+
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            guard let url = urls.first else { return }
+            onPick(url)
+        }
     }
 }
