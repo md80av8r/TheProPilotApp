@@ -531,6 +531,9 @@ struct DailyForecastData: Identifiable {
     let detailedForecast: String
     let precipChance: Int?
     let icon: String          // SF Symbol name
+    let windSpeed: String?    // "5 to 10 mph" or "15 mph"
+    let windDirection: String? // "SSE", "W", "NNW"
+    let isDaytime: Bool
 
     var temperatureString: String {
         if let high = highTemp, let low = lowTemp {
@@ -541,5 +544,13 @@ struct DailyForecastData: Identifiable {
             return "Low: \(low)°"
         }
         return "N/A"
+    }
+
+    var windString: String? {
+        guard let speed = windSpeed, !speed.isEmpty else { return nil }
+        if let dir = windDirection, !dir.isEmpty {
+            return "\(dir) \(speed)"
+        }
+        return speed
     }
 }

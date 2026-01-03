@@ -181,56 +181,44 @@ class BackupFileHandler: ObservableObject {
             showError("No backup file to import.")
             return
         }
-        
+
         isProcessing = true
-        
-        DispatchQueue.global(qos: .userInitiated).async {
+
+        Task {
             do {
                 let data = try Data(contentsOf: url)
-                let decoder = JSONDecoder()
-                decoder.dateDecodingStrategy = .iso8601
-                
-                var trips: [Trip]
-                
-                // Try FULL format first
-                if let backup = try? decoder.decode(AppBackupData.self, from: data) {
-                    print("✅ Importing FULL backup format")
-                    trips = backup.trips
-                } else {
-                    // Fall back to SIMPLE format
-                    print("✅ Importing SIMPLE backup format")
-                    let simpleBackup = try decoder.decode(SimpleBackupFormat.self, from: data)
-                    trips = simpleBackup.trips
-                }
-                
-                DispatchQueue.main.async {
-                    // Replace all trips
-                    store.trips = trips
-                    
-                    // Save using the store's save method
-                    store.save()
-                    
+
+                // Use the new nuclear reset function which properly handles relationships
+                print("🔥 Using Nuclear Reset for clean import...")
+                let success = await store.nuclearResetAndImport(data)
+
+                await MainActor.run {
                     // Clean up temp file
                     try? FileManager.default.removeItem(at: url)
-                    
-                    self.importedTripCount = trips.count
-                    self.isProcessing = false
-                    self.showingConfirmation = false
-                    self.pendingBackupURL = nil
-                    self.backupPreview = nil
-                    self.importSuccess = true
-                    
-                    // Post notification for UI update
-                    NotificationCenter.default.post(
-                        name: .backupRestored,
-                        object: nil,
-                        userInfo: ["tripCount": trips.count]
-                    )
-                    
-                    print("✅ Backup restored successfully: \(trips.count) trips")
+
+                    if success {
+                        self.importedTripCount = store.trips.count
+                        self.isProcessing = false
+                        self.showingConfirmation = false
+                        self.pendingBackupURL = nil
+                        self.backupPreview = nil
+                        self.importSuccess = true
+
+                        // Post notification for UI update
+                        NotificationCenter.default.post(
+                            name: .backupRestored,
+                            object: nil,
+                            userInfo: ["tripCount": store.trips.count]
+                        )
+
+                        print("✅ Backup restored successfully: \(store.trips.count) trips with legs in SwiftData")
+                    } else {
+                        self.isProcessing = false
+                        self.showError("Failed to import backup. Check console for details.")
+                    }
                 }
             } catch {
-                DispatchQueue.main.async {
+                await MainActor.run {
                     self.isProcessing = false
                     self.showError("Failed to restore backup: \(error.localizedDescription)")
                 }

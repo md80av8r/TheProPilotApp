@@ -135,21 +135,24 @@ enum EquipmentType: String, Codable, CaseIterable {
 // MARK: - Unified Aircraft Record
 struct Aircraft: Identifiable, Codable, Equatable, Hashable {
     var id: UUID
-    
+
     // Core identification
     var tailNumber: String              // Registration (N831US)
     var typeCode: String                // ICAO type designator (MD88, BE36)
     var manufacturer: String            // Make (McDonnell Douglas)
     var model: String                   // Model (MD-88)
     var year: Int?                      // Year of manufacture
-    
+
+    // Airline Scoping - Aircraft visibility is scoped to the airline
+    var airlineIdentifier: String?      // Fleet callsign (e.g., "JUS" for USA Jet)
+
     // Classification
     var categoryClass: ForeFlightCategoryClass
     var gearType: ForeFlightGearType
     var engineType: ForeFlightEngineType
     var engineCount: Int
     var equipmentType: EquipmentType
-    
+
     // FAA Endorsement Flags
     var isComplex: Bool                 // Flaps, retractable gear, controllable prop
     var isHighPerformance: Bool         // >200 HP
@@ -157,14 +160,14 @@ struct Aircraft: Identifiable, Codable, Equatable, Hashable {
     var isPressurized: Bool
     var requiresTypeRating: Bool
     var typeRatingDesignation: String?
-    
+
     // Tracking
     var lastTATValue: String            // Last known TAT for auto-fill
     var notes: String
     var dateAdded: Date
     var dateModified: Date
     var isUserAdded: Bool               // vs seeded default
-    
+
     // CloudKit tracking
     var cloudKitRecordID: String?
     var lastSyncedAt: Date?
@@ -177,6 +180,7 @@ struct Aircraft: Identifiable, Codable, Equatable, Hashable {
         manufacturer: String = "",
         model: String = "",
         year: Int? = nil,
+        airlineIdentifier: String? = nil,
         categoryClass: ForeFlightCategoryClass = .airplaneMultiEngineLand,
         gearType: ForeFlightGearType = .retractableTricycle,
         engineType: ForeFlightEngineType = .turbofan,
@@ -202,6 +206,7 @@ struct Aircraft: Identifiable, Codable, Equatable, Hashable {
         self.manufacturer = manufacturer
         self.model = model
         self.year = year
+        self.airlineIdentifier = airlineIdentifier
         self.categoryClass = categoryClass
         self.gearType = gearType
         self.engineType = engineType
@@ -274,12 +279,13 @@ struct Aircraft: Identifiable, Codable, Equatable, Hashable {
     func toCKRecord() -> CKRecord {
         let recordID = CKRecord.ID(recordName: id.uuidString)
         let record = CKRecord(recordType: "Aircraft", recordID: recordID)
-        
+
         record["tailNumber"] = tailNumber as NSString
         record["typeCode"] = typeCode as NSString
         record["manufacturer"] = manufacturer as NSString
         record["model"] = model as NSString
         record["year"] = (year ?? 0) as NSNumber
+        record["airlineIdentifier"] = (airlineIdentifier ?? "") as NSString  // Airline scoping
         record["categoryClass"] = categoryClass.rawValue as NSString
         record["gearType"] = gearType.rawValue as NSString
         record["engineType"] = engineType.rawValue as NSString
@@ -295,7 +301,7 @@ struct Aircraft: Identifiable, Codable, Equatable, Hashable {
         record["notes"] = notes as NSString
         record["dateAdded"] = dateAdded as NSDate
         record["dateModified"] = dateModified as NSDate
-        
+
         return record
     }
     
@@ -310,10 +316,14 @@ struct Aircraft: Identifiable, Codable, Equatable, Hashable {
         aircraft.typeCode = (record["typeCode"] as? String) ?? ""
         aircraft.manufacturer = (record["manufacturer"] as? String) ?? ""
         aircraft.model = (record["model"] as? String) ?? ""
-        
+
         let yearNum = (record["year"] as? Int) ?? 0
         aircraft.year = yearNum > 0 ? yearNum : nil
-        
+
+        // Parse airline identifier for scoped visibility
+        let airlineId = record["airlineIdentifier"] as? String
+        aircraft.airlineIdentifier = (airlineId?.isEmpty == false) ? airlineId : nil
+
         if let catClass = record["categoryClass"] as? String,
            let cat = ForeFlightCategoryClass(rawValue: catClass) {
             aircraft.categoryClass = cat
@@ -371,21 +381,30 @@ struct Aircraft: Identifiable, Codable, Equatable, Hashable {
 @MainActor
 class UnifiedAircraftDatabase: ObservableObject {
     static let shared = UnifiedAircraftDatabase()
-    
+
     @Published var aircraft: [Aircraft] = []
     @Published var isSyncing = false
     @Published var lastSyncTime: Date?
     @Published var syncError: String?
-    
-    private let container = CKContainer(identifier: "iCloud.com.jkadans.ProPilotApp")
+
+    private let container = CKContainer(identifier: "iCloud.com.jkadans.TheProPilotApp")
     private var privateDB: CKDatabase { container.privateCloudDatabase }
-    
+
     private let userDefaults = UserDefaults(suiteName: "group.com.propilot.app")
     private let localStorageKey = "UnifiedAircraftDatabase"
-    
+
+    // Airline settings for scoped visibility
+    private let airlineSettingsStore = AirlineSettingsStore()
+
+    /// Get the current user's airline identifier from settings
+    private var currentAirlineIdentifier: String? {
+        let callsign = airlineSettingsStore.settings.fleetCallsign
+        return callsign.isEmpty ? nil : callsign
+    }
+
     private init() {
         loadFromLocal()
-        
+
         // Sync from CloudKit on launch
         Task {
             await syncFromCloudKit()
@@ -399,23 +418,28 @@ class UnifiedAircraftDatabase: ObservableObject {
             print("⚠️ Aircraft \(newAircraft.tailNumber) already exists")
             return
         }
-        
+
         var ac = newAircraft
         ac.isUserAdded = true
         ac.dateAdded = Date()
         ac.dateModified = Date()
-        
+
+        // Auto-set airline identifier from current settings (if not already set)
+        if ac.airlineIdentifier == nil {
+            ac.airlineIdentifier = currentAirlineIdentifier
+        }
+
         aircraft.append(ac)
         aircraft.sort { $0.tailNumber < $1.tailNumber }
-        
+
         saveToLocal()
-        
+
         // Sync to CloudKit
         Task {
             await saveToCloudKit(ac)
         }
-        
-        print("✅ Added aircraft: \(newAircraft.tailNumber)")
+
+        print("✅ Added aircraft: \(newAircraft.tailNumber) (Airline: \(ac.airlineIdentifier ?? "none"))")
     }
     
     func updateAircraft(_ updatedAircraft: Aircraft) {
@@ -546,16 +570,32 @@ class UnifiedAircraftDatabase: ObservableObject {
     }
     
     // MARK: - CloudKit Sync
-    
+
     func syncFromCloudKit() async {
-        print("☁️ Syncing aircraft from CloudKit...")
+        let userAirline = currentAirlineIdentifier
+        print("☁️ Syncing aircraft from CloudKit (Airline: \(userAirline ?? "all"))...")
         isSyncing = true
         syncError = nil
-        
+
         do {
-            let query = CKQuery(recordType: "Aircraft", predicate: NSPredicate(value: true))
+            // Build predicate to filter by airline
+            // Show aircraft that: match user's airline OR have no airline set (shared/personal)
+            let predicate: NSPredicate
+            if let airline = userAirline {
+                // Filter to user's airline OR aircraft without airline identifier
+                predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+                    NSPredicate(format: "airlineIdentifier == %@", airline),
+                    NSPredicate(format: "airlineIdentifier == %@", ""),
+                    NSPredicate(format: "airlineIdentifier == nil")
+                ])
+            } else {
+                // No airline configured - show all aircraft
+                predicate = NSPredicate(value: true)
+            }
+
+            let query = CKQuery(recordType: "Aircraft", predicate: predicate)
             let (matchResults, _) = try await privateDB.records(matching: query)
-            
+
             var cloudAircraft: [Aircraft] = []
             for (_, result) in matchResults {
                 if case .success(let record) = result,
@@ -563,39 +603,44 @@ class UnifiedAircraftDatabase: ObservableObject {
                     cloudAircraft.append(ac)
                 }
             }
-            
-            print("☁️ Found \(cloudAircraft.count) aircraft in CloudKit")
-            
+
+            print("☁️ Found \(cloudAircraft.count) aircraft in CloudKit for airline: \(userAirline ?? "all")")
+
             // Merge: CloudKit wins for conflicts, but keep local-only items
             var mergedAircraft: [Aircraft] = []
-            
+
             // Add all cloud aircraft
             for cloudAc in cloudAircraft {
                 mergedAircraft.append(cloudAc)
             }
-            
+
             // Add local-only aircraft (not in cloud yet)
             for localAc in aircraft {
                 if !cloudAircraft.contains(where: { $0.id == localAc.id }) {
-                    mergedAircraft.append(localAc)
+                    // Ensure local aircraft has airline identifier set before pushing
+                    var acToSync = localAc
+                    if acToSync.airlineIdentifier == nil {
+                        acToSync.airlineIdentifier = userAirline
+                    }
+                    mergedAircraft.append(acToSync)
                     // Push to cloud
-                    await saveToCloudKit(localAc)
+                    await saveToCloudKit(acToSync)
                 }
             }
-            
+
             aircraft = mergedAircraft.sorted { $0.tailNumber < $1.tailNumber }
             saveToLocal()
-            
+
             lastSyncTime = Date()
-            print("✅ CloudKit sync complete: \(aircraft.count) aircraft")
-            
+            print("✅ CloudKit sync complete: \(aircraft.count) aircraft (Airline: \(userAirline ?? "all"))")
+
         } catch let error as CKError {
             // Handle "Unknown Item" (schema doesn't exist) gracefully
             if error.errorCode == 11 { // CKError.unknownItem
                 print("⚠️ CloudKit schema not set up yet. Aircraft will be stored locally only.")
                 print("   To enable sync, create 'Aircraft' record type in CloudKit Dashboard.")
                 syncError = "CloudKit schema not configured. Data saved locally."
-                
+
                 // Still update lastSyncTime to avoid repeated attempts
                 lastSyncTime = Date()
             } else {
@@ -606,7 +651,7 @@ class UnifiedAircraftDatabase: ObservableObject {
             print("❌ CloudKit sync failed: \(error)")
             syncError = error.localizedDescription
         }
-        
+
         isSyncing = false
     }
     
@@ -640,30 +685,32 @@ class UnifiedAircraftDatabase: ObservableObject {
     
     private func seedDefaultAircraft() {
         let defaults: [Aircraft] = [
-            // Your Bonanza
+            // Personal Bonanza (no airline - visible to all)
             Aircraft(
                 tailNumber: "N17WN",
                 typeCode: "BE36",
                 manufacturer: "Beechcraft",
                 model: "Bonanza A36",
+                airlineIdentifier: nil,  // Personal aircraft - no airline scoping
                 categoryClass: .airplaneSingleEngineLand,
                 gearType: .retractableTricycle,
                 engineType: .piston,
                 engineCount: 1,
                 isComplex: true,
                 isHighPerformance: true,
-                isTAA: false,
+                isTAA: true,
                 isPressurized: false,
                 requiresTypeRating: false,
                 isUserAdded: false
             ),
-            
-            // USA Jet MD-88 Fleet
+
+            // USA Jet MD-88 Fleet (scoped to JUS airline)
             Aircraft(
                 tailNumber: "N831US",
                 typeCode: "MD88",
                 manufacturer: "McDonnell Douglas",
                 model: "MD-88",
+                airlineIdentifier: "JUS",  // USA Jet airline
                 categoryClass: .airplaneMultiEngineLand,
                 gearType: .retractableTricycle,
                 engineType: .turbofan,
@@ -681,6 +728,7 @@ class UnifiedAircraftDatabase: ObservableObject {
                 typeCode: "MD88",
                 manufacturer: "McDonnell Douglas",
                 model: "MD-88",
+                airlineIdentifier: "JUS",
                 categoryClass: .airplaneMultiEngineLand,
                 gearType: .retractableTricycle,
                 engineType: .turbofan,
@@ -697,6 +745,7 @@ class UnifiedAircraftDatabase: ObservableObject {
                 typeCode: "MD88",
                 manufacturer: "McDonnell Douglas",
                 model: "MD-88",
+                airlineIdentifier: "JUS",
                 categoryClass: .airplaneMultiEngineLand,
                 gearType: .retractableTricycle,
                 engineType: .turbofan,
@@ -713,6 +762,7 @@ class UnifiedAircraftDatabase: ObservableObject {
                 typeCode: "MD88",
                 manufacturer: "McDonnell Douglas",
                 model: "MD-88",
+                airlineIdentifier: "JUS",
                 categoryClass: .airplaneMultiEngineLand,
                 gearType: .retractableTricycle,
                 engineType: .turbofan,
@@ -729,6 +779,7 @@ class UnifiedAircraftDatabase: ObservableObject {
                 typeCode: "MD88",
                 manufacturer: "McDonnell Douglas",
                 model: "MD-88",
+                airlineIdentifier: "JUS",
                 categoryClass: .airplaneMultiEngineLand,
                 gearType: .retractableTricycle,
                 engineType: .turbofan,
@@ -745,6 +796,7 @@ class UnifiedAircraftDatabase: ObservableObject {
                 typeCode: "MD88",
                 manufacturer: "McDonnell Douglas",
                 model: "MD-88",
+                airlineIdentifier: "JUS",
                 categoryClass: .airplaneMultiEngineLand,
                 gearType: .retractableTricycle,
                 engineType: .turbofan,

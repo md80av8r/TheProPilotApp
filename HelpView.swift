@@ -123,25 +123,70 @@ struct HelpView: View {
                             title: "CloudKit Sync",
                             content: """
                             Your data syncs across all devices:
-                            
+
                             • iPhone, iPad, Apple Watch
                             • Automatic background sync
                             • Works offline, syncs when online
                             • End-to-end encrypted
-                            
+
                             Make sure you're signed into iCloud.
+                            """
+                        ),
+                        HelpArticle(
+                            title: "GPS Track Recording",
+                            content: """
+                            Record your flight paths automatically:
+
+                            • Auto-starts on takeoff (>80 kts)
+                            • Auto-stops on landing (<60 kts)
+                            • Detects departure/arrival airports
+                            • Shows OFF/ON times from GPS data
+
+                            View tracks in Trip Details or export:
+                            • GPX format (standard GPS)
+                            • KML format (Google Earth 3D)
+
+                            Open directly in Apple Maps or Google Earth!
+                            """
+                        ),
+                        HelpArticle(
+                            title: "Airport Proximity Alerts",
+                            content: """
+                            Automatic detection when you arrive:
+
+                            • Geofencing for 20 priority airports
+                            • Auto-prompt to start duty timer
+                            • OPS calling reminders
+                            • Configurable in Settings
+
+                            Enable Location "Always" for best results.
+                            Access via Settings > Airport Proximity.
+                            """
+                        ),
+                        HelpArticle(
+                            title: "Auto Time Logging",
+                            content: """
+                            GPS-based automatic time capture:
+
+                            • Takeoff detected at 80+ knots
+                            • Landing detected at 60 knots
+                            • Optional 5-minute rounding
+                            • Zulu or Local time option
+                            • GPS spoofing detection included
+
+                            Configure in Settings > Auto Time Logging.
                             """
                         ),
                         HelpArticle(
                             title: "Flight Time Limits",
                             content: """
                             Track compliance automatically:
-                            
+
                             • 30-Day Flight Time (100 hrs)
                             • Annual Flight Time (1,000 hrs)
                             • 30-Day FDP (100 hrs duty)
                             • Configurable for Part 121/135
-                            
+
                             View in Flight Time Limits card.
                             """
                         ),
@@ -149,13 +194,13 @@ struct HelpView: View {
                             title: "CSV Import/Export",
                             content: """
                             Compatible with ForeFlight:
-                            
+
                             Import:
                             1. Export CSV from ForeFlight
                             2. Tap "Import Flight Data"
                             3. Select your CSV file
                             4. Review and import
-                            
+
                             Export:
                             1. Tap export in Logbook
                             2. Choose date range
@@ -166,12 +211,12 @@ struct HelpView: View {
                             title: "Apple Watch App",
                             content: """
                             Track flights from your wrist:
-                            
+
                             • View recent trips
                             • See flight time totals
                             • Quick duty status
                             • Sync with iPhone
-                            
+
                             Requires Apple Watch Series 4+
                             """
                         )

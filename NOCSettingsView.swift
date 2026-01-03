@@ -1,11 +1,20 @@
 import SwiftUI
+import SwiftData
 
 struct NOCSettingsView: View {
     @ObservedObject var nocSettings: NOCSettingsStore
     @ObservedObject var scheduleStore: ScheduleStore
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Query private var importProfiles: [SDImportProfile]
+    
     @State private var showingClearScheduleConfirmation = false
     @State private var showingAirportMappings = false
+    
+    // Field Mapping states
+    @State private var showFieldMappingConfirmation = false
+    @State private var showFieldMappingEditor = false
+    @State private var activeProfile: SDImportProfile?
     
     var body: some View {
         NavigationView {
@@ -57,6 +66,55 @@ struct NOCSettingsView: View {
                         .autocapitalization(.none)
                     
                     SecureField("Password", text: $nocSettings.password)
+                }
+
+                // MARK: - Import Configuration Section
+                Section(header: Text("Import Configuration")) {
+                    // Active Profile Picker
+                    if let active = getActiveProfile() {
+                        HStack {
+                            Text("Active Profile")
+                            Spacer()
+                            Text(active.airlineName)
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        Text("No profile selected")
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    // Configure Button
+                    Button(action: {
+                        // Load or create profile for testing
+                        loadOrCreateProfile()
+                        showFieldMappingConfirmation = true
+                    }) {
+                        HStack {
+                            Image(systemName: "slider.horizontal.3")
+                            Text("Configure Field Mapping")
+                        }
+                    }
+                    
+                    // Profile Stats (if active profile exists)
+                    if let active = getActiveProfile() {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("Last Used:")
+                                Spacer()
+                                Text(active.lastUsed, style: .relative)
+                                    .foregroundColor(.secondary)
+                            }
+                            .font(.caption)
+                            
+                            HStack {
+                                Text("Success Rate:")
+                                Spacer()
+                                Text("\(Int(active.successRate * 100))%")
+                                    .foregroundColor(active.successRate > 0.8 ? .green : .orange)
+                            }
+                            .font(.caption)
+                        }
+                    }
                 }
 
                 // MARK: - Roster URL Section
@@ -405,7 +463,72 @@ struct NOCSettingsView: View {
             .sheet(isPresented: $showingAirportMappings) {
                 UserAirportMappingsView()
             }
+            .sheet(isPresented: $showFieldMappingConfirmation) {
+                if let profile = activeProfile {
+                    FieldMappingConfirmationView(
+                        profile: profile,
+                        onApprove: { approvedProfile in
+                            saveProfile(approvedProfile)
+                            showFieldMappingConfirmation = false
+                        },
+                        onEdit: {
+                            showFieldMappingConfirmation = false
+                            showFieldMappingEditor = true
+                        }
+                    )
+                }
+            }
+            .sheet(isPresented: $showFieldMappingEditor) {
+                if let profile = activeProfile {
+                    FieldMappingEditorView(
+                        profile: profile,
+                        onSave: { editedProfile in
+                            saveProfile(editedProfile)
+                            showFieldMappingEditor = false
+                        }
+                    )
+                }
+            }
         }
+    }
+    
+    // MARK: - Helper Methods for Import Profiles
+    
+    private func getActiveProfile() -> SDImportProfile? {
+        return importProfiles.first(where: { $0.isActive })
+    }
+    
+    private func loadOrCreateProfile() {
+        // Check if we have an existing active profile
+        if let existing = getActiveProfile() {
+            activeProfile = existing
+            return
+        }
+        
+        // Check if NOC template exists
+        if let nocProfile = importProfiles.first(where: { $0.airlineName == "NOC (USA Jet)" }) {
+            activeProfile = nocProfile
+            return
+        }
+        
+        // Create NOC template and save it
+        let newProfile = ImportTemplates.nocTemplate()
+        modelContext.insert(newProfile)
+        try? modelContext.save()
+        activeProfile = newProfile
+    }
+    
+    private func saveProfile(_ profile: SDImportProfile) {
+        // Deactivate all other profiles
+        for p in importProfiles {
+            p.isActive = false
+        }
+        
+        // Activate this one
+        profile.isActive = true
+        profile.lastUsed = Date()
+        
+        try? modelContext.save()
     }
     
     // MARK: - Helper Properties

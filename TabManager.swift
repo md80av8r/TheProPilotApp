@@ -25,15 +25,21 @@ struct TabItem: Identifiable, Codable, Hashable {
 // MARK: - Tab Configuration Manager
 class CustomizableTabManager: ObservableObject {
     static let shared = CustomizableTabManager()
-    
+
     @Published var availableTabs: [TabItem] = []
-    @Published var visibleTabs: [TabItem] = []
-    @Published var moreTabs: [TabItem] = []
+    @Published var visibleTabs: [TabItem] = []      // iPhone visible tabs (max 4 + More)
+    @Published var iPadVisibleTabs: [TabItem] = []  // iPad visible tabs (max 7 + More)
+    @Published var moreTabs: [TabItem] = []         // iPhone "more" tabs
+    @Published var iPadMoreTabs: [TabItem] = []     // iPad "more" tabs
     @Published var recentTab: TabItem?
-    
+
+    // iPhone: 4 main tabs + Recent + More = 6 items in bar
     private let maxVisibleTabs = 5
+    // iPad: 7 main tabs + More = 8 items in bar (no Recent needed with more space)
+    private let maxVisibleTabsiPad = 8
     private let userDefaults = UserDefaults.standard
     private let tabConfigKey = "TabConfiguration"
+    private let iPadTabConfigKey = "iPadTabConfiguration"
     private let recentTabKey = "RecentTabID"
     
     init() {
@@ -84,16 +90,20 @@ class CustomizableTabManager: ObservableObject {
             TabItem(id: "scannerEmailSettings", title: "Scanner & Email", systemImage: "envelope.fill", isVisible: false, order: 8),
             // ID: "scanner" → Opens: TripScannerView (standalone scanner)
             TabItem(id: "scanner", title: "Document Scanner", systemImage: "doc.viewfinder", isVisible: false, order: 9),
+            // ID: "flightTracks" → Opens: FlightTrackListView (GPS track recording & viewer)
+            TabItem(id: "flightTracks", title: "Flight Tracks", systemImage: "recordingtape", isVisible: false, order: 10),
             
             // ─────────────────────────────────────────────────────────────────
             // SCHEDULE & OPERATIONS SECTION
             // ─────────────────────────────────────────────────────────────────
             // ID: "nocSchedule" → Opens: NOCSettingsView
             TabItem(id: "nocSchedule", title: "NOC Schedule Import", systemImage: "calendar.badge.clock", isVisible: false, order: 10),
-            // ID: "tripGeneration" → Opens: TripGenerationSettingsView ⭐ NEW
-            TabItem(id: "tripGeneration", title: "Trip Generation", systemImage: "wand.and.stars", isVisible: false, order: 11),
+            // ID: "nocAlertSettings" → Opens: NOCAlertSettingsView
+            TabItem(id: "nocAlertSettings", title: "NOC Alert Settings", systemImage: "bell.badge.fill", isVisible: false, order: 11),
+            // ID: "tripGeneration" → Opens: TripGenerationSettingsView
+            TabItem(id: "tripGeneration", title: "Trip Generation", systemImage: "wand.and.stars", isVisible: false, order: 12),
             // ID: "crewContacts" → Opens: CrewImportHelperView
-            TabItem(id: "crewContacts", title: "Crew Contacts", systemImage: "person.3.fill", isVisible: false, order: 12),
+            TabItem(id: "crewContacts", title: "Crew Contacts", systemImage: "person.3.fill", isVisible: false, order: 13),
             
             // ─────────────────────────────────────────────────────────────────
             // CLOCKS & TIMERS SECTION
@@ -142,14 +152,18 @@ class CustomizableTabManager: ObservableObject {
             TabItem(id: "notes", title: "Notes", systemImage: "note.text", isVisible: false, order: 24),
             // ID: "dataBackup" → Opens: DataBackupSettingsView
             TabItem(id: "dataBackup", title: "Backup & Restore", systemImage: "externaldrive.fill.badge.timemachine", isVisible: false, order: 25),
+            // ID: "monthlySummary" → Opens: MonthlyEmailSettingsView
+            TabItem(id: "monthlySummary", title: "Monthly Summary", systemImage: "envelope.badge.fill", isVisible: false, order: 26),
             
             // ─────────────────────────────────────────────────────────────────
-            // HELP & SUPPORT SECTION ⭐ NEW
+            // HELP & SUPPORT SECTION
             // ─────────────────────────────────────────────────────────────────
+            // ID: "universalSearch" → Opens: UniversalSearchView (App-wide search)
+            TabItem(id: "universalSearch", title: "Search App", systemImage: "magnifyingglass", isVisible: false, order: 26),
             // ID: "help" → Opens: HelpView
-            TabItem(id: "help", title: "Help & Support", systemImage: "questionmark.circle.fill", isVisible: false, order: 26),
+            TabItem(id: "help", title: "Help & Support", systemImage: "questionmark.circle.fill", isVisible: false, order: 27),
             // ID: "search" → Opens: LogbookSearchView
-            TabItem(id: "search", title: "Search Logbook", systemImage: "magnifyingglass.circle.fill", isVisible: false, order: 27),
+            TabItem(id: "search", title: "Search Logbook", systemImage: "magnifyingglass.circle.fill", isVisible: false, order: 28),
 
             // ─────────────────────────────────────────────────────────────────
             // JUMPSEAT NETWORK SECTION
@@ -196,8 +210,26 @@ class CustomizableTabManager: ObservableObject {
     // MARK: - Tab Array Updates
     func updateTabArrays() {
         let sorted = availableTabs.sorted { $0.order < $1.order }
+
+        // iPhone: Up to 4 visible tabs (5 - 1 for More button)
         visibleTabs = Array(sorted.filter { $0.isVisible }.prefix(maxVisibleTabs - 1))
         moreTabs = sorted.filter { !$0.isVisible }
+
+        // iPad: Up to 7 visible tabs (8 - 1 for More button)
+        // iPad shows all visible tabs plus some from "more" to fill the space
+        let allVisible = sorted.filter { $0.isVisible }
+        let remaining = sorted.filter { !$0.isVisible }
+
+        if allVisible.count >= maxVisibleTabsiPad - 1 {
+            // User has configured enough visible tabs
+            iPadVisibleTabs = Array(allVisible.prefix(maxVisibleTabsiPad - 1))
+            iPadMoreTabs = Array(allVisible.dropFirst(maxVisibleTabsiPad - 1)) + remaining
+        } else {
+            // Fill iPad bar with some "more" tabs
+            let neededFromMore = (maxVisibleTabsiPad - 1) - allVisible.count
+            iPadVisibleTabs = allVisible + Array(remaining.prefix(neededFromMore))
+            iPadMoreTabs = Array(remaining.dropFirst(neededFromMore))
+        }
     }
     
     func moveTab(_ tab: TabItem, toVisible: Bool) {
@@ -254,41 +286,47 @@ class CustomizableTabManager: ObservableObject {
     }
 }
 
-// MARK: - Customizable Tab View
+// MARK: - Customizable Tab View (iPhone)
 struct CustomizableTabView<Content: View>: View {
     @StateObject private var tabManager = CustomizableTabManager.shared
     @State private var selectedTab = "logbook"
     @State private var showingTabEditor = false
     @State private var showingMorePanel = false
     @State private var selectedMoreTabForSheet: MoreTabSelection? = nil
-    
+
     let content: (String) -> Content
-    
+
     init(@ViewBuilder content: @escaping (String) -> Content) {
         self.content = content
     }
-    
+
     var body: some View {
         ZStack {
-            // Main content
+            // Main content with NavigationView for each tab
             TabView(selection: $selectedTab) {
                 ForEach(tabManager.visibleTabs) { tab in
-                    content(tab.id)
-                        .tabItem {
-                            Label(tab.title, systemImage: tab.systemImage)
-                        }
-                        .tag(tab.id)
+                    NavigationView {
+                        content(tab.id)
+                    }
+                    .navigationViewStyle(.stack)
+                    .tabItem {
+                        Label(tab.title, systemImage: tab.systemImage)
+                    }
+                    .tag(tab.id)
                 }
-                
+
                 // Dynamic Recent Tab
                 if let recentTab = tabManager.recentTab {
-                    content(recentTab.id)
-                        .tabItem {
-                            Label(recentTab.title, systemImage: recentTab.systemImage)
-                        }
-                        .tag(recentTab.id)
+                    NavigationView {
+                        content(recentTab.id)
+                    }
+                    .navigationViewStyle(.stack)
+                    .tabItem {
+                        Label(recentTab.title, systemImage: recentTab.systemImage)
+                    }
+                    .tag(recentTab.id)
                 }
-                
+
                 // More tab - triggers overlay
                 Color.clear
                     .tabItem {
@@ -305,7 +343,7 @@ struct CustomizableTabView<Content: View>: View {
                     }
                 }
             }
-            
+
             // More panel overlay (slides from right)
             if showingMorePanel {
                 MorePanelOverlay(
@@ -332,7 +370,10 @@ struct CustomizableTabView<Content: View>: View {
             TabEditorView(tabManager: tabManager)
         }
         .sheet(item: $selectedMoreTabForSheet) { selection in
-            content(selection.id)
+            NavigationView {
+                content(selection.id)
+            }
+            .navigationViewStyle(.stack)
         }
     }
 }
@@ -357,16 +398,16 @@ struct MorePanelOverlay<Content: View>: View {
     // Section definitions for cleaner code
     private let appleWatchTabs = ["appleWatch"]
     private let airlineAircraftTabs = ["airlineConfig", "aircraftDatabase"]
-    private let flightLoggingTabs = ["autoTimeLogging", "scannerEmailSettings", "scanner"]
-    private let scheduleOpsTabs = ["nocSchedule", "tripGeneration", "crewContacts"]
+    private let flightLoggingTabs = ["autoTimeLogging", "scannerEmailSettings", "scanner", "flightTracks"]
+    private let scheduleOpsTabs = ["nocSchedule", "nocAlertSettings", "tripGeneration", "crewContacts"]
     private let clocksTabs = ["clocks"]
     private let flightToolsTabs = ["airportDatabase", "gpsRaim", "weather", "areaGuide", "calculator", "flightOps"]
     private let trackingReportsTabs = ["flightTimeLimits", "rolling30Day", "far117Compliance", "fleetTracker", "reports", "electronicLogbook"]
-    private let documentsDataTabs = ["documents", "notes", "dataBackup"]
+    private let documentsDataTabs = ["documents", "notes", "dataBackup", "monthlySummary"]
     #if DEBUG
-    private let helpSupportTabs = ["help", "search", "subscriptionDebug"]  // ⭐ Added debug tab
+    private let helpSupportTabs = ["universalSearch", "help", "search", "subscriptionDebug"]
     #else
-    private let helpSupportTabs = ["help", "search"]
+    private let helpSupportTabs = ["universalSearch", "help", "search"]
     #endif
     private let jumpseatTabs = ["jumpseat"]
     private let betaTestingTabs = ["nocTest", "gpxTesting"]
@@ -376,7 +417,7 @@ struct MorePanelOverlay<Content: View>: View {
             HStack(spacing: 0) {
                 // Left side - transparent tap area to dismiss
                 Color.clear
-                    .frame(width: geometry.size.width * 0.35)
+                    .frame(width: geometry.size.width * 0.5)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         isShowing = false
@@ -428,7 +469,7 @@ struct MorePanelOverlay<Content: View>: View {
                     // Timer at bottom
                     timerSection
                 }
-                .frame(width: geometry.size.width * 0.65)
+                .frame(width: geometry.size.width * 0.5)
                 .background(LogbookTheme.navyDark)
             }
         }
@@ -439,8 +480,8 @@ struct MorePanelOverlay<Content: View>: View {
     private var panelHeader: some View {
         HStack {
             Text("More")
-                .font(.title2)
-                .fontWeight(.semibold)
+                .font(.title3)
+                .fontWeight(.regular)
                 .foregroundColor(.white)
             Spacer()
             
@@ -632,6 +673,7 @@ struct MorePanelOverlay<Content: View>: View {
         
         // Schedule & Operations
         case "nocSchedule": return LogbookTheme.accentGreen
+        case "nocAlertSettings": return .orange
         case "tripGeneration": return .purple
         case "crewContacts": return LogbookTheme.accentBlue
         
@@ -655,8 +697,10 @@ struct MorePanelOverlay<Content: View>: View {
         case "documents": return LogbookTheme.accentBlue
         case "notes": return .yellow
         case "dataBackup": return LogbookTheme.accentOrange
+        case "monthlySummary": return LogbookTheme.accentBlue
         
         // Help & Support
+        case "universalSearch": return .blue
         case "help": return .cyan
         case "search": return .purple
         #if DEBUG
@@ -669,11 +713,12 @@ struct MorePanelOverlay<Content: View>: View {
         // Beta Testing
         case "nocTest": return .purple
         case "gpxTesting": return .orange
-        
+        case "flightTracks": return .cyan
+
         default: return .blue
         }
     }
-    
+
     // MARK: - Timer Section
     private var timerSection: some View {
         VStack(spacing: 8) {
@@ -807,7 +852,7 @@ struct MorePanelButton: View {
                     .frame(width: 24)
                 
                 Text(title)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.system(size: 15, weight: .regular))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.leading)
                 
@@ -918,17 +963,17 @@ struct TabEditorRow: View {
     let tab: TabItem
     let isVisible: Bool
     let onToggle: () -> Void
-    
+
     var body: some View {
         HStack {
             Image(systemName: tab.systemImage)
                 .foregroundColor(.blue)
                 .frame(width: 24)
-            
+
             Text(tab.title)
-            
+
             Spacer()
-            
+
             if isVisible {
                 Button(action: onToggle) {
                     Image(systemName: "minus.circle.fill")
@@ -943,5 +988,617 @@ struct TabEditorRow: View {
                 .buttonStyle(PlainButtonStyle())
             }
         }
+    }
+}
+
+// MARK: - ═══════════════════════════════════════════════════════════════════════════
+// MARK: iPad Tab View System (Bottom tabs + Slide-out More Panel)
+// MARK: ═══════════════════════════════════════════════════════════════════════════
+
+/// iPad Tab View Wrapper - Custom bottom tab bar implementation for iPad
+/// SwiftUI's TabView doesn't reliably show bottom tabs on iPad, so we build our own
+struct iPadTabViewWrapper<Content: View>: View {
+    @StateObject private var tabManager = CustomizableTabManager.shared
+    @State private var selectedTab = "logbook"
+    @State private var showingTabEditor = false
+    @State private var showingMorePanel = false
+
+    let content: (String) -> Content
+
+    init(@ViewBuilder content: @escaping (String) -> Content) {
+        self.content = content
+    }
+
+    var body: some View {
+        ZStack {
+            // Main content area with custom bottom tab bar
+            VStack(spacing: 0) {
+                // Content area
+                NavigationStack {
+                    content(selectedTab)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                // Custom bottom tab bar for iPad
+                iPadBottomTabBar
+            }
+
+            // iPad More panel overlay (slides from right - optimized for iPad)
+            if showingMorePanel {
+                iPadMorePanelOverlay(
+                    moreTabs: tabManager.iPadMoreTabs,
+                    isShowing: $showingMorePanel,
+                    onTabSelected: { tabId in
+                        selectedTab = tabId
+                        showingMorePanel = false
+                    },
+                    onEditTabs: {
+                        showingTabEditor = true
+                    },
+                    onSelectMoreTab: { tabId in
+                        // On iPad, directly switch to the tab (no recent tab needed)
+                        selectedTab = tabId
+                        showingMorePanel = false
+                    },
+                    content: content
+                )
+                .transition(.move(edge: .trailing))
+                .animation(.easeInOut(duration: 0.3), value: showingMorePanel)
+            }
+        }
+        .sheet(isPresented: $showingTabEditor) {
+            iPadTabEditorView(tabManager: tabManager)
+        }
+    }
+
+    // MARK: - Custom iPad Bottom Tab Bar (supports up to 7 tabs + More)
+    private var iPadBottomTabBar: some View {
+        HStack(spacing: 0) {
+            // iPad visible tabs (up to 7)
+            ForEach(tabManager.iPadVisibleTabs) { tab in
+                iPadTabButton(
+                    title: tab.title,
+                    systemImage: tab.systemImage,
+                    isSelected: selectedTab == tab.id
+                ) {
+                    selectedTab = tab.id
+                }
+            }
+
+            // More button (only show if there are more tabs)
+            if !tabManager.iPadMoreTabs.isEmpty {
+                iPadTabButton(
+                    title: "More",
+                    systemImage: "ellipsis.circle.fill",
+                    isSelected: false
+                ) {
+                    showingMorePanel = true
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+        .background(
+            Rectangle()
+                .fill(LogbookTheme.navyDark)
+                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: -4)
+        )
+    }
+
+    // MARK: - iPad Tab Button
+    private func iPadTabButton(title: String, systemImage: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 22))
+                    .foregroundColor(isSelected ? LogbookTheme.accentBlue : .gray)
+
+                Text(title)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(isSelected ? LogbookTheme.accentBlue : .gray)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - iPad More Panel Overlay (Optimized for larger screens)
+struct iPadMorePanelOverlay<Content: View>: View {
+    let moreTabs: [TabItem]
+    @Binding var isShowing: Bool
+    let onTabSelected: (String) -> Void
+    let onEditTabs: () -> Void
+    let onSelectMoreTab: (String) -> Void
+    let content: (String) -> Content
+
+    @StateObject private var timer = FlexibleTimerManager.shared
+    @State private var showingTimerSettings = false
+
+    // Section definitions
+    private let appleWatchTabs = ["appleWatch"]
+    private let airlineAircraftTabs = ["airlineConfig", "aircraftDatabase"]
+    private let flightLoggingTabs = ["autoTimeLogging", "scannerEmailSettings", "scanner", "flightTracks"]
+    private let scheduleOpsTabs = ["nocSchedule", "nocAlertSettings", "tripGeneration", "crewContacts"]
+    private let clocksTabs = ["clocks"]
+    private let flightToolsTabs = ["airportDatabase", "gpsRaim", "weather", "areaGuide", "calculator", "flightOps"]
+    private let trackingReportsTabs = ["flightTimeLimits", "rolling30Day", "far117Compliance", "fleetTracker", "reports", "electronicLogbook"]
+    private let documentsDataTabs = ["documents", "notes", "dataBackup", "monthlySummary"]
+    #if DEBUG
+    private let helpSupportTabs = ["universalSearch", "help", "search", "subscriptionDebug"]
+    #else
+    private let helpSupportTabs = ["universalSearch", "help", "search"]
+    #endif
+    private let jumpseatTabs = ["jumpseat"]
+    private let betaTestingTabs = ["nocTest", "gpxTesting"]
+
+    var body: some View {
+        GeometryReader { geometry in
+            HStack(spacing: 0) {
+                // Left side - transparent tap area to dismiss (larger on iPad)
+                Color.black.opacity(0.4)
+                    .frame(width: geometry.size.width * 0.5)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            isShowing = false
+                        }
+                    }
+
+                // Right side - iPad-optimized More panel (single column, wider cards)
+                VStack(spacing: 0) {
+                    // Header
+                    iPadPanelHeader
+
+                    // Single-column scrolling list (better for text readability)
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            // Edit Tab Order button
+                            iPadMorePanelCard(
+                                icon: "slider.horizontal.3",
+                                iconColor: .blue,
+                                title: "Edit Tab Order",
+                                action: {
+                                    onEditTabs()
+                                    isShowing = false
+                                }
+                            )
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 8)
+
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                                .padding(.horizontal, 16)
+
+                            // All sections
+                            ForEach(allSections, id: \.title) { section in
+                                if !section.tabs.isEmpty {
+                                    iPadSectionView(section: section)
+                                }
+                            }
+                        }
+                        .padding(.bottom, 20)
+                    }
+
+                    Spacer()
+
+                    // Timer at bottom
+                    iPadTimerSection
+                }
+                .frame(width: geometry.size.width * 0.5)
+                .background(LogbookTheme.navyDark)
+            }
+        }
+        .edgesIgnoringSafeArea(.all)
+    }
+
+    // MARK: - All Sections Helper
+    private var allSections: [(title: String, tabs: [TabItem])] {
+        [
+            ("Apple Watch", moreTabs.filter { appleWatchTabs.contains($0.id) }),
+            ("Airline & Aircraft", moreTabs.filter { airlineAircraftTabs.contains($0.id) }),
+            ("Flight Logging", moreTabs.filter { flightLoggingTabs.contains($0.id) }),
+            ("Schedule & Operations", moreTabs.filter { scheduleOpsTabs.contains($0.id) }),
+            ("Clocks & Timers", moreTabs.filter { clocksTabs.contains($0.id) }),
+            ("Flight Tools", moreTabs.filter { flightToolsTabs.contains($0.id) }),
+            ("Tracking & Reports", moreTabs.filter { trackingReportsTabs.contains($0.id) }),
+            ("Documents & Data", moreTabs.filter { documentsDataTabs.contains($0.id) }),
+            ("Help & Support", moreTabs.filter { helpSupportTabs.contains($0.id) }),
+            ("Jumpseat Network", moreTabs.filter { jumpseatTabs.contains($0.id) }),
+            ("Beta Testing", moreTabs.filter { betaTestingTabs.contains($0.id) })
+        ]
+    }
+
+    // MARK: - Section View
+    @ViewBuilder
+    private func iPadSectionView(section: (title: String, tabs: [TabItem])) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(section.title.uppercased())
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.gray)
+                .padding(.leading, 20)
+                .padding(.top, 16)
+
+            ForEach(section.tabs) { tab in
+                iPadMorePanelCard(
+                    icon: tab.systemImage,
+                    iconColor: getIconColor(for: tab.id),
+                    title: tab.title,
+                    badge: tab.badge,
+                    action: { onSelectMoreTab(tab.id) }
+                )
+                .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    // MARK: - Panel Header
+    private var iPadPanelHeader: some View {
+        HStack {
+            Text("More")
+                .font(.title)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            Spacer()
+
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    isShowing = false
+                }
+            }) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title)
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 20)
+        .padding(.bottom, 12)
+    }
+
+    // MARK: - Icon Colors
+    private func getIconColor(for tabId: String) -> Color {
+        switch tabId {
+        case "appleWatch": return .pink
+        case "airlineConfig": return LogbookTheme.accentGreen
+        case "aircraftDatabase": return LogbookTheme.accentBlue
+        case "autoTimeLogging", "scannerEmailSettings", "scanner": return LogbookTheme.accentOrange
+        case "nocSchedule": return LogbookTheme.accentGreen
+        case "nocAlertSettings": return .orange
+        case "tripGeneration": return .purple
+        case "crewContacts": return LogbookTheme.accentBlue
+        case "clocks": return LogbookTheme.accentBlue
+        case "airportDatabase": return .cyan
+        case "gpsRaim": return .purple
+        case "weather": return .cyan
+        case "areaGuide": return LogbookTheme.accentGreen
+        case "calculator": return LogbookTheme.accentOrange
+        case "flightOps": return .purple
+        case "fleetTracker": return .indigo
+        case "reports": return LogbookTheme.accentGreen
+        case "electronicLogbook": return LogbookTheme.accentBlue
+        case "documents": return LogbookTheme.accentBlue
+        case "notes": return .yellow
+        case "dataBackup": return LogbookTheme.accentOrange
+        case "monthlySummary": return LogbookTheme.accentBlue
+        case "universalSearch": return .blue
+        case "help": return .cyan
+        case "search": return .purple
+        case "jumpseat": return .cyan
+        case "nocTest": return .purple
+        case "gpxTesting": return .orange
+        case "flightTracks": return .cyan
+        #if DEBUG
+        case "subscriptionDebug": return .orange
+        #endif
+        default: return .blue
+        }
+    }
+
+    // MARK: - iPad Timer Section
+    private var iPadTimerSection: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 16) {
+                // Time display with mode toggle
+                VStack(spacing: 4) {
+                    Text(formatCompactTime())
+                        .font(.system(size: 48, weight: .semibold, design: .monospaced))
+                        .monospacedDigit()
+                        .foregroundColor(timerDisplayColor())
+
+                    Text(timer.mode == .stopwatch ? "Stopwatch" : "Countdown")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+
+                // Mode toggle arrow
+                Button(action: {
+                    withAnimation {
+                        if timer.mode == .stopwatch {
+                            timer.switchMode(to: .countdown)
+                        } else {
+                            timer.switchMode(to: .stopwatch)
+                        }
+                    }
+                }) {
+                    Image(systemName: timer.mode == .stopwatch ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundColor(timer.mode == .stopwatch ? .green : .orange)
+                }
+            }
+
+            // Control buttons (larger for iPad)
+            HStack(spacing: 24) {
+                Button(action: {
+                    if timer.state == .running {
+                        timer.pauseTimer()
+                    } else {
+                        timer.startTimer()
+                    }
+                }) {
+                    Image(systemName: timer.state == .running ? "pause.fill" : "play.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.white)
+                        .frame(width: 56, height: 56)
+                        .background(timer.state == .running ? Color.orange : Color.green)
+                        .clipShape(Circle())
+                }
+
+                Button(action: {
+                    timer.stopTimer()
+                }) {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 24))
+                        .foregroundColor(.white)
+                        .frame(width: 56, height: 56)
+                        .background(Color.gray.opacity(0.5))
+                        .clipShape(Circle())
+                }
+
+                Button(action: {
+                    showingTimerSettings = true
+                }) {
+                    Image(systemName: "gear")
+                        .font(.system(size: 24))
+                        .foregroundColor(.white)
+                        .frame(width: 56, height: 56)
+                        .background(Color.blue.opacity(0.5))
+                        .clipShape(Circle())
+                }
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 20)
+        .background(LogbookTheme.navyLight)
+        .sheet(isPresented: $showingTimerSettings) {
+            TimerSettingsView(timer: timer)
+        }
+    }
+
+    private func formatCompactTime() -> String {
+        let totalSeconds = Int(timer.displayTime)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
+
+    private func timerDisplayColor() -> Color {
+        if timer.mode == .countdown && timer.displayTime <= 60 {
+            return .red
+        } else if timer.state == .running {
+            return timer.mode == .stopwatch ? .green : .orange
+        } else {
+            return .white
+        }
+    }
+}
+
+// MARK: - iPad More Panel Card
+struct iPadMorePanelCard: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    var badge: String? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .foregroundColor(iconColor)
+                    .font(.system(size: 22))
+                    .frame(width: 32, height: 32)
+                    .background(iconColor.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+
+                Spacer()
+
+                if let badge = badge {
+                    Text(badge)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.red)
+                        .clipShape(Capsule())
+                }
+
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.gray)
+                    .font(.system(size: 14))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(Color.white.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - ═══════════════════════════════════════════════════════════════════════════
+// MARK: iPad Tab Editor View (Supports 7 main tabs)
+// MARK: ═══════════════════════════════════════════════════════════════════════════
+
+struct iPadTabEditorView: View {
+    @ObservedObject var tabManager: CustomizableTabManager
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Customize your iPad tab bar. You can have up to 7 main tabs plus the More button.")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                        .padding(.top)
+
+                    Text("Tap + to add to main tabs, - to remove. Drag to reorder.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
+                }
+
+                List {
+                    Section("Main Tabs (\(tabManager.iPadVisibleTabs.count)/7)") {
+                        ForEach(tabManager.iPadVisibleTabs) { tab in
+                            iPadTabEditorRow(
+                                tab: tab,
+                                isVisible: true,
+                                onToggle: {
+                                    removeFromiPadVisible(tab)
+                                }
+                            )
+                        }
+                        .onMove { source, destination in
+                            var tabs = tabManager.iPadVisibleTabs
+                            tabs.move(fromOffsets: source, toOffset: destination)
+                            reorderTabs(tabs)
+                        }
+                    }
+
+                    Section("Available Tabs") {
+                        ForEach(tabManager.iPadMoreTabs) { tab in
+                            iPadTabEditorRow(
+                                tab: tab,
+                                isVisible: false,
+                                onToggle: {
+                                    if tabManager.iPadVisibleTabs.count < 7 {
+                                        addToiPadVisible(tab)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+                .environment(\.editMode, .constant(.active))
+            }
+            .navigationTitle("Edit iPad Tabs")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Reset") {
+                        tabManager.resetToDefaults()
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private func addToiPadVisible(_ tab: TabItem) {
+        // Mark the tab as visible
+        if let index = tabManager.availableTabs.firstIndex(where: { $0.id == tab.id }) {
+            tabManager.availableTabs[index].isVisible = true
+            tabManager.updateTabArrays()
+        }
+    }
+
+    private func removeFromiPadVisible(_ tab: TabItem) {
+        // Don't allow removing logbook
+        guard tab.id != "logbook" else { return }
+
+        if let index = tabManager.availableTabs.firstIndex(where: { $0.id == tab.id }) {
+            tabManager.availableTabs[index].isVisible = false
+            tabManager.updateTabArrays()
+        }
+    }
+
+    private func reorderTabs(_ tabs: [TabItem]) {
+        for (index, tab) in tabs.enumerated() {
+            if let originalIndex = tabManager.availableTabs.firstIndex(where: { $0.id == tab.id }) {
+                tabManager.availableTabs[originalIndex].order = index
+            }
+        }
+        tabManager.updateTabArrays()
+    }
+}
+
+// MARK: - iPad Tab Editor Row
+struct iPadTabEditorRow: View {
+    let tab: TabItem
+    let isVisible: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        HStack {
+            Image(systemName: tab.systemImage)
+                .foregroundColor(.blue)
+                .frame(width: 28)
+
+            Text(tab.title)
+                .font(.body)
+
+            Spacer()
+
+            if isVisible {
+                if tab.id != "logbook" {
+                    Button(action: onToggle) {
+                        Image(systemName: "minus.circle.fill")
+                            .foregroundColor(.red)
+                            .font(.title3)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                } else {
+                    // Logbook can't be removed
+                    Image(systemName: "lock.fill")
+                        .foregroundColor(.gray)
+                        .font(.caption)
+                }
+            } else {
+                Button(action: onToggle) {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.title3)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(.vertical, 4)
     }
 }

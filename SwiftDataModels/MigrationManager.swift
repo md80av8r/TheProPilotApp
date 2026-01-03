@@ -54,13 +54,13 @@ class MigrationManager {
             // Create logpages with legs
             for logpage in trip.logpages {
                 let sdLogpage = SDLogpage(from: logpage)
-                sdLogpage.trip = sdTrip
+                sdLogpage.owningTrip = sdTrip
                 context.insert(sdLogpage)
 
                 // Create legs within logpage
                 for (order, leg) in logpage.legs.enumerated() {
                     let sdLeg = SDFlightLeg(from: leg, order: order)
-                    sdLeg.logpage = sdLogpage
+                    sdLeg.parentLogpage = sdLogpage
                     context.insert(sdLeg)
                 }
             }
@@ -193,6 +193,8 @@ enum MigrationError: Error, LocalizedError {
     case appGroupNotAccessible
     case noBackupFound
     case migrationFailed(underlying: Error)
+    case cloudKitUnavailable
+    case noLegacyDataFound
 
     var errorDescription: String? {
         switch self {
@@ -202,6 +204,155 @@ enum MigrationError: Error, LocalizedError {
             return "No backup file found for rollback"
         case .migrationFailed(let error):
             return "Migration failed: \(error.localizedDescription)"
+        case .cloudKitUnavailable:
+            return "iCloud is not available"
+        case .noLegacyDataFound:
+            return "No legacy CloudKit data found to migrate"
+        }
+    }
+}
+
+// MARK: - CloudKit to SwiftData Migration Helper
+
+/// Migrates trips from OLD CloudKit "Trip" records to SwiftData's "CD_SDTrip" records.
+/// Use this when a user has legacy data in CloudKit from before the SwiftData migration.
+@MainActor
+class CloudKitMigrationHelper: ObservableObject {
+    static let shared = CloudKitMigrationHelper()
+
+    @Published var migrationStatus: MigrationStatus = .idle
+    @Published var progressMessage: String = ""
+    @Published var legacyTripCount: Int = 0
+    @Published var migratedCount: Int = 0
+
+    enum MigrationStatus {
+        case idle
+        case checking
+        case legacyDataFound(count: Int)
+        case migrating(progress: Double)
+        case completed(imported: Int, skipped: Int)
+        case failed(error: String)
+        case noLegacyData
+
+        var isInProgress: Bool {
+            switch self {
+            case .checking, .migrating:
+                return true
+            default:
+                return false
+            }
+        }
+    }
+
+    /// Checks if there are legacy CloudKit records that need migration
+    func checkForLegacyData() async {
+        migrationStatus = .checking
+        progressMessage = "Checking for legacy CloudKit data..."
+
+        // Check iCloud availability first
+        let (available, _, error) = await SwiftDataConfiguration.checkCloudKitStatus()
+        guard available else {
+            migrationStatus = .failed(error: error ?? "iCloud unavailable")
+            return
+        }
+
+        do {
+            // Use the deprecated method intentionally to check for old data
+            let legacyTrips = try await CloudKitManager.shared.fetchAllTrips()
+            legacyTripCount = legacyTrips.count
+
+            if legacyTrips.isEmpty {
+                migrationStatus = .noLegacyData
+                progressMessage = "No legacy CloudKit data found."
+            } else {
+                migrationStatus = .legacyDataFound(count: legacyTrips.count)
+                progressMessage = "Found \(legacyTrips.count) trips in legacy CloudKit format."
+            }
+        } catch {
+            migrationStatus = .failed(error: error.localizedDescription)
+            progressMessage = "Failed to check CloudKit: \(error.localizedDescription)"
+        }
+    }
+
+    /// Migrates legacy CloudKit data to SwiftData
+    /// - Parameter store: The SwiftDataLogBookStore to import into
+    /// - Parameter mergeWithExisting: If true, skips trips that already exist; if false, replaces duplicates
+    func migrateLegacyData(to store: SwiftDataLogBookStore, mergeWithExisting: Bool = true) async {
+        migrationStatus = .migrating(progress: 0)
+        progressMessage = "Starting migration..."
+        migratedCount = 0
+
+        do {
+            // Fetch legacy trips
+            let legacyTrips = try await CloudKitManager.shared.fetchAllTrips()
+
+            guard !legacyTrips.isEmpty else {
+                migrationStatus = .noLegacyData
+                return
+            }
+
+            let total = legacyTrips.count
+            var imported = 0
+            var skipped = 0
+
+            for (index, trip) in legacyTrips.enumerated() {
+                let progress = Double(index + 1) / Double(total)
+                migrationStatus = .migrating(progress: progress)
+                progressMessage = "Migrating trip \(index + 1) of \(total): #\(trip.tripNumber)"
+
+                // Check if trip already exists in SwiftData
+                let existingTrip = store.trips.first { $0.id == trip.id }
+
+                if existingTrip != nil && mergeWithExisting {
+                    print("⏭️ Migration: Skipping existing trip #\(trip.tripNumber)")
+                    skipped += 1
+                } else {
+                    // Import the trip
+                    if existingTrip != nil {
+                        // Replace mode - find index and delete existing first
+                        if let existingIndex = store.trips.firstIndex(where: { $0.id == trip.id }) {
+                            store.deleteTrip(at: IndexSet(integer: existingIndex))
+                        }
+                    }
+                    store.addTrip(trip)
+                    imported += 1
+                    print("✅ Migration: Imported trip #\(trip.tripNumber)")
+                }
+
+                migratedCount = imported
+            }
+
+            migrationStatus = .completed(imported: imported, skipped: skipped)
+            progressMessage = "Migration complete! Imported \(imported) trips, skipped \(skipped) duplicates."
+
+            print("☁️ CloudKit Migration Complete:")
+            print("   - Total legacy trips: \(total)")
+            print("   - Imported: \(imported)")
+            print("   - Skipped (already exist): \(skipped)")
+
+        } catch {
+            migrationStatus = .failed(error: error.localizedDescription)
+            progressMessage = "Migration failed: \(error.localizedDescription)"
+        }
+    }
+
+    /// Deletes all legacy CloudKit records after successful migration
+    /// This cleans up the old "Trip", "FlightLeg", "CrewMember" records
+    func cleanupLegacyRecords() async {
+        progressMessage = "Cleaning up legacy records..."
+
+        do {
+            let legacyTrips = try await CloudKitManager.shared.fetchAllTrips()
+
+            for trip in legacyTrips {
+                try await CloudKitManager.shared.deleteTrip(tripID: trip.id.uuidString)
+            }
+
+            progressMessage = "Cleaned up \(legacyTrips.count) legacy CloudKit records."
+            print("🗑️ Cleaned up \(legacyTrips.count) legacy CloudKit records")
+        } catch {
+            progressMessage = "Cleanup failed: \(error.localizedDescription)"
+            print("❌ Failed to cleanup legacy records: \(error)")
         }
     }
 }

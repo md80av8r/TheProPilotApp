@@ -14,7 +14,7 @@ import CloudKit
 class CloudKitManager: ObservableObject {
     static let shared = CloudKitManager()
     
-    private let container = CKContainer(identifier: "iCloud.com.jkadans.ProPilotApp")
+    private let container = CKContainer(identifier: "iCloud.com.jkadans.TheProPilotApp")
     private let privateDB: CKDatabase
     
     @Published var iCloudAvailable = false
@@ -136,10 +136,18 @@ class CloudKitManager: ObservableObject {
         }
     }
     
-    // MARK: - Save Trip to CloudKit
+    // MARK: - Save Trip to CloudKit (DEPRECATED)
+    /// ⚠️ LEGACY: This method saves to the OLD CloudKit record type "Trip".
+    /// SwiftData now handles sync automatically to "CD_SDTrip" records.
+    /// Only use for legacy sync compatibility.
+    /// Use SwiftDataLogBookStore.saveTrip() instead for proper CloudKit sync.
     func saveTrip(_ trip: Trip) async throws {
+        print("🚨 DEPRECATED: CloudKitManager.saveTrip() called!")
+        print("   ⚠️ This saves to OLD 'Trip' record type, NOT SwiftData's 'CD_SDTrip'")
+        print("   ⚠️ Data saved here will NOT sync with SwiftData!")
+        print("   ➡️ Use SwiftDataLogBookStore.saveTrip() instead")
         print("🔵 saveTrip() called for: \(trip.tripNumber) (ID: \(trip.id.uuidString))")
-        
+
         guard iCloudAvailable else {
             print("⚠️ iCloud not available - skipping CloudKit save")
             return
@@ -351,12 +359,19 @@ class CloudKitManager: ObservableObject {
         print("  ✅ Crew saved: \(crew.role) - \(crew.name)")
     }
     
-    // MARK: - Fetch All Trips
+    // MARK: - Fetch All Trips (Legacy)
+    /// ⚠️ LEGACY: This fetches from OLD "Trip" record type, NOT SwiftData's "CD_SDTrip".
+    /// Use this ONLY for migrating legacy data from old CloudKit records to SwiftData.
+    /// For normal operations, use SwiftDataLogBookStore.loadTrips() instead.
     func fetchAllTrips() async throws -> [Trip] {
+        print("⚠️ DEPRECATED: CloudKitManager.fetchAllTrips() - reads OLD 'Trip' records")
+        print("   ➡️ For normal use: SwiftDataLogBookStore.loadTrips()")
+        print("   ➡️ This method is for LEGACY DATA MIGRATION only")
+
         guard iCloudAvailable else {
             return []
         }
-        
+
         let query = CKQuery(recordType: "Trip", predicate: NSPredicate(value: true))
         
         let (matchResults, _) = try await privateDB.records(matching: query)
@@ -492,6 +507,140 @@ class CloudKitManager: ObservableObject {
         try await deleteAssociatedRecords(for: tripID)
         
         print("✅ Trip deleted from CloudKit: \(tripID)")
+    }
+    
+    // MARK: - ═══════════════════════════════════════════════════════════════
+    // MARK: Flight Track Sync (KML/GPX GPS Data)
+    // MARK: ═══════════════════════════════════════════════════════════════
+    
+    /// Save a flight track to iCloud (private sync across user's devices)
+    func saveFlightTrack(legId: UUID, trackData: Data) async throws {
+        guard iCloudAvailable else {
+            print("⚠️ iCloud not available, skipping flight track sync")
+            return
+        }
+        
+        print("📤 Uploading flight track for leg: \(legId.uuidString)")
+        
+        let recordID = CKRecord.ID(recordName: "track_\(legId.uuidString)")
+        
+        var trackRecord: CKRecord
+        do {
+            trackRecord = try await privateDB.record(for: recordID)
+            print("📝 Found existing track record, will update")
+        } catch {
+            trackRecord = CKRecord(recordType: "FlightTrack", recordID: recordID)
+            print("✨ Creating new track record")
+        }
+        
+        // Store metadata
+        trackRecord["legID"] = legId.uuidString as NSString
+        trackRecord["uploadDate"] = Date() as NSDate
+        trackRecord["dataSize"] = trackData.count as NSNumber
+        
+        // Store track data as CKAsset (efficient for large files)
+        // This automatically handles compression and chunking
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("track_\(legId.uuidString).json")
+        
+        do {
+            try trackData.write(to: tempURL)
+            let asset = CKAsset(fileURL: tempURL)
+            trackRecord["trackData"] = asset
+            
+            // Upload to iCloud
+            let savedRecord = try await privateDB.save(trackRecord)
+            print("✅ Flight track uploaded: \(legId.uuidString) (\(trackData.count) bytes)")
+            
+            // Cleanup temp file
+            try? FileManager.default.removeItem(at: tempURL)
+            
+        } catch {
+            print("❌ Failed to upload flight track: \(error)")
+            try? FileManager.default.removeItem(at: tempURL)
+            throw error
+        }
+    }
+    
+    /// Fetch a flight track from iCloud
+    func fetchFlightTrack(legId: UUID) async throws -> Data? {
+        guard iCloudAvailable else {
+            print("⚠️ iCloud not available")
+            return nil
+        }
+        
+        let recordID = CKRecord.ID(recordName: "track_\(legId.uuidString)")
+        
+        do {
+            let record = try await privateDB.record(for: recordID)
+            
+            guard let asset = record["trackData"] as? CKAsset,
+                  let fileURL = asset.fileURL else {
+                print("⚠️ No track data found in record")
+                return nil
+            }
+            
+            let data = try Data(contentsOf: fileURL)
+            print("✅ Flight track downloaded: \(legId.uuidString) (\(data.count) bytes)")
+            return data
+            
+        } catch let error as CKError where error.code == .unknownItem {
+            print("ℹ️ No flight track found for leg: \(legId.uuidString)")
+            return nil
+        } catch {
+            print("❌ Failed to fetch flight track: \(error)")
+            throw error
+        }
+    }
+    
+    /// Delete a flight track from iCloud
+    func deleteFlightTrack(legId: UUID) async throws {
+        guard iCloudAvailable else { return }
+        
+        let recordID = CKRecord.ID(recordName: "track_\(legId.uuidString)")
+        
+        do {
+            try await privateDB.deleteRecord(withID: recordID)
+            print("✅ Flight track deleted from iCloud: \(legId.uuidString)")
+        } catch let error as CKError where error.code == .unknownItem {
+            // Already deleted or never existed
+            print("ℹ️ Flight track not found in iCloud (already deleted): \(legId.uuidString)")
+        } catch {
+            print("❌ Failed to delete flight track: \(error)")
+            throw error
+        }
+    }
+    
+    /// Fetch all flight tracks for a trip (for bulk sync)
+    func fetchFlightTracksForTrip(legIds: [UUID]) async throws -> [UUID: Data] {
+        guard iCloudAvailable else { return [:] }
+        
+        var tracks: [UUID: Data] = [:]
+        
+        print("📥 Downloading \(legIds.count) flight tracks...")
+        
+        for legId in legIds {
+            if let data = try await fetchFlightTrack(legId: legId) {
+                tracks[legId] = data
+            }
+        }
+        
+        print("✅ Downloaded \(tracks.count)/\(legIds.count) flight tracks")
+        return tracks
+    }
+    
+    /// Check if a flight track exists in iCloud (without downloading it)
+    func flightTrackExists(legId: UUID) async -> Bool {
+        guard iCloudAvailable else { return false }
+        
+        let recordID = CKRecord.ID(recordName: "track_\(legId.uuidString)")
+        
+        do {
+            _ = try await privateDB.record(for: recordID)
+            return true
+        } catch {
+            return false
+        }
     }
 }
 

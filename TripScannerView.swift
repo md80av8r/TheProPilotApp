@@ -207,7 +207,8 @@ struct TripScannerView: View {
                         showingCreateTrip = false
                     },
                     onEdit: {},
-                    onScanLogPage: {}
+                    onScanLogPage: {},
+                    documentManager: documentStore
                 )
                 .navigationTitle("Create Trip")
                 .navigationBarItems(trailing: Button("Cancel") {

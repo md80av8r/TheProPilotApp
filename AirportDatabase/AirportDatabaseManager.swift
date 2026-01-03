@@ -13,6 +13,144 @@ enum AirportSource: String, Codable {
     case cloudKit = "CloudKit"
 }
 
+// MARK: - Preferred FBO Info (User-selected per airport)
+struct PreferredFBO: Codable, Identifiable {
+    var id: String { airportCode }
+    let airportCode: String
+    var fboName: String
+    var unicomFrequency: String?
+    var phoneNumber: String?
+    var notes: String?
+    var notifyAtDistance: Double  // nautical miles (default 120)
+    var lastUpdated: Date
+
+    init(airportCode: String, fboName: String, unicomFrequency: String? = nil, phoneNumber: String? = nil, notes: String? = nil, notifyAtDistance: Double = 120, lastUpdated: Date = Date()) {
+        self.airportCode = airportCode
+        self.fboName = fboName
+        self.unicomFrequency = unicomFrequency
+        self.phoneNumber = phoneNumber
+        self.notes = notes
+        self.notifyAtDistance = notifyAtDistance
+        self.lastUpdated = lastUpdated
+    }
+}
+
+// MARK: - Crowdsourced FBO Data (CloudKit synced)
+struct CrowdsourcedFBO: Codable, Identifiable {
+    let id: UUID
+    let airportCode: String
+    var name: String
+    var phoneNumber: String?
+    var unicomFrequency: String?
+    var website: String?
+
+    // Fuel Prices
+    var jetAPrice: Double?
+    var avGasPrice: Double?
+    var fuelPriceDate: Date?
+    var fuelPriceReporter: String?
+
+    // Amenities
+    var hasCrewCars: Bool
+    var hasCrewLounge: Bool
+    var hasCatering: Bool
+    var hasMaintenance: Bool
+    var hasHangars: Bool
+    var hasDeice: Bool
+    var hasOxygen: Bool
+    var hasGPU: Bool
+    var hasLav: Bool
+
+    // Fees
+    var handlingFee: Double?
+    var overnightFee: Double?
+    var rampFee: Double?
+    var rampFeeWaived: Bool  // waived with fuel purchase
+
+    // Ratings
+    var averageRating: Double?
+    var ratingCount: Int?
+
+    // Metadata
+    var lastUpdated: Date
+    var updatedBy: String?
+    var cloudKitRecordID: String?
+    var isVerified: Bool
+
+    init(
+        id: UUID = UUID(),
+        airportCode: String,
+        name: String,
+        phoneNumber: String? = nil,
+        unicomFrequency: String? = nil,
+        website: String? = nil,
+        jetAPrice: Double? = nil,
+        avGasPrice: Double? = nil,
+        fuelPriceDate: Date? = nil,
+        fuelPriceReporter: String? = nil,
+        hasCrewCars: Bool = false,
+        hasCrewLounge: Bool = false,
+        hasCatering: Bool = false,
+        hasMaintenance: Bool = false,
+        hasHangars: Bool = false,
+        hasDeice: Bool = false,
+        hasOxygen: Bool = false,
+        hasGPU: Bool = false,
+        hasLav: Bool = false,
+        handlingFee: Double? = nil,
+        overnightFee: Double? = nil,
+        rampFee: Double? = nil,
+        rampFeeWaived: Bool = false,
+        averageRating: Double? = nil,
+        ratingCount: Int? = nil,
+        lastUpdated: Date = Date(),
+        updatedBy: String? = nil,
+        cloudKitRecordID: String? = nil,
+        isVerified: Bool = false
+    ) {
+        self.id = id
+        self.airportCode = airportCode
+        self.name = name
+        self.phoneNumber = phoneNumber
+        self.unicomFrequency = unicomFrequency
+        self.website = website
+        self.jetAPrice = jetAPrice
+        self.avGasPrice = avGasPrice
+        self.fuelPriceDate = fuelPriceDate
+        self.fuelPriceReporter = fuelPriceReporter
+        self.hasCrewCars = hasCrewCars
+        self.hasCrewLounge = hasCrewLounge
+        self.hasCatering = hasCatering
+        self.hasMaintenance = hasMaintenance
+        self.hasHangars = hasHangars
+        self.hasDeice = hasDeice
+        self.hasOxygen = hasOxygen
+        self.hasGPU = hasGPU
+        self.hasLav = hasLav
+        self.handlingFee = handlingFee
+        self.overnightFee = overnightFee
+        self.rampFee = rampFee
+        self.rampFeeWaived = rampFeeWaived
+        self.averageRating = averageRating
+        self.ratingCount = ratingCount
+        self.lastUpdated = lastUpdated
+        self.updatedBy = updatedBy
+        self.cloudKitRecordID = cloudKitRecordID
+        self.isVerified = isVerified
+    }
+
+    /// Format fuel price age for display
+    var fuelPriceAge: String? {
+        guard let date = fuelPriceDate else { return nil }
+        let days = Calendar.current.dateComponents([.day], from: date, to: Date()).day ?? 0
+        if days == 0 { return "Today" }
+        if days == 1 { return "Yesterday" }
+        if days < 7 { return "\(days) days ago" }
+        if days < 30 { return "\(days / 7) weeks ago" }
+        return "\(days / 30) months ago"
+    }
+}
+
 // MARK: - Airport Info Model
 struct AirportInfo: Codable, Identifiable {
     let id = UUID()
@@ -24,12 +162,61 @@ struct AirportInfo: Codable, Identifiable {
     let dateAdded: Date
     var averageRating: Double?
     var reviewCount: Int?
-    
+
+    // Frequency Data (optional, from CloudKit or user-set)
+    var towerFrequency: String?
+    var groundFrequency: String?
+    var atisFrequency: String?
+    var unicomFrequency: String?
+    var ctafFrequency: String?
+
+    // Location Details (from CloudKit enrichment)
+    var city: String?
+    var state: String?              // State/province code (e.g., "MI", "ON")
+    var stateName: String?          // Full state/province name (e.g., "Michigan", "Ontario")
+    var countryCode: String?        // ISO country code (e.g., "US", "CA")
+    var countryName: String?        // Full country name (e.g., "United States", "Canada")
+    var regionName: String?         // Full region name (same as stateName for most cases)
+    var elevation: String?          // Elevation string (e.g., "1234 ft")
+    var elevationFeet: Int?         // Elevation in feet (numeric)
+
+    // Runway Data (from CloudKit)
+    var longestRunway: Int?         // Longest runway in feet
+    var runwaySurface: String?      // Surface type (e.g., "ASP", "CON")
+    var allRunways: String?         // Pipe-delimited runway info: "09/27:6000'ASP|18/36:4500'CON"
+    var hasLightedRunway: Bool?
+
+    // All Frequencies (from CloudKit - pipe-delimited)
+    var allFrequencies: String?     // Pipe-delimited: "TWR:118.7|GND:121.9|ATIS:127.25"
+
+    // Navaid Data (from CloudKit)
+    var navaids: String?            // Pipe-delimited: "DTW:VOR:117.4|DXO:NDB:344"
+    var navaidCount: Int?
+    var vorIdent: String?           // Primary VOR identifier
+    var vorFrequency: String?       // Primary VOR frequency
+    var ndbIdent: String?           // Primary NDB identifier
+    var ndbFrequency: String?       // Primary NDB frequency
+    var dmeIdent: String?           // Primary DME identifier
+    var dmeChannel: String?         // Primary DME channel
+
+    // Local Comments/Tips (from CloudKit)
+    var localComments: String?      // Pipe-delimited local pilot tips
+    var commentCount: Int?
+
+    // External Links (from CloudKit)
+    var wikipediaLink: String?      // Wikipedia article URL
+    var homeLink: String?           // Airport's official website
+
     enum CodingKeys: String, CodingKey {
         case icaoCode, name, timeZone, source, dateAdded, latitude, longitude, averageRating, reviewCount
+        case towerFrequency, groundFrequency, atisFrequency, unicomFrequency, ctafFrequency
+        case city, state, stateName, countryCode, countryName, regionName, elevation, elevationFeet
+        case longestRunway, runwaySurface, allRunways, hasLightedRunway, allFrequencies
+        case navaids, navaidCount, vorIdent, vorFrequency, ndbIdent, ndbFrequency, dmeIdent, dmeChannel
+        case localComments, commentCount, wikipediaLink, homeLink
     }
-    
-    init(icaoCode: String, name: String, coordinate: CLLocationCoordinate2D, timeZone: String? = nil, source: AirportSource = .csvImport, dateAdded: Date = Date(), averageRating: Double? = nil, reviewCount: Int? = nil) {
+
+    init(icaoCode: String, name: String, coordinate: CLLocationCoordinate2D, timeZone: String? = nil, source: AirportSource = .csvImport, dateAdded: Date = Date(), averageRating: Double? = nil, reviewCount: Int? = nil, towerFrequency: String? = nil, groundFrequency: String? = nil, atisFrequency: String? = nil, unicomFrequency: String? = nil, ctafFrequency: String? = nil, city: String? = nil, state: String? = nil, stateName: String? = nil, countryCode: String? = nil, countryName: String? = nil, regionName: String? = nil, elevation: String? = nil, elevationFeet: Int? = nil, longestRunway: Int? = nil, runwaySurface: String? = nil, allRunways: String? = nil, hasLightedRunway: Bool? = nil, allFrequencies: String? = nil, navaids: String? = nil, navaidCount: Int? = nil, vorIdent: String? = nil, vorFrequency: String? = nil, ndbIdent: String? = nil, ndbFrequency: String? = nil, dmeIdent: String? = nil, dmeChannel: String? = nil, localComments: String? = nil, commentCount: Int? = nil, wikipediaLink: String? = nil, homeLink: String? = nil) {
         self.icaoCode = icaoCode
         self.name = name
         self.coordinate = coordinate
@@ -38,8 +225,38 @@ struct AirportInfo: Codable, Identifiable {
         self.dateAdded = dateAdded
         self.averageRating = averageRating
         self.reviewCount = reviewCount
+        self.towerFrequency = towerFrequency
+        self.groundFrequency = groundFrequency
+        self.atisFrequency = atisFrequency
+        self.unicomFrequency = unicomFrequency
+        self.ctafFrequency = ctafFrequency
+        self.city = city
+        self.state = state
+        self.stateName = stateName
+        self.countryCode = countryCode
+        self.countryName = countryName
+        self.regionName = regionName
+        self.elevation = elevation
+        self.elevationFeet = elevationFeet
+        self.longestRunway = longestRunway
+        self.runwaySurface = runwaySurface
+        self.allRunways = allRunways
+        self.hasLightedRunway = hasLightedRunway
+        self.allFrequencies = allFrequencies
+        self.navaids = navaids
+        self.navaidCount = navaidCount
+        self.vorIdent = vorIdent
+        self.vorFrequency = vorFrequency
+        self.ndbIdent = ndbIdent
+        self.ndbFrequency = ndbFrequency
+        self.dmeIdent = dmeIdent
+        self.dmeChannel = dmeChannel
+        self.localComments = localComments
+        self.commentCount = commentCount
+        self.wikipediaLink = wikipediaLink
+        self.homeLink = homeLink
     }
-    
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         icaoCode = try c.decode(String.self, forKey: .icaoCode)
@@ -52,8 +269,38 @@ struct AirportInfo: Codable, Identifiable {
         dateAdded = try c.decode(Date.self, forKey: .dateAdded)
         averageRating = try c.decodeIfPresent(Double.self, forKey: .averageRating)
         reviewCount = try c.decodeIfPresent(Int.self, forKey: .reviewCount)
+        towerFrequency = try c.decodeIfPresent(String.self, forKey: .towerFrequency)
+        groundFrequency = try c.decodeIfPresent(String.self, forKey: .groundFrequency)
+        atisFrequency = try c.decodeIfPresent(String.self, forKey: .atisFrequency)
+        unicomFrequency = try c.decodeIfPresent(String.self, forKey: .unicomFrequency)
+        ctafFrequency = try c.decodeIfPresent(String.self, forKey: .ctafFrequency)
+        city = try c.decodeIfPresent(String.self, forKey: .city)
+        state = try c.decodeIfPresent(String.self, forKey: .state)
+        stateName = try c.decodeIfPresent(String.self, forKey: .stateName)
+        countryCode = try c.decodeIfPresent(String.self, forKey: .countryCode)
+        countryName = try c.decodeIfPresent(String.self, forKey: .countryName)
+        regionName = try c.decodeIfPresent(String.self, forKey: .regionName)
+        elevation = try c.decodeIfPresent(String.self, forKey: .elevation)
+        elevationFeet = try c.decodeIfPresent(Int.self, forKey: .elevationFeet)
+        longestRunway = try c.decodeIfPresent(Int.self, forKey: .longestRunway)
+        runwaySurface = try c.decodeIfPresent(String.self, forKey: .runwaySurface)
+        allRunways = try c.decodeIfPresent(String.self, forKey: .allRunways)
+        hasLightedRunway = try c.decodeIfPresent(Bool.self, forKey: .hasLightedRunway)
+        allFrequencies = try c.decodeIfPresent(String.self, forKey: .allFrequencies)
+        navaids = try c.decodeIfPresent(String.self, forKey: .navaids)
+        navaidCount = try c.decodeIfPresent(Int.self, forKey: .navaidCount)
+        vorIdent = try c.decodeIfPresent(String.self, forKey: .vorIdent)
+        vorFrequency = try c.decodeIfPresent(String.self, forKey: .vorFrequency)
+        ndbIdent = try c.decodeIfPresent(String.self, forKey: .ndbIdent)
+        ndbFrequency = try c.decodeIfPresent(String.self, forKey: .ndbFrequency)
+        dmeIdent = try c.decodeIfPresent(String.self, forKey: .dmeIdent)
+        dmeChannel = try c.decodeIfPresent(String.self, forKey: .dmeChannel)
+        localComments = try c.decodeIfPresent(String.self, forKey: .localComments)
+        commentCount = try c.decodeIfPresent(Int.self, forKey: .commentCount)
+        wikipediaLink = try c.decodeIfPresent(String.self, forKey: .wikipediaLink)
+        homeLink = try c.decodeIfPresent(String.self, forKey: .homeLink)
     }
-    
+
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(icaoCode, forKey: .icaoCode)
@@ -65,6 +312,99 @@ struct AirportInfo: Codable, Identifiable {
         try c.encode(dateAdded, forKey: .dateAdded)
         try c.encodeIfPresent(averageRating, forKey: .averageRating)
         try c.encodeIfPresent(reviewCount, forKey: .reviewCount)
+        try c.encodeIfPresent(towerFrequency, forKey: .towerFrequency)
+        try c.encodeIfPresent(groundFrequency, forKey: .groundFrequency)
+        try c.encodeIfPresent(atisFrequency, forKey: .atisFrequency)
+        try c.encodeIfPresent(unicomFrequency, forKey: .unicomFrequency)
+        try c.encodeIfPresent(ctafFrequency, forKey: .ctafFrequency)
+        try c.encodeIfPresent(city, forKey: .city)
+        try c.encodeIfPresent(state, forKey: .state)
+        try c.encodeIfPresent(stateName, forKey: .stateName)
+        try c.encodeIfPresent(countryCode, forKey: .countryCode)
+        try c.encodeIfPresent(countryName, forKey: .countryName)
+        try c.encodeIfPresent(regionName, forKey: .regionName)
+        try c.encodeIfPresent(elevation, forKey: .elevation)
+        try c.encodeIfPresent(elevationFeet, forKey: .elevationFeet)
+        try c.encodeIfPresent(longestRunway, forKey: .longestRunway)
+        try c.encodeIfPresent(runwaySurface, forKey: .runwaySurface)
+        try c.encodeIfPresent(allRunways, forKey: .allRunways)
+        try c.encodeIfPresent(hasLightedRunway, forKey: .hasLightedRunway)
+        try c.encodeIfPresent(allFrequencies, forKey: .allFrequencies)
+        try c.encodeIfPresent(navaids, forKey: .navaids)
+        try c.encodeIfPresent(navaidCount, forKey: .navaidCount)
+        try c.encodeIfPresent(vorIdent, forKey: .vorIdent)
+        try c.encodeIfPresent(vorFrequency, forKey: .vorFrequency)
+        try c.encodeIfPresent(ndbIdent, forKey: .ndbIdent)
+        try c.encodeIfPresent(ndbFrequency, forKey: .ndbFrequency)
+        try c.encodeIfPresent(dmeIdent, forKey: .dmeIdent)
+        try c.encodeIfPresent(dmeChannel, forKey: .dmeChannel)
+        try c.encodeIfPresent(localComments, forKey: .localComments)
+        try c.encodeIfPresent(commentCount, forKey: .commentCount)
+        try c.encodeIfPresent(wikipediaLink, forKey: .wikipediaLink)
+        try c.encodeIfPresent(homeLink, forKey: .homeLink)
+    }
+
+    /// Get the primary contact frequency (UNICOM or CTAF for non-towered, Tower for towered)
+    var primaryContactFrequency: String? {
+        unicomFrequency ?? ctafFrequency ?? towerFrequency
+    }
+
+    /// Get display-friendly location string (e.g., "Detroit, Michigan, United States")
+    var locationString: String {
+        var parts: [String] = []
+        if let city = city, !city.isEmpty { parts.append(city) }
+        if let stateName = stateName, !stateName.isEmpty { parts.append(stateName) }
+        else if let state = state, !state.isEmpty { parts.append(state) }
+        if let countryName = countryName, !countryName.isEmpty { parts.append(countryName) }
+        else if let countryCode = countryCode, !countryCode.isEmpty { parts.append(countryCode) }
+        return parts.joined(separator: ", ")
+    }
+
+    /// Get parsed runway list from allRunways string
+    var parsedRunways: [(name: String, length: String, surface: String)] {
+        guard let runways = allRunways, !runways.isEmpty else { return [] }
+        return runways.components(separatedBy: "|").compactMap { runway in
+            // Format: "09/27:6000'ASP"
+            let parts = runway.components(separatedBy: ":")
+            guard parts.count >= 2 else { return nil }
+            let name = parts[0]
+            let details = parts[1]
+            // Parse length and surface from "6000'ASP"
+            if let apostropheIndex = details.firstIndex(of: "'") {
+                let length = String(details[..<apostropheIndex])
+                let surface = String(details[details.index(after: apostropheIndex)...])
+                return (name: name, length: length + " ft", surface: surface)
+            }
+            return (name: name, length: details, surface: "")
+        }
+    }
+
+    /// Get parsed frequency list from allFrequencies string
+    var parsedFrequencies: [(type: String, frequency: String)] {
+        guard let freqs = allFrequencies, !freqs.isEmpty else { return [] }
+        return freqs.components(separatedBy: "|").compactMap { freq in
+            // Format: "TWR:118.7"
+            let parts = freq.components(separatedBy: ":")
+            guard parts.count >= 2 else { return nil }
+            return (type: parts[0], frequency: parts[1])
+        }
+    }
+
+    /// Get parsed navaid list from navaids string
+    var parsedNavaids: [(ident: String, type: String, frequency: String)] {
+        guard let navs = navaids, !navs.isEmpty else { return [] }
+        return navs.components(separatedBy: "|").compactMap { nav in
+            // Format: "DTW:VOR:117.4"
+            let parts = nav.components(separatedBy: ":")
+            guard parts.count >= 3 else { return nil }
+            return (ident: parts[0], type: parts[1], frequency: parts[2])
+        }
+    }
+
+    /// Get parsed local comments
+    var parsedComments: [String] {
+        guard let comments = localComments, !comments.isEmpty else { return [] }
+        return comments.components(separatedBy: " | ").filter { !$0.isEmpty }
     }
 }
 
@@ -134,19 +474,25 @@ class AirportDatabaseManager: ObservableObject {
     
     @Published var airports: [String: AirportInfo] = [:]  // ICAO code -> AirportInfo
     @Published var pilotReviews: [String: [PilotReview]] = [:]  // ICAO code -> Reviews
+    @Published var preferredFBOs: [String: PreferredFBO] = [:]  // ICAO code -> Preferred FBO
+    @Published var crowdsourcedFBOs: [String: [CrowdsourcedFBO]] = [:]  // ICAO code -> FBOs at airport
     @Published var isLoading = false
     @Published var loadingMessage: String = ""
     @Published var lastDatabaseUpdate: Date?
 
-    private let container = CKContainer(identifier: "iCloud.com.jkadans.ProPilotApp")
+    private let container = CKContainer(identifier: "iCloud.com.jkadans.TheProPilotApp")
     private let cacheKey = "CachedAirportDatabase"
     private let reviewsCacheKey = "CachedPilotReviews"
+    private let preferredFBOsCacheKey = "CachedPreferredFBOs"
+    private let crowdsourcedFBOsCacheKey = "CachedCrowdsourcedFBOs"
     private let lastUpdateKey = "AirportDatabaseLastUpdate"
     private let userDefaults = UserDefaults.shared
     private let csvLoadedKey = "CSVAirportsLoaded"
 
     private init() {
         loadLocalData()
+        loadCachedPreferredFBOs()
+        loadCachedCrowdsourcedFBOs()
     }
     
     // MARK: - Initialization & Loading
@@ -384,11 +730,54 @@ class AirportDatabaseManager: ObservableObject {
               let lon = record["longitude"] as? Double ?? record["lon"] as? Double else {
             return nil
         }
-        
+
         let timezone = record["timezoneId"] as? String ?? record["timezone"] as? String
         let avgRating = record["averageRating"] as? Double
         let reviewCount = record["reviewCount"] as? Int
-        
+
+        // Location fields
+        let city = record["city"] as? String ?? record["municipality"] as? String
+        let state = record["state"] as? String
+        let stateName = record["stateName"] as? String ?? record["regionName"] as? String
+        let countryCode = record["countryCode"] as? String ?? record["country"] as? String
+        let countryName = record["countryName"] as? String
+        let regionName = record["regionName"] as? String
+
+        // Elevation
+        let elevation = record["elevation"] as? String
+        let elevationFeet = record["elevationInteger"] as? Int
+
+        // Runway data
+        let longestRunway = record["longestRunway"] as? Int
+        let runwaySurface = record["runwaySurface"] as? String
+        let allRunways = record["allRunways"] as? String
+        let hasLightedRunwayStr = record["hasLightedRunway"] as? String
+        let hasLightedRunway = hasLightedRunwayStr == "yes"
+
+        // Frequency data
+        let towerFrequency = record["towerFrequency"] as? String
+        let groundFrequency = record["groundFrequency"] as? String
+        let atisFrequency = record["atisFrequency"] as? String
+        let allFrequencies = record["frequencies"] as? String
+
+        // Navaid data
+        let navaids = record["navaids"] as? String
+        let navaidCount = record["navaidCount"] as? Int
+        let vorIdent = record["vorIdent"] as? String
+        let vorFrequency = record["vorFrequency"] as? String
+        let ndbIdent = record["ndbIdent"] as? String
+        let ndbFrequency = record["ndbFrequency"] as? String
+        let dmeIdent = record["dmeIdent"] as? String
+        let dmeChannel = record["dmeChannel"] as? String
+
+        // Comments
+        let localComments = record["localComments"] as? String
+        let commentCount = record["commentCount"] as? Int
+
+        // External links
+        let wikipediaLink = record["wikipediaLink"] as? String ?? record["wikipedia_link"] as? String
+        let homeLink = record["homeLink"] as? String ?? record["home_link"] as? String
+
         return AirportInfo(
             icaoCode: icao.uppercased(),
             name: name,
@@ -397,7 +786,35 @@ class AirportDatabaseManager: ObservableObject {
             source: .cloudKit,
             dateAdded: Date(),
             averageRating: avgRating,
-            reviewCount: reviewCount
+            reviewCount: reviewCount,
+            towerFrequency: towerFrequency,
+            groundFrequency: groundFrequency,
+            atisFrequency: atisFrequency,
+            city: city,
+            state: state,
+            stateName: stateName,
+            countryCode: countryCode,
+            countryName: countryName,
+            regionName: regionName,
+            elevation: elevation,
+            elevationFeet: elevationFeet,
+            longestRunway: longestRunway,
+            runwaySurface: runwaySurface,
+            allRunways: allRunways,
+            hasLightedRunway: hasLightedRunway,
+            allFrequencies: allFrequencies,
+            navaids: navaids,
+            navaidCount: navaidCount,
+            vorIdent: vorIdent,
+            vorFrequency: vorFrequency,
+            ndbIdent: ndbIdent,
+            ndbFrequency: ndbFrequency,
+            dmeIdent: dmeIdent,
+            dmeChannel: dmeChannel,
+            localComments: localComments,
+            commentCount: commentCount,
+            wikipediaLink: wikipediaLink,
+            homeLink: homeLink
         )
     }
     
@@ -531,7 +948,8 @@ class AirportDatabaseManager: ObservableObject {
         let publicDB = container.publicCloudDatabase
         let predicate = NSPredicate(format: "airportCode == %@", icaoCode.uppercased())
         let query = CKQuery(recordType: "PilotReview", predicate: predicate)
-        query.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+        // Sort disabled until CloudKit schema marks 'date' field as sortable
+        // query.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
         
         do {
             let results = try await publicDB.records(matching: query)
@@ -543,6 +961,9 @@ class AirportDatabaseManager: ObservableObject {
                     reviews.append(review)
                 }
             }
+            
+            // Sort reviews in-memory by date (newest first)
+            reviews.sort { $0.date > $1.date }
 
             // Capture the final value for MainActor (Swift 6 concurrency fix)
             let finalReviews = reviews
@@ -843,21 +1264,313 @@ class AirportDatabaseManager: ObservableObject {
     /// Reset and reload the airport database (use if corrupted)
     func resetDatabase() {
         print("🔄 Resetting airport database...")
-        
+
         // Clear all caches
         userDefaults.removeObject(forKey: cacheKey)
         userDefaults.removeObject(forKey: reviewsCacheKey)
         userDefaults.removeObject(forKey: lastUpdateKey)
         userDefaults.removeObject(forKey: csvLoadedKey)
-        
+
         // Clear in-memory data
         airports.removeAll()
         pilotReviews.removeAll()
         lastDatabaseUpdate = nil
-        
+
         // Reload from CSV
         loadLocalData()
-        
+
         print("✅ Database reset complete")
+    }
+
+    // MARK: - Preferred FBO Management
+
+    /// Load cached preferred FBOs
+    private func loadCachedPreferredFBOs() {
+        guard let data = userDefaults.data(forKey: preferredFBOsCacheKey) else {
+            print("📦 No cached preferred FBOs found")
+            return
+        }
+
+        do {
+            let fbos = try JSONDecoder().decode([String: PreferredFBO].self, from: data)
+            DispatchQueue.main.async {
+                self.preferredFBOs = fbos
+                print("📦 Loaded \(fbos.count) preferred FBOs from cache")
+            }
+        } catch {
+            print("❌ Failed to load cached preferred FBOs: \(error)")
+        }
+    }
+
+    /// Cache preferred FBOs to UserDefaults
+    private func cachePreferredFBOs() {
+        do {
+            let data = try JSONEncoder().encode(preferredFBOs)
+            userDefaults.set(data, forKey: preferredFBOsCacheKey)
+            print("💾 Cached \(preferredFBOs.count) preferred FBOs")
+        } catch {
+            print("❌ Failed to cache preferred FBOs: \(error)")
+        }
+    }
+
+    /// Set preferred FBO for an airport
+    func setPreferredFBO(_ fbo: PreferredFBO) {
+        DispatchQueue.main.async {
+            self.preferredFBOs[fbo.airportCode.uppercased()] = fbo
+            self.cachePreferredFBOs()
+            print("✅ Set preferred FBO '\(fbo.fboName)' for \(fbo.airportCode)")
+        }
+    }
+
+    /// Get preferred FBO for an airport
+    func getPreferredFBO(for icaoCode: String) -> PreferredFBO? {
+        return preferredFBOs[icaoCode.uppercased()]
+    }
+
+    /// Remove preferred FBO for an airport
+    func removePreferredFBO(for icaoCode: String) {
+        DispatchQueue.main.async {
+            self.preferredFBOs.removeValue(forKey: icaoCode.uppercased())
+            self.cachePreferredFBOs()
+            print("🗑️ Removed preferred FBO for \(icaoCode)")
+        }
+    }
+
+    /// Get all airports with preferred FBOs that need contact notifications
+    /// Returns airports within the specified distance (in nautical miles)
+    func getAirportsNeedingFBOContact(from currentLocation: CLLocation, withinNM: Double = 150) -> [(airport: AirportInfo, fbo: PreferredFBO, distanceNM: Double)] {
+        var results: [(airport: AirportInfo, fbo: PreferredFBO, distanceNM: Double)] = []
+
+        for (icao, fbo) in preferredFBOs {
+            guard let airport = airports[icao] else { continue }
+
+            let airportLocation = CLLocation(
+                latitude: airport.coordinate.latitude,
+                longitude: airport.coordinate.longitude
+            )
+
+            // Convert meters to nautical miles (1 NM = 1852 meters)
+            let distanceMeters = currentLocation.distance(from: airportLocation)
+            let distanceNM = distanceMeters / 1852.0
+
+            // Check if within the specified range and notification distance
+            if distanceNM <= withinNM && distanceNM <= fbo.notifyAtDistance {
+                results.append((airport: airport, fbo: fbo, distanceNM: distanceNM))
+            }
+        }
+
+        return results.sorted { $0.distanceNM < $1.distanceNM }
+    }
+
+    /// Get the contact frequency for an airport (UNICOM from preferred FBO, or airport's primary frequency)
+    func getContactFrequency(for icaoCode: String) -> String? {
+        let icao = icaoCode.uppercased()
+
+        // First, check if there's a preferred FBO with a UNICOM frequency
+        if let fbo = preferredFBOs[icao], let unicom = fbo.unicomFrequency {
+            return unicom
+        }
+
+        // Fall back to airport's primary contact frequency
+        if let airport = airports[icao] {
+            return airport.primaryContactFrequency
+        }
+
+        return nil
+    }
+
+    // MARK: - Crowdsourced FBO CloudKit Methods
+
+    /// Fetch crowdsourced FBOs for an airport from CloudKit
+    func fetchCrowdsourcedFBOs(for icaoCode: String) async throws -> [CrowdsourcedFBO] {
+        let icao = icaoCode.uppercased()
+        let database = container.publicCloudDatabase
+
+        let predicate = NSPredicate(format: "airportCode == %@", icao)
+        let query = CKQuery(recordType: "CrowdsourcedFBO", predicate: predicate)
+        query.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+
+        let (results, _) = try await database.records(matching: query)
+
+        var fbos: [CrowdsourcedFBO] = []
+        for (_, result) in results {
+            if let record = try? result.get() {
+                if let fbo = crowdsourcedFBO(from: record) {
+                    fbos.append(fbo)
+                }
+            }
+        }
+
+        // Update local cache
+        let fbosToCache = fbos
+        await MainActor.run {
+            self.crowdsourcedFBOs[icao] = fbosToCache
+            self.cacheCrowdsourcedFBOs()
+        }
+
+        return fbos
+    }
+
+    /// Save or update a crowdsourced FBO to CloudKit
+    func saveCrowdsourcedFBO(_ fbo: CrowdsourcedFBO) async throws {
+        let database = container.publicCloudDatabase
+
+        let record: CKRecord
+        if let recordID = fbo.cloudKitRecordID {
+            // Update existing record
+            record = try await database.record(for: CKRecord.ID(recordName: recordID))
+        } else {
+            // Create new record
+            record = CKRecord(recordType: "CrowdsourcedFBO")
+        }
+
+        // Set all fields
+        record["airportCode"] = fbo.airportCode
+        record["name"] = fbo.name
+        record["phoneNumber"] = fbo.phoneNumber
+        record["unicomFrequency"] = fbo.unicomFrequency
+        record["website"] = fbo.website
+        record["jetAPrice"] = fbo.jetAPrice
+        record["avGasPrice"] = fbo.avGasPrice
+        record["fuelPriceDate"] = fbo.fuelPriceDate
+        record["fuelPriceReporter"] = fbo.fuelPriceReporter
+        record["hasCrewCars"] = fbo.hasCrewCars ? 1 : 0
+        record["hasCrewLounge"] = fbo.hasCrewLounge ? 1 : 0
+        record["hasCatering"] = fbo.hasCatering ? 1 : 0
+        record["hasMaintenance"] = fbo.hasMaintenance ? 1 : 0
+        record["hasHangars"] = fbo.hasHangars ? 1 : 0
+        record["hasDeice"] = fbo.hasDeice ? 1 : 0
+        record["hasOxygen"] = fbo.hasOxygen ? 1 : 0
+        record["hasGPU"] = fbo.hasGPU ? 1 : 0
+        record["hasLav"] = fbo.hasLav ? 1 : 0
+        record["handlingFee"] = fbo.handlingFee
+        record["overnightFee"] = fbo.overnightFee
+        record["rampFee"] = fbo.rampFee
+        record["rampFeeWaived"] = fbo.rampFeeWaived ? 1 : 0
+        record["averageRating"] = fbo.averageRating
+        record["ratingCount"] = fbo.ratingCount
+        record["lastUpdated"] = Date()
+        record["isVerified"] = fbo.isVerified ? 1 : 0
+
+        let savedRecord = try await database.save(record)
+
+        // Update local cache with the saved record ID
+        var updatedFBO = fbo
+        updatedFBO.cloudKitRecordID = savedRecord.recordID.recordName
+        let fboToSave = updatedFBO
+        let airportCode = fbo.airportCode
+        let fboId = fbo.id
+
+        await MainActor.run {
+            var fbos = self.crowdsourcedFBOs[airportCode] ?? []
+            if let index = fbos.firstIndex(where: { $0.id == fboId }) {
+                fbos[index] = fboToSave
+            } else {
+                fbos.append(fboToSave)
+            }
+            self.crowdsourcedFBOs[airportCode] = fbos
+            self.cacheCrowdsourcedFBOs()
+        }
+    }
+
+    /// Quick update fuel price for an FBO
+    func updateFuelPrice(for fboId: UUID, airportCode: String, jetAPrice: Double?, avGasPrice: Double?) async throws {
+        guard let fbos = crowdsourcedFBOs[airportCode],
+              let index = fbos.firstIndex(where: { $0.id == fboId }) else {
+            throw NSError(domain: "FBO", code: 404, userInfo: [NSLocalizedDescriptionKey: "FBO not found"])
+        }
+
+        var fbo = fbos[index]
+        fbo.jetAPrice = jetAPrice
+        fbo.avGasPrice = avGasPrice
+        fbo.fuelPriceDate = Date()
+        // Could add user ID here for fuelPriceReporter
+
+        try await saveCrowdsourcedFBO(fbo)
+    }
+
+    /// Delete a crowdsourced FBO from CloudKit
+    func deleteCrowdsourcedFBO(_ fbo: CrowdsourcedFBO) async throws {
+        guard let recordIDName = fbo.cloudKitRecordID else {
+            // Just remove from local cache if not synced to CloudKit
+            await MainActor.run {
+                var fbos = self.crowdsourcedFBOs[fbo.airportCode] ?? []
+                fbos.removeAll { $0.id == fbo.id }
+                self.crowdsourcedFBOs[fbo.airportCode] = fbos
+                self.cacheCrowdsourcedFBOs()
+            }
+            return
+        }
+
+        let database = container.publicCloudDatabase
+        let recordID = CKRecord.ID(recordName: recordIDName)
+        try await database.deleteRecord(withID: recordID)
+
+        await MainActor.run {
+            var fbos = self.crowdsourcedFBOs[fbo.airportCode] ?? []
+            fbos.removeAll { $0.id == fbo.id }
+            self.crowdsourcedFBOs[fbo.airportCode] = fbos
+            self.cacheCrowdsourcedFBOs()
+        }
+    }
+
+    /// Convert CloudKit record to CrowdsourcedFBO
+    private func crowdsourcedFBO(from record: CKRecord) -> CrowdsourcedFBO? {
+        guard let airportCode = record["airportCode"] as? String,
+              let name = record["name"] as? String else {
+            return nil
+        }
+
+        return CrowdsourcedFBO(
+            id: UUID(),
+            airportCode: airportCode,
+            name: name,
+            phoneNumber: record["phoneNumber"] as? String,
+            unicomFrequency: record["unicomFrequency"] as? String,
+            website: record["website"] as? String,
+            jetAPrice: record["jetAPrice"] as? Double,
+            avGasPrice: record["avGasPrice"] as? Double,
+            fuelPriceDate: record["fuelPriceDate"] as? Date,
+            fuelPriceReporter: record["fuelPriceReporter"] as? String,
+            hasCrewCars: (record["hasCrewCars"] as? Int ?? 0) == 1,
+            hasCrewLounge: (record["hasCrewLounge"] as? Int ?? 0) == 1,
+            hasCatering: (record["hasCatering"] as? Int ?? 0) == 1,
+            hasMaintenance: (record["hasMaintenance"] as? Int ?? 0) == 1,
+            hasHangars: (record["hasHangars"] as? Int ?? 0) == 1,
+            hasDeice: (record["hasDeice"] as? Int ?? 0) == 1,
+            hasOxygen: (record["hasOxygen"] as? Int ?? 0) == 1,
+            hasGPU: (record["hasGPU"] as? Int ?? 0) == 1,
+            hasLav: (record["hasLav"] as? Int ?? 0) == 1,
+            handlingFee: record["handlingFee"] as? Double,
+            overnightFee: record["overnightFee"] as? Double,
+            rampFee: record["rampFee"] as? Double,
+            rampFeeWaived: (record["rampFeeWaived"] as? Int ?? 0) == 1,
+            averageRating: record["averageRating"] as? Double,
+            ratingCount: record["ratingCount"] as? Int,
+            lastUpdated: record["lastUpdated"] as? Date ?? Date(),
+            updatedBy: record["updatedBy"] as? String,
+            cloudKitRecordID: record.recordID.recordName,
+            isVerified: (record["isVerified"] as? Int ?? 0) == 1
+        )
+    }
+
+    /// Cache crowdsourced FBOs locally
+    private func cacheCrowdsourcedFBOs() {
+        if let data = try? JSONEncoder().encode(crowdsourcedFBOs) {
+            userDefaults.set(data, forKey: crowdsourcedFBOsCacheKey)
+        }
+    }
+
+    /// Load cached crowdsourced FBOs
+    private func loadCachedCrowdsourcedFBOs() {
+        if let data = userDefaults.data(forKey: crowdsourcedFBOsCacheKey),
+           let cached = try? JSONDecoder().decode([String: [CrowdsourcedFBO]].self, from: data) {
+            crowdsourcedFBOs = cached
+        }
+    }
+
+    /// Get all FBOs for an airport (crowdsourced)
+    func getFBOs(for icaoCode: String) -> [CrowdsourcedFBO] {
+        return crowdsourcedFBOs[icaoCode.uppercased()] ?? []
     }
 }

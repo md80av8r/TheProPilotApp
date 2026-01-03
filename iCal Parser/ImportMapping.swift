@@ -15,7 +15,7 @@ struct ImportMapping: Codable, Identifiable {
     let id: UUID
     var name: String // "USA Jet", "Atlas Air", "Custom Mapping"
     var fieldMappings: [iCalFieldMapping]
-    var parsingRules: [ParsingRule]
+    var parsingRules: [LegacyParsingRule]
     var timezonePreference: TimezonePreference
     var isDefault: Bool
     var activityFilters: ActivityFilters
@@ -26,7 +26,7 @@ struct ImportMapping: Codable, Identifiable {
         id: UUID = UUID(),
         name: String,
         fieldMappings: [iCalFieldMapping] = [],
-        parsingRules: [ParsingRule] = [],
+        parsingRules: [LegacyParsingRule] = [],
         timezonePreference: TimezonePreference = .utc,
         isDefault: Bool = false,
         activityFilters: ActivityFilters = ActivityFilters(),
@@ -180,9 +180,9 @@ struct ExtractionRule: Codable {
     }
 }
 
-// MARK: - Parsing Rules
+// MARK: - Parsing Rules (Legacy)
 
-struct ParsingRule: Codable, Identifiable {
+struct LegacyParsingRule: Codable, Identifiable {
     let id: UUID
     var name: String
     var pattern: String

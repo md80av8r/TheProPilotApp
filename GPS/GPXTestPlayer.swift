@@ -342,22 +342,61 @@ class GPXParser: NSObject, XMLParserDelegate {
     }
 }
 
+// MARK: - Available GPX Test Files
+enum GPXTestFile: String, CaseIterable, Identifiable {
+    case yipDtw = "YIP_DTW"
+    case kdtwKcle = "KDTW_KCLE"
+    case cleToYip = "CLE_to_YIP"
+    case dtwOrd = "DTW_ORD"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .yipDtw: return "YIP → DTW (Willow Run to Detroit)"
+        case .kdtwKcle: return "DTW → CLE (Detroit to Cleveland)"
+        case .cleToYip: return "CLE → YIP (Cleveland to Willow Run)"
+        case .dtwOrd: return "DTW → ORD (Detroit to Chicago)"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .yipDtw: return "Short regional flight"
+        case .kdtwKcle: return "Regional jet flight"
+        case .cleToYip: return "Return leg flight"
+        case .dtwOrd: return "Regional jet with speed triggers"
+        }
+    }
+}
+
 // MARK: - SwiftUI Test View
 struct GPXTestPlayerView: View {
     @StateObject private var player = GPXTestPlayer()
-    @State private var selectedFile = "YIP_DTW"
-    
+    @State private var selectedFile: GPXTestFile = .dtwOrd
+
     var body: some View {
         NavigationView {
             Form {
                 Section("GPX File") {
-                    TextField("Filename (without .gpx)", text: $selectedFile)
-                    
+                    Picker("Select Flight", selection: $selectedFile) {
+                        ForEach(GPXTestFile.allCases) { file in
+                            VStack(alignment: .leading) {
+                                Text(file.displayName)
+                                Text(file.description)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .tag(file)
+                        }
+                    }
+                    .pickerStyle(.navigationLink)
+
                     Button("Load GPX File") {
-                        _ = player.loadGPX(from: selectedFile)
+                        _ = player.loadGPX(from: selectedFile.rawValue)
                     }
                     .buttonStyle(.borderedProminent)
-                    
+
                     if player.totalTrackPoints > 0 {
                         Label("\(player.totalTrackPoints) track points loaded", systemImage: "checkmark.circle.fill")
                             .foregroundColor(.green)

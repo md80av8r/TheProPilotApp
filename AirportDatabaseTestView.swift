@@ -68,7 +68,7 @@ struct AirportDatabaseTestView: View {
         errorMessage = ""
         searchResults = []
         
-        let container = CKContainer(identifier: "iCloud.com.jkadans.ProPilotApp")
+        let container = CKContainer(identifier: "iCloud.com.jkadans.TheProPilotApp")
         let database = container.publicCloudDatabase
         
         // Query by ICAO code

@@ -9,9 +9,13 @@ import SwiftUI
 import CloudKit
 
 struct CloudKitSettingsView: View {
+    @EnvironmentObject var store: SwiftDataLogBookStore
     @ObservedObject private var errorHandler = CloudKitErrorHandler.shared
+    @ObservedObject private var migrationHelper = CloudKitMigrationHelper.shared
     @State private var iCloudAccountStatus: String = "Checking..."
-    
+    @State private var showingMigrationConfirmation = false
+    @State private var showingCleanupConfirmation = false
+
     var body: some View {
         List {
             // MARK: - Current Status Section
@@ -103,21 +107,72 @@ struct CloudKitSettingsView: View {
                 }
             }
             
+            // MARK: - Legacy Data Migration Section
+            Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Legacy CloudKit Migration", systemImage: "arrow.triangle.2.circlepath")
+                        .font(.subheadline.bold())
+
+                    Text("If you have trips from an older version that aren't showing up, you may need to migrate them to the new SwiftData format.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    // Migration status
+                    migrationStatusView
+
+                    // Action buttons
+                    if !migrationHelper.migrationStatus.isInProgress {
+                        Button {
+                            Task {
+                                await migrationHelper.checkForLegacyData()
+                            }
+                        } label: {
+                            Label("Check for Legacy Data", systemImage: "magnifyingglass")
+                        }
+
+                        if case .legacyDataFound(let count) = migrationHelper.migrationStatus {
+                            Button {
+                                showingMigrationConfirmation = true
+                            } label: {
+                                Label("Migrate \(count) Trips", systemImage: "arrow.right.circle")
+                            }
+                            .foregroundColor(.blue)
+                        }
+
+                        if case .completed = migrationHelper.migrationStatus {
+                            Button {
+                                showingCleanupConfirmation = true
+                            } label: {
+                                Label("Cleanup Legacy Records", systemImage: "trash")
+                            }
+                            .foregroundColor(.orange)
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            } header: {
+                Text("Data Migration")
+            } footer: {
+                Text("Legacy data migration imports trips from the old CloudKit format into SwiftData.")
+                    .font(.caption2)
+            }
+
             // MARK: - Recovery Options Section
             Section {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("How to Fix Sync Issues", systemImage: "lifepreserver")
                         .font(.subheadline.bold())
-                    
+
                     Text("""
                     If you're experiencing persistent sync problems:
-                    
-                    1. Go to Documents & Data tab
+
+                    1. Go to Data & Backup tab
                     2. Tap "Export Flight Data" to create a backup
                     3. Sign out of iCloud on this device (Settings app)
                     4. Sign back into iCloud
                     5. Tap "Import Flight Data" to restore your backup
-                    
+
                     This will give you a fresh sync without losing any data.
                     """)
                     .font(.caption)
@@ -125,7 +180,7 @@ struct CloudKitSettingsView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.vertical, 4)
-                
+
             } header: {
                 Text("Recovery Options")
             }
@@ -156,6 +211,88 @@ struct CloudKitSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             checkiCloudAccountStatus()
+        }
+        .alert("Migrate Legacy Data?", isPresented: $showingMigrationConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Migrate") {
+                Task {
+                    await migrationHelper.migrateLegacyData(to: store, mergeWithExisting: true)
+                }
+            }
+        } message: {
+            Text("This will import \(migrationHelper.legacyTripCount) trips from the old CloudKit format into SwiftData. Existing trips will be preserved.")
+        }
+        .alert("Cleanup Legacy Records?", isPresented: $showingCleanupConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Cleanup", role: .destructive) {
+                Task {
+                    await migrationHelper.cleanupLegacyRecords()
+                }
+            }
+        } message: {
+            Text("This will delete the old CloudKit records. Only do this after confirming all your trips are visible in the app. This cannot be undone.")
+        }
+    }
+
+    // MARK: - Migration Status View
+    @ViewBuilder
+    private var migrationStatusView: some View {
+        switch migrationHelper.migrationStatus {
+        case .idle:
+            EmptyView()
+
+        case .checking:
+            HStack {
+                ProgressView()
+                    .scaleEffect(0.8)
+                Text("Checking...")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+        case .noLegacyData:
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("No legacy data found")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+        case .legacyDataFound(let count):
+            HStack {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundColor(.orange)
+                Text("Found \(count) trips to migrate")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+            }
+
+        case .migrating(let progress):
+            VStack(alignment: .leading, spacing: 4) {
+                ProgressView(value: progress)
+                Text(migrationHelper.progressMessage)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+
+        case .completed(let imported, let skipped):
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("Imported \(imported), skipped \(skipped)")
+                    .font(.caption)
+                    .foregroundColor(.green)
+            }
+
+        case .failed(let error):
+            HStack {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.red)
+                Text(error)
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
         }
     }
     

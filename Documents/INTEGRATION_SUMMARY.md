@@ -1,332 +1,390 @@
-# 🎉 Integration Complete! Jumpseat Finder for TheProPilotApp
+# 🎉 ProPilot App - Integration Summary
 
-## What You Now Have
+## Current Feature Set (January 2026)
 
-### ✅ Core Files Created:
-1. **FlightScheduleService.swift** - AviationStack API integration with mock data
-2. **JumpseatFinderView.swift** - Complete UI for flight search and results
-3. **SubscriptionService.swift** - Pro subscription management system
-4. **JumpseatFinderView+Subscription.swift** - Paywall protection example
-5. **JUMPSEAT_INTEGRATION.md** - Comprehensive documentation
+### ✅ Core Systems
 
-### ✅ Modified Files:
-1. **TabManager.swift** - Added jumpseat tab definition
-2. **ContentView.swift** - Added jumpseat routing case
+#### 1. Flight Logbook
+- Trip and leg management with SwiftData
+- OUT/OFF/ON/IN time entry
+- Automatic block and flight time calculation
+- CloudKit sync across devices
+- CSV import/export (ForeFlight compatible)
 
-## Quick Start Guide
+#### 2. GPS Track Recording System
+**Files:**
+- `GPS/FlightTrackRecorder.swift` - Recording service with auto-start/stop
+- `GPS/FlightTrackViewerView.swift` - Track viewer with export options
+- `GPS/GPSSpeedMonitor.swift` - Speed-based takeoff/landing detection
 
-### Step 1: Build and Run
-```bash
-# Your existing Xcode project should now compile with these new files
-# Open the app and navigate: More → Jumpseat Finder
-```
+**Features:**
+- Auto-start on takeoff (>80 knots)
+- Auto-stop on landing (<60 knots)
+- Airport detection from track points
+- Detected OFF/ON times from GPS data
+- Export to GPX format (standard GPS)
+- Export to KML format (Google Earth 3D)
+- Open in Google Earth with animated tour
+- View in Apple Maps
 
-### Step 2: Get API Key (Optional for testing)
-1. Visit: https://aviationstack.com/signup/free
-2. Copy your API key
-3. In app: Jumpseat Finder → Settings (gear icon)
-4. Paste key
+#### 3. Auto Time Logging
+**Files:**
+- `GPS/GPSSpeedMonitor.swift` - Speed monitoring and triggers
+- `AutoTimeSettings.swift` - Configuration storage
+- `AutoTimeSettingsView.swift` - Settings UI
 
-**Note:** App includes mock data, so you can test immediately without an API key!
+**Features:**
+- Takeoff detection at 80+ knots
+- Landing detection at 60 knots
+- Optional 5-minute time rounding
+- Zulu or Local time options
+- GPS spoofing detection integration
 
-### Step 3: Test Flight Search
-```
-From: KMEM (Memphis)
-To: KATL (Atlanta)
-Date: Today
-Tap: Search Flights
-```
+#### 4. Airport Proximity System
+**Files:**
+- `PilotLocationManager.swift` - Geofencing and location management
+- `FBOProximityNotificationService.swift` - FBO alerts
+- `OPSCallingManager.swift` - OPS call reminders
+- `ProximitySettingsView.swift` - Settings UI
 
-Expected result: List of flights with times, gates, airlines
+**Features:**
+- Geofencing for 20 priority airports
+- Auto-detect arrival at airports
+- Duty timer start prompts
+- OPS calling reminders
+- Configurable alert preferences
 
-### Step 4: Enable Subscription Protection (Optional)
-```swift
-// In ContentView.swift, change:
-case "jumpseat": JumpseatFinderView()
+#### 5. Weather System
+**Files:**
+- `Weather/WeatherModels.swift` - METAR/TAF data structures
+- `Weather/WeatherIconHelper.swift` - Weather icon generation
+- `Weather/WeatherBannerView.swift` - Weather display banners
+- `Weather/BannerWeatherService.swift` - Weather data fetching
 
-// To:
-case "jumpseat": ProtectedJumpseatFinderView()
-```
+**Features:**
+- METAR parsing and display
+- TAF parsing and display
+- Flight category badges (VFR/MVFR/IFR/LIFR)
+- Density altitude calculation
+- Cloud layer parsing
+- Wind component calculations
 
-## Feature Tour
+#### 6. Jumpseat Finder
+**Files:**
+- `Jumpseat/JumpseatSearchView.swift` - Search UI
+- `Jumpseat/FlightScheduleService.swift` - AviationStack API
 
-### 🔍 Search Interface
-- **From/To** fields accept ICAO (KMEM) or IATA (MEM)
-- **Date picker** for future searches
-- **Swap button** to reverse route
-- **Search button** with loading state
-
-### ✈️ Flight Results
-Each flight card shows:
-- Airline name & flight number
-- Departure/arrival airports & times (Zulu)
-- Gate & terminal information
-- Aircraft type (e.g., B738, A320)
-- Flight status (Scheduled, Active, Landed, Cancelled)
-- Load indicator (Phase 2 - currently shows "Unknown")
-
-### 📱 Flight Details
-Tap any flight to see:
-- Full flight information
-- Route visualization
-- Gate/terminal details
-- Pro tips for jumpseating
-
-### ⚙️ Settings
-- API key configuration
-- Link to AviationStack signup
-- Usage information
-
-## Business Model Implementation
-
-### Free Tier (Always Available):
-```swift
-// These features work without subscription:
-- Flight logbook
-- Airport database
-- Basic scanning
-- Manual time entry
-```
-
-### Pro Tier ($4.99/month):
-```swift
-// Gate these features with requiresPro():
-- Jumpseat Finder
-- Live tracking
-- Weather radar
-- CloudKit sync
-- Unlimited scans
-```
-
-### Revenue Potential
-```
-Cost: $50/month (API)
-Capacity: 160 users (60 searches/month each)
-Revenue: $798/month ($4.99 × 160)
-Apple Cut: $120/month (15%)
-Profit: $628/month 🎯
-```
-
-## Testing Checklist
-
-### ✅ Without API Key (Mock Mode):
-- [x] Open Jumpseat Finder
-- [x] Search KMEM → KATL
-- [x] See 3 mock flights
-- [x] Tap flight for details
-- [x] Verify times display correctly
-
-### ✅ With API Key (Real Data):
-- [ ] Add API key in settings
-- [ ] Search real route (e.g., JFK → LAX)
-- [ ] Verify real airlines appear
-- [ ] Check gate/terminal info
-- [ ] Verify times are accurate
-
-### ✅ Subscription Flow:
-- [ ] Reset to Free tier
-- [ ] Navigate to Jumpseat Finder
-- [ ] See paywall/locked view
-- [ ] Tap "Upgrade to Pro"
-- [ ] View pricing and features
-- [ ] Test upgrade (dev mode)
-- [ ] Verify access granted
-
-### ✅ Edge Cases:
-- [x] Empty search fields → Disabled button
-- [x] Invalid airport → "No flights found"
-- [x] API error → Shows error message
-- [x] No network → Falls back to mock data
-- [x] Rate limit exceeded → User-friendly error
-
-## Architecture Overview
-
-```
-┌─────────────────────────────────────────┐
-│         JumpseatFinderView              │
-│  (Search UI + Results Display)          │
-└──────────────┬──────────────────────────┘
-               │
-               ↓
-┌─────────────────────────────────────────┐
-│       JumpseatViewModel                 │
-│  (State management)                     │
-└──────────────┬──────────────────────────┘
-               │
-               ↓
-┌─────────────────────────────────────────┐
-│     FlightScheduleService               │
-│  (API calls + Mock data)                │
-└──────────────┬──────────────────────────┘
-               │
-               ↓
-┌─────────────────────────────────────────┐
-│      AviationStack API                  │
-│  (Real flight schedules)                │
-└─────────────────────────────────────────┘
-
-         Gated by:
-
-┌─────────────────────────────────────────┐
-│     SubscriptionService                 │
-│  (Pro access management)                │
-└─────────────────────────────────────────┘
-```
-
-## Phase 2 Features (Future Enhancements)
-
-### 🔜 Coming Soon:
-1. **Load Predictor**
-   - Parse booking class availability
-   - Estimate open seats
-   - Color-coded indicators (Green/Yellow/Red)
-
-2. **Crowdsourced Loads**
-   - Let pilots report actual loads
-   - Display community-sourced data
-   - Build reputation system
-
-3. **Push Notifications**
-   - Alert when flights open up
-   - Gate changes
-   - Cancellation notices
-
-4. **Saved Routes**
-   - Quick access to favorites
-   - One-tap search
-   - Route history
-
-5. **Calendar Integration**
-   - Sync with duty schedule
-   - Auto-suggest commute flights
-   - Conflict detection
-
-6. **Airline Filters**
-   - Show only specific carriers
-   - Hide certain airlines
-   - Crew agreement restrictions
-
-## Security Best Practices
-
-### ⚠️ API Key Protection
-```swift
-// ❌ NEVER DO THIS:
-let apiKey = "abc123secret"  // Hardcoded in source!
-
-// ✅ DO THIS INSTEAD:
-@AppStorage("aviationStackAPIKey") private var apiKey = ""
-
-// 🚀 PRODUCTION: Use proxy backend
-// User app → Your server → AviationStack
-// Verify subscription on server before making API call
-```
-
-### 🔐 Subscription Validation
-```swift
-// For production, use RevenueCat or StoreKit 2
-// Validate receipts server-side
-// Never trust client-side subscription status
-```
-
-## Troubleshooting
-
-### Problem: "No flights found"
-**Solutions:**
-- Verify airport codes are valid (ICAO or IATA)
-- Check date is not too far in future
-- Try different route
-- Enable mock data for testing
-
-### Problem: API rate limit exceeded
-**Solutions:**
-- Wait for rate limit to reset (usually 1 hour)
-- Upgrade API plan
-- Implement request caching
-- Use mock data for development
-
-### Problem: Subscription check not working
-**Solutions:**
-- Enable development mode in SubscriptionService
-- Check UserDefaults key: `isProMember`
-- Verify SubscriptionService.shared is initialized
-- Test with `.upgradeToProForTesting()`
-
-## Next Steps
-
-### Immediate (Day 1):
-1. ✅ Test the integration in Xcode
-2. ✅ Verify all views load correctly
-3. ✅ Test mock data searches
-4. ✅ Review UI in both iPhone and iPad
-
-### Short-term (Week 1):
-1. Sign up for AviationStack free tier
-2. Add real API key and test
-3. Decide on subscription pricing
-4. Design paywall artwork
-5. Add analytics tracking
-
-### Long-term (Month 1):
-1. Implement RevenueCat or StoreKit 2
-2. Set up App Store subscriptions
-3. Add load predictor (Phase 2)
-4. Implement push notifications
-5. Beta test with pilots
-
-## Support & Resources
-
-### API Documentation:
-- [AviationStack Docs](https://aviationstack.com/documentation)
-- [FlightAware AeroAPI](https://www.flightaware.com/commercial/aeroapi/)
-
-### Subscription Management:
-- [RevenueCat SDK](https://www.revenuecat.com/docs/)
-- [StoreKit 2](https://developer.apple.com/documentation/storekit)
-
-### Alternative APIs:
-- **AirLabs** - Good for schedules
-- **FlightAware** - Best for tracking
-- **OAG** - Enterprise-grade (expensive)
-
-## Success Metrics
-
-### Track These KPIs:
-- **Daily Active Users** (DAU)
-- **Searches per user** (avg ~2/day)
-- **Conversion rate** (Free → Pro)
-- **API cost per user** (target: <$0.50/month)
-- **Churn rate** (target: <5%/month)
-- **LTV:CAC ratio** (target: >3:1)
-
-### Monetization Goal:
-```
-Month 1: 50 users → $250/month revenue
-Month 3: 200 users → $1,000/month revenue
-Month 6: 500 users → $2,500/month revenue
-Month 12: 1,000 users → $5,000/month revenue 🎯
-```
-
-## Conclusion
-
-You now have a **fully functional Jumpseat Finder** integrated into TheProPilotApp! 🎉
-
-### What Makes This Special:
-✅ Real-time flight schedules (AviationStack API)  
-✅ Beautiful dark UI matching your LogbookTheme  
-✅ Mock data for testing without API key  
-✅ Subscription protection built-in  
-✅ Scalable architecture for Phase 2 features  
-✅ Revenue model proven by competitors  
-
-### Get Started:
-1. Build the app
-2. Navigate to More → Jumpseat Finder
-3. Search for flights
-4. Start planning your commutes!
-
-**Questions?** Check JUMPSEAT_INTEGRATION.md for detailed docs.
+**Features:**
+- Real-time flight schedules
+- ICAO/IATA airport code support
+- Mock data for offline testing
+- Pro subscription gating
 
 ---
 
-**Built with ❤️ for professional pilots**  
-*"Never miss a jumpseat again!"*
+## File Structure
+
+### Main App Files
+```
+TheProPilotApp/
+├── ContentView.swift           - Main app navigation
+├── TabManager.swift            - Tab bar management
+├── SettingsView.swift          - Settings UI (More tab content)
+├── DataEntryView.swift         - Trip/leg editing
+├── HelpView.swift              - Help & Support
+├── UniversalSearchView.swift   - App-wide search
+└── NotificationNames.swift     - Centralized notifications
+```
+
+### GPS Subsystem
+```
+GPS/
+├── FlightTrackRecorder.swift   - Track recording & export
+├── FlightTrackViewerView.swift - Track viewing UI
+├── GPSSpeedMonitor.swift       - Speed-based auto-time
+├── GPSSpoofingMonitor.swift    - Spoofing detection
+├── GPSSpoofingStatusPill.swift - Spoofing status UI
+└── GPXTestPlayer.swift         - Test GPX playback
+```
+
+### SwiftData Models
+```
+SwiftDataModels/
+├── SDTrip.swift               - Trip model
+├── SDFlightLeg.swift          - Leg model
+├── SDLogpage.swift            - Logpage model
+├── SDCrewMember.swift         - Crew member model
+├── SwiftDataConfiguration.swift
+├── SwiftDataLogBookStore.swift
+└── MigrationManager.swift
+```
+
+### Weather Subsystem
+```
+Weather/
+├── WeatherModels.swift
+├── WeatherIconHelper.swift
+├── WeatherBannerView.swift
+├── BannerWeatherService.swift
+├── AirportWeatherTabContent.swift
+└── WeatherIconHelper_Examples.swift
+```
+
+### Airport Database
+```
+AirportDatabase/
+├── AirportDatabaseManager.swift
+├── AirportDatabaseView.swift
+├── CloudAirport.swift
+├── UnifiedAircraftDatabase.swift
+└── AirportDetailView.swift
+```
+
+### Data Recovery
+```
+Data Recovery/
+├── DataBackupSettingsView.swift
+├── DataIntegrityManager.swift
+├── DataProtectionSettingsView.swift
+└── DataRecoveryView.swift
+```
+
+### Monthly Backup
+```
+MonthlyBackup/
+├── BackupPromptManager.swift
+├── BackupPromptView.swift
+├── ExcelExportService.swift
+└── MonthlyEmailSettingsView.swift
+```
+
+---
+
+## Key Notification Names
+
+### Location & GPS
+```swift
+.arrivedAtAirport           // Geofence entry
+.departedAirport            // Geofence exit
+.takeoffRollStarted         // Speed > 80 kts
+.landingRollDecel           // Speed < 60 kts
+.autoTimeTriggered          // OFF/ON time captured
+.flightPhaseChanged         // Flight state change
+.gpsSpoofingDetected        // Spoofing alert
+.showGPSSpoofingWarning     // UI warning trigger
+```
+
+### Sync & Data
+```swift
+.syncStateChanged           // CloudKit sync status
+.dataExported               // Export completed
+.dataImported               // Import completed
+.scheduleUpdated            // Schedule changed
+.dataRecoveryAvailable      // Recovery ready
+```
+
+### Duty & Time
+```swift
+.dutyTimerStarted           // Duty began
+.dutyTimerEnded             // Duty ended
+.tripStatusChanged          // Trip state change
+```
+
+### Watch Integration
+```swift
+.startDutyFromWatch
+.endDutyFromWatch
+.setOutTimeFromWatch
+.setInTimeFromWatch
+.flightTimeUpdatedFromWatch
+```
+
+---
+
+## Settings Architecture
+
+### Settings Flow
+```
+SettingsView.swift
+├── Home Base Configuration
+├── Airline Setup
+├── Auto Time Logging → AutoTimeSettingsView
+├── Airport Proximity → ProximitySettingsView
+├── Trip Creation Settings
+├── CloudKit Settings
+├── Data Backup Settings
+└── FAR 117 Limits
+```
+
+### Settings Storage
+- **AutoTimeSettings**: Singleton with AppStorage
+- **ProximitySettings**: UserDefaults
+- **AirlineSettings**: AirlineSettingsStore (ObservableObject)
+- **TripCreationSettings**: Singleton
+
+---
+
+## Export Capabilities
+
+### Track Export Formats
+
+#### GPX (GPS Exchange Format)
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1">
+  <trk>
+    <name>Flight: UAL123</name>
+    <trkseg>
+      <trkpt lat="42.212" lon="-83.353">
+        <ele>1000</ele>
+        <time>2026-01-01T12:00:00Z</time>
+        <extensions><speed>150.5</speed></extensions>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>
+```
+
+#### KML (Google Earth)
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>UAL123: KDTW to KORD</name>
+    <Placemark>
+      <LineString>
+        <coordinates>-83.353,42.212,1000</coordinates>
+      </LineString>
+    </Placemark>
+    <gx:Tour>
+      <name>Fly Along Flight Path</name>
+      <!-- Animated flythrough -->
+    </gx:Tour>
+  </Document>
+</kml>
+```
+
+---
+
+## Info.plist Configuration
+
+### Location Permissions
+```xml
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>ProPilot needs always location access...</string>
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>ProPilot uses your location...</string>
+```
+
+### App Queries (URL Schemes)
+```xml
+<key>LSApplicationQueriesSchemes</key>
+<array>
+    <string>comgoogleearth</string>
+    <string>googlemaps</string>
+</array>
+```
+
+### Document Types
+```xml
+<key>CFBundleDocumentTypes</key>
+<array>
+    <!-- GPX Files -->
+    <dict>
+        <key>CFBundleTypeName</key><string>GPX File</string>
+        <key>LSItemContentTypes</key>
+        <array><string>com.topografix.gpx</string></array>
+    </dict>
+    <!-- KML Files -->
+    <dict>
+        <key>CFBundleTypeName</key><string>KML File</string>
+        <key>LSItemContentTypes</key>
+        <array><string>com.google.earth.kml</string></array>
+    </dict>
+</array>
+```
+
+---
+
+## Testing
+
+### GPS Track Testing
+1. Enable Auto Time Logging in Settings
+2. Open Debug menu (GPX Test Player)
+3. Load test GPX file (e.g., KDTW_KORD.gpx)
+4. Verify:
+   - Track recording starts at takeoff
+   - Track stops at landing
+   - Airports detected correctly
+   - Export works for GPX and KML
+
+### Proximity Testing
+1. Enable Airport Proximity in Settings
+2. Use location simulation in Xcode
+3. Simulate arrival at monitored airport
+4. Verify:
+   - Geofence triggers notification
+   - Duty timer prompt appears
+   - OPS calling reminder (if configured)
+
+---
+
+## Recent Changes
+
+### January 2026
+- ✅ Added KML export with 3D flight paths
+- ✅ Added Google Earth integration (URL scheme)
+- ✅ Added track logs section to DataEntryView
+- ✅ Added detected OFF/ON times from GPS
+- ✅ Added Airport Proximity section to Settings
+- ✅ Updated Help & Support with GPS features
+- ✅ Updated Universal Search with GPS items
+- ✅ Cleaned up obsolete SettingsIntegration.swift
+
+### December 2025
+- ✅ Implemented GPS Track Recording system
+- ✅ Added auto-time logging with speed detection
+- ✅ Added geofencing for airport proximity
+- ✅ Added GPS spoofing detection
+- ✅ Improved CloudKit sync reliability
+- ✅ Fixed weather parsing for METAR/TAF
+
+### Earlier 2025
+- ✅ Jumpseat Finder with AviationStack API
+- ✅ NOC schedule import system
+- ✅ Pro subscription management
+- ✅ Apple Watch integration
+- ✅ Document scanner with email routing
+
+---
+
+## Architecture Decisions
+
+### Why Singleton Services?
+- `FlightTrackRecorder.shared` - Single recording session
+- `GPSSpeedMonitor.shared` - Continuous monitoring
+- `AirportDatabaseManager.shared` - Cached airport data
+
+### Why NotificationCenter?
+- Decouples GPS system from UI
+- Allows background processing
+- Watch app integration
+- Multiple listeners for same event
+
+### Why Local JSON Storage for Tracks?
+- Large data (thousands of points)
+- Offline-first design
+- Easy export/import
+- CloudKit for metadata only
+
+---
+
+## Support
+
+- **Email**: support@propilotapp.com
+- **Help**: In-app Help & Support section
+- **App Store**: [Review](https://apps.apple.com/app/id6748836146)
+
+---
+
+**Built with ❤️ for professional pilots**

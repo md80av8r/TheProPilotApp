@@ -5,18 +5,9 @@
       location = "self:">
    </FileRef>
    <FileRef
-      location = "group:NEXT_STEPS_COMPLETE_GUIDE.md">
+      location = "group:ContainerMigrationWarning.swift">
    </FileRef>
    <FileRef
-      location = "group:AIRPORT_DB_MIGRATION.md">
-   </FileRef>
-   <FileRef
-      location = "group:AIRPORT_DATABASE_FIX.md">
-   </FileRef>
-   <FileRef
-      location = "group:INFINITE_PRINT_LOOP_FIX.md">
-   </FileRef>
-   <FileRef
-      location = "group:CLOUDKIT_AIRPORT_QUERY_FIX.md">
+      location = "group:CONTAINER_MIGRATION_WARNING.md">
    </FileRef>
 </Workspace>

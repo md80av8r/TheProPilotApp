@@ -78,9 +78,9 @@ struct AutoTimeLoggingSettingsView: View {
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
-                        
+
                         Spacer()
-                        
+
                         Toggle("", isOn: $autoTimeSettings.isEnabled)
                             .onChange(of: autoTimeSettings.isEnabled) { _, enabled in
                                 if enabled {
@@ -90,7 +90,7 @@ struct AutoTimeLoggingSettingsView: View {
                                 }
                             }
                     }
-                    
+
                     if speedMonitor.isTracking {
                         HStack {
                             Text("Current Speed")
@@ -102,6 +102,54 @@ struct AutoTimeLoggingSettingsView: View {
                     }
                 } header: {
                     Text("Auto Time Logging")
+                }
+
+                // MARK: - Flight Track Recording Section
+                Section {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("Record GPS Track")
+                                .font(.headline)
+                            Text("Automatically record flight path on takeoff")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+
+                        Spacer()
+
+                        Toggle("", isOn: $autoTimeSettings.trackRecordingEnabled)
+                    }
+
+                    if autoTimeSettings.trackRecordingEnabled {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "recordingtape")
+                                    .foregroundColor(.cyan)
+                                    .font(.caption)
+                                Text("Track recording starts at takeoff, stops at landing")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+
+                            NavigationLink(destination: FlightTrackListView()) {
+                                HStack {
+                                    Image(systemName: "map")
+                                        .foregroundColor(.blue)
+                                    Text("View Recorded Tracks")
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Flight Track Recording")
+                } footer: {
+                    if autoTimeSettings.trackRecordingEnabled {
+                        Text("Recorded tracks are saved locally and can be exported as GPX files.")
+                    }
                 }
                 
                 // MARK: - Timezone Section

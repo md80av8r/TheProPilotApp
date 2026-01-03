@@ -94,8 +94,8 @@ final class AreaGuideCloudKit {
     }
     
     private init() {
-        self.container = CKContainer(identifier: "iCloud.com.jkadans.ProPilotApp")
-        print("🔵 CloudKit initialized with container: iCloud.com.jkadans.ProPilotApp")
+        self.container = CKContainer(identifier: "iCloud.com.jkadans.TheProPilotApp")
+        print("🔵 CloudKit initialized with container: iCloud.com.jkadans.TheProPilotApp")
         
         // Log which environment we're using
         #if DEBUG

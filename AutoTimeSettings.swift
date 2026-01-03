@@ -21,7 +21,10 @@ class AutoTimeSettings: ObservableObject {
     
     @AppStorage("autoTimeLoggingEnabled", store: UserDefaults(suiteName: "group.com.propilot.app"))
     var isEnabled: Bool = false
-    
+
+    @AppStorage("trackRecordingEnabled", store: UserDefaults(suiteName: "group.com.propilot.app"))
+    var trackRecordingEnabled: Bool = false
+
     private init() {
         print("✅ AutoTimeSettings initialized with App Group storage")
         print("   useZuluTime: \(useZuluTime)")

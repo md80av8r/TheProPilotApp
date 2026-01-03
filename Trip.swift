@@ -75,7 +75,8 @@ enum PilotRole: String, CaseIterable, Codable, Equatable {
     case captain = "Captain"
     case firstOfficer = "First Officer"
     case solo = "Solo"
-    
+    case jumpseater = "Jumpseater"
+
     var shouldHandleReceipts: Bool {
         return self == .captain || self == .solo
     }

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="ProPilot Test Flight" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>KDTW to KORD Test Flight</name>
+    <desc>Simulated regional jet flight with speed triggers for auto-time capture testing</desc>
+  </metadata>
+  
+  <trk>
+    <name>Test Flight KDTW-KORD</name>
+    <trkseg>
+      
+      <!-- KDTW - Gate/Ramp - Stationary (approx coords near DTW) -->
+      <trkpt lat="42.2162" lon="-83.3554">
+        <ele>203</ele>
+        <time>2025-10-01T14:00:00Z</time>
+        <extensions><speed>0</speed></extensions>
+      </trkpt>
+      
+      <!-- Taxi Out - Slow -->
+      <trkpt lat="42.2168" lon="-83.3540">
+        <ele>203</ele>
+        <time>2025-10-01T14:02:00Z</time>
+        <extensions><speed>5.1</speed></extensions> <!-- 10 kts -->
+      </trkpt>
+      
+      <trkpt lat="42.2173" lon="-83.3530">
+        <ele>203</ele>
+        <time>2025-10-01T14:04:00Z</time>
+        <extensions><speed>7.7</speed></extensions> <!-- 15 kts -->
+      </trkpt>
+      
+      <!-- Lineup on Runway -->
+      <trkpt lat="42.2178" lon="-83.3520">
+        <ele>203</ele>
+        <time>2025-10-01T14:05:00Z</time>
+        <extensions><speed>2.6</speed></extensions> <!-- 5 kts -->
+      </trkpt>
+      
+      <!-- TAKEOFF ROLL - Speed increasing -->
+      <trkpt lat="42.2183" lon="-83.3500">
+        <ele>203</ele>
+        <time>2025-10-01T14:05:20Z</time>
+        <extensions><speed>20.6</speed></extensions> <!-- 40 kts -->
+      </trkpt>
+      
+      <trkpt lat="42.2188" lon="-83.3480">
+        <ele>203</ele>
+        <time>2025-10-01T14:05:35Z</time>
+        <extensions><speed>35.0</speed></extensions> <!-- 68 kts -->
+      </trkpt>
+      
+      <!-- CRITICAL: Passing 80 kts - Should trigger OFF time -->
+      <trkpt lat="42.2193" lon="-83.3460">
+        <ele>210</ele>
+        <time>2025-10-01T14:05:45Z</time>
+        <extensions><speed>43.0</speed></extensions> <!-- 84 kts - OFF TIME TRIGGER -->
+      </trkpt>
+      
+      <!-- Rotation and Climb -->
+      <trkpt lat="42.2205" lon="-83.3430">
+        <ele>350</ele>
+        <time>2025-10-01T14:06:00Z</time>
+        <extensions><speed>56.0</speed></extensions> <!-- 109 kts -->
+      </trkpt>
+      
+      <trkpt lat="42.2225" lon="-83.3370">
+        <ele>800</ele>
+        <time>2025-10-01T14:06:30Z</time>
+        <extensions><speed>82.0</speed></extensions> <!-- 160 kts -->
+      </trkpt>
+      
+      <!-- Climb to cruise westbound towards Chicago -->
+      <trkpt lat="42.2245" lon="-83.3250">
+        <ele>1500</ele>
+        <time>2025-10-01T14:07:00Z</time>
+        <extensions><speed>103.0</speed></extensions> <!-- 200 kts -->
+      </trkpt>
+      
+      <trkpt lat="42.2265" lon="-83.3050">
+        <ele>2500</ele>
+        <time>2025-10-01T14:08:00Z</time>
+        <extensions><speed>123.0</speed></extensions> <!-- 240 kts -->
+      </trkpt>
+      
+      <!-- Cruise segment across Michigan -->
+      <trkpt lat="42.2300" lon="-83.0500">
+        <ele>3000</ele>
+        <time>2025-10-01T14:12:00Z</time>
+        <extensions><speed>128.0</speed></extensions> <!-- 250 kts -->
+      </trkpt>
+      
+      <trkpt lat="42.2400" lon="-82.7000">
+        <ele>3000</ele>
+        <time>2025-10-01T14:16:00Z</time>
+        <extensions><speed>128.0</speed></extensions> <!-- 250 kts -->
+      </trkpt>
+
+      <trkpt lat="42.2500" lon="-82.3000">
+        <ele>3000</ele>
+        <time>2025-10-01T14:20:00Z</time>
+        <extensions><speed>128.0</speed></extensions> <!-- 250 kts -->
+      </trkpt>
+      
+      <!-- Begin descent into Chicago area -->
+      <trkpt lat="42.2600" lon="-82.0000">
+        <ele>2500</ele>
+        <time>2025-10-01T14:23:00Z</time>
+        <extensions><speed>113.0</speed></extensions> <!-- 220 kts -->
+      </trkpt>
+      
+      <trkpt lat="42.2500" lon="-81.7000">
+        <ele>2000</ele>
+        <time>2025-10-01T14:26:00Z</time>
+        <extensions><speed>103.0</speed></extensions> <!-- 200 kts -->
+      </trkpt>
+      
+      <!-- Approach to KORD (approx coords near O'Hare) -->
+      <trkpt lat="41.9950" lon="-87.9500">
+        <ele>1500</ele>
+        <time>2025-10-01T14:42:00Z</time>
+        <extensions><speed>87.0</speed></extensions> <!-- 170 kts -->
+      </trkpt>
+      
+      <trkpt lat="41.9900" lon="-87.9300">
+        <ele>1000</ele>
+        <time>2025-10-01T14:43:00Z</time>
+        <extensions><speed>77.0</speed></extensions> <!-- 150 kts -->
+      </trkpt>
+      
+      <!-- Final approach -->
+      <trkpt lat="41.9850" lon="-87.9150">
+        <ele>500</ele>
+        <time>2025-10-01T14:44:00Z</time>
+        <extensions><speed>67.0</speed></extensions> <!-- 130 kts -->
+      </trkpt>
+      
+      <!-- Short final -->
+      <trkpt lat="41.9800" lon="-87.9050">
+        <ele>300</ele>
+        <time>2025-10-01T14:44:30Z</time>
+        <extensions><speed>62.0</speed></extensions> <!-- 120 kts -->
+      </trkpt>
+      
+      <!-- Touchdown -->
+      <trkpt lat="41.9770" lon="-87.9050">
+        <ele>204</ele>
+        <time>2025-10-01T14:45:00Z</time>
+        <extensions><speed>57.0</speed></extensions> <!-- 111 kts -->
+      </trkpt>
+      
+      <!-- Landing rollout - Speed decreasing -->
+      <trkpt lat="41.9760" lon="-87.9070">
+        <ele>204</ele>
+        <time>2025-10-01T14:45:15Z</time>
+        <extensions><speed>41.0</speed></extensions> <!-- 80 kts -->
+      </trkpt>
+      
+      <!-- CRITICAL: Passing below 60 kts - Should trigger ON time -->
+      <trkpt lat="41.9755" lon="-87.9080">
+        <ele>204</ele>
+        <time>2025-10-01T14:45:30Z</time>
+        <extensions><speed>28.0</speed></extensions> <!-- 54 kts - ON TIME TRIGGER -->
+      </trkpt>
+      
+      <!-- Slow down -->
+      <trkpt lat="41.9752" lon="-87.9085">
+        <ele>204</ele>
+        <time>2025-10-01T14:45:45Z</time>
+        <extensions><speed>15.4</speed></extensions> <!-- 30 kts -->
+      </trkpt>
+      
+      <!-- Exit runway -->
+      <trkpt lat="41.9750" lon="-87.9090">
+        <ele>204</ele>
+        <time>2025-10-01T14:46:00Z</time>
+        <extensions><speed>7.7</speed></extensions> <!-- 15 kts -->
+      </trkpt>
+      
+      <!-- Taxi in -->
+      <trkpt lat="41.9748" lon="-87.9095">
+        <ele>204</ele>
+        <time>2025-10-01T14:47:00Z</time>
+        <extensions><speed>5.1</speed></extensions> <!-- 10 kts -->
+      </trkpt>
+      
+      <!-- Approaching gate -->
+      <trkpt lat="41.9747" lon="-87.9097">
+        <ele>204</ele>
+        <time>2025-10-01T14:48:00Z</time>
+        <extensions><speed>2.6</speed></extensions> <!-- 5 kts -->
+      </trkpt>
+      
+      <!-- KORD - Gate - Stopped -->
+      <trkpt lat="41.9746" lon="-87.9099">
+        <ele>204</ele>
+        <time>2025-10-01T14:49:00Z</time>
+        <extensions><speed>0</speed></extensions>
+      </trkpt>
+      
+    </trkseg>
+  </trk>
+</gpx>

@@ -67,12 +67,28 @@ struct ContentView: View {
     @State private var existingTripForDuplicate: Trip?
     @State private var showingFreightPaperwork = false
     @State private var showingWeatherBanner = false  // ✅ NEW: Weather banner toggle
+    @State private var showingFBOBanner = false  // 🏢 FBO Banner toggle
     @State private var showWelcomeScreen = false  // ✅ NEW: Welcome screen for first-time users
     @State private var showingPaywall = false  // 🆕 PAYWALL: Show subscription paywall
-    
+    @State private var showingRaidoImportPicker = false  // RAIDO JSON import
+    @State private var showingImportError = false  // Import error alert
+    @State private var importErrorMessage: String?  // Import error message
+    @State private var showingImportSuccess = false  // Import success alert
+    @State private var importSuccessMessage: String?  // Import success message
+
     // Track if user has ever had trips (persisted)
     @AppStorage("hasEverHadTrips") private var hasEverHadTrips = false
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
+
+    // MARK: - Backup Prompt State
+    @StateObject private var backupPromptManager = BackupPromptManager.shared
+    @State private var showingBackupPrompt = false
+    @State private var showingMonthlySummary = false
+    
+    // MARK: - Container Migration Warning State (temporarily disabled)
+    // See FIX_MIGRATION_WARNING_SCOPE_ERROR.md for instructions
+    // @StateObject private var migrationManager = MigrationWarningManager.shared
+    // @State private var showingMigrationWarning = false
     
     // MARK: - iPad-Specific State
     @State private var selectedTab: String = "logbook"
@@ -363,6 +379,14 @@ struct ContentView: View {
                     showingContinuationPrompt = first
                 }
             }
+            // MARK: - Backup Prompt Sheet
+            .sheet(isPresented: $showingBackupPrompt) {
+                BackupPromptView(logbookStore: store)
+            }
+            // MARK: - Monthly Summary Sheet
+            .sheet(isPresented: $showingMonthlySummary) {
+                MonthlySummaryEmailView(logbookStore: store)
+            }
     }
     
     // MARK: - Email Composer Sheet (✅ NEW: Uses DocumentEmailSettingsStore)
@@ -437,7 +461,8 @@ struct ContentView: View {
                         isActiveTrip = (trip.status == .active || trip.status == .planning)
                         showingScanner = true
                         showingDataEntry = false
-                    }
+                    },
+                    documentManager: sharedDocumentStore
                 )
                 .onAppear {
                     populateTripForEditing(trip)
@@ -600,7 +625,8 @@ struct ContentView: View {
             onEdit: saveEditedTrip,
             onScanLogPage: {
                 print("Scan LogPage action")
-            }
+            },
+            documentManager: sharedDocumentStore
         )
         .environmentObject(crewContactManager)
         .preferredColorScheme(.dark)
@@ -651,6 +677,31 @@ struct ContentView: View {
         setupWatchConnectivity()
         checkAndAutoStartDutyForActiveTrip()
         checkIfShouldShowWelcome()  // ✅ NEW: Check welcome screen status
+        checkBackupAndMonthlySummary()  // Check backup prompts
+    }
+
+    // MARK: - Backup Prompt Check
+    private func checkBackupAndMonthlySummary() {
+        // Delay slightly to let the UI settle
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            let totalLegs = store.trips.reduce(0) { $0 + $1.legs.count }
+            backupPromptManager.checkOnAppLaunch(
+                tripCount: store.trips.count,
+                hasSignificantData: totalLegs > 5
+            )
+
+            // Bind manager state to local state
+            if backupPromptManager.shouldShowBackupPrompt {
+                showingBackupPrompt = true
+            }
+
+            // Check monthly summary after backup prompt is handled
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if backupPromptManager.shouldShowMonthlySummary && !showingBackupPrompt {
+                    showingMonthlySummary = true
+                }
+            }
+        }
     }
     
     private func setupNotificationObservers() {
@@ -704,7 +755,19 @@ struct ContentView: View {
         .onAppear {
             print("ContentView appeared - Device: \(isPad ? "iPad" : "iPhone")")
             setupContentView()
+            
+            // Check if migration warning should be shown (temporarily disabled)
+            // See FIX_MIGRATION_WARNING_SCOPE_ERROR.md for instructions
+            // if migrationManager.shouldShowWarning {
+            //     // Delay slightly to ensure view is fully loaded
+            //     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            //         showingMigrationWarning = true
+            //     }
+            // }
         }
+        // .sheet(isPresented: $showingMigrationWarning) {
+        //     ContainerMigrationWarningView()
+        // }
         .onChange(of: activeTrip) { oldValue, newValue in
             if newValue != nil && AutoTimeSettings.shared.isEnabled {
                 speedMonitor.startTracking()
@@ -772,6 +835,10 @@ struct ContentView: View {
                 onImportCSV: {
                     // Show CSV import
                     showingFileImport = true
+                },
+                onImportRAIDO: {
+                    // Show RAIDO JSON import picker
+                    showingRaidoImportPicker = true
                 }
             )
             .transition(.opacity.combined(with: .scale(scale: 0.95)))
@@ -780,7 +847,12 @@ struct ContentView: View {
     }
     
     // MARK: - Empty State Views
-    
+
+    // State for recovery actions
+    @State private var isRecovering = false
+    @State private var recoveryMessage: String?
+    @State private var showingRecoveryResult = false
+
     /// Data recovery view for users who HAD trips but lost them
     private var dataRecoveryView: some View {
         VStack(spacing: 16) {
@@ -788,50 +860,59 @@ struct ContentView: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 18))
                     .foregroundColor(LogbookTheme.warningYellow)
-                
+
                 Text("No flight data found")
                     .font(.headline)
                     .foregroundColor(.white)
-                
+
                 Spacer()
             }
-            
+
             Text("It looks like you might have lost your flight data when switching apps. Tap below to recover or import your flights.")
                 .font(.callout)
                 .foregroundColor(LogbookTheme.textSecondary)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
+
+            // Recovery buttons - first row
             HStack(spacing: 12) {
                 Button(action: {
-                    let success = store.recoverDataWithCrewMemberMigration()
-                    if success {
-                        print("✅ Recovery successful!")
-                    } else {
-                        print("❌ No recoverable data found")
-                    }
+                    attemptDataRecovery()
                 }) {
-                    Text("Attempt Recovery")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(LogbookTheme.warningYellow)
-                        .cornerRadius(20)
+                    HStack(spacing: 6) {
+                        if isRecovering {
+                            ProgressView()
+                                .scaleEffect(0.7)
+                                .tint(.white)
+                        } else {
+                            Image(systemName: "icloud.and.arrow.down")
+                        }
+                        Text(isRecovering ? "Recovering..." : "Attempt Recovery")
+                    }
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(isRecovering ? Color.gray : LogbookTheme.warningYellow)
+                    .cornerRadius(20)
                 }
-                
+                .disabled(isRecovering)
+
                 Button(action: {
                     showingFileImport = true
                 }) {
-                    Text("Import Flight Data")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(LogbookTheme.accentBlue)
-                        .cornerRadius(20)
+                    HStack(spacing: 6) {
+                        Image(systemName: "doc.badge.plus")
+                        Text("Import Backup")
+                    }
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(LogbookTheme.accentBlue)
+                    .cornerRadius(20)
                 }
                 .sheet(isPresented: $showingFileImport) {
                     NavigationView {
@@ -844,8 +925,39 @@ struct ContentView: View {
                         .navigationBarItems(trailing: Button("Done") { showingFileImport = false })
                     }
                 }
-                
+
                 Spacer()
+            }
+
+            // Second row - RAIDO import for USA Jet pilots
+            HStack(spacing: 12) {
+                Button(action: {
+                    // Navigate to Data & Backup tab where RAIDO import is handled
+                    // Or show file picker for RAIDO JSON
+                    showingRaidoImportPicker = true
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "airplane.departure")
+                        Text("Import from RAIDO")
+                    }
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(LogbookTheme.accentGreen)
+                    .cornerRadius(20)
+                }
+
+                Spacer()
+            }
+
+            // Recovery result message
+            if let message = recoveryMessage {
+                Text(message)
+                    .font(.caption)
+                    .foregroundColor(message.contains("✅") ? .green : .orange)
+                    .padding(.top, 4)
             }
         }
         .padding(20)
@@ -857,6 +969,59 @@ struct ContentView: View {
         )
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+    }
+
+    /// Attempt to recover data from various sources
+    private func attemptDataRecovery() {
+        isRecovering = true
+        recoveryMessage = nil
+
+        Task {
+            // Step 1: Try SwiftData CloudKit sync
+            await store.syncFromCloud()
+
+            if store.trips.count > 0 {
+                await MainActor.run {
+                    recoveryMessage = "✅ Recovered \(store.trips.count) trips from iCloud!"
+                    isRecovering = false
+                }
+                return
+            }
+
+            // Step 2: Check for legacy CloudKit data
+            await CloudKitMigrationHelper.shared.checkForLegacyData()
+
+            if case .legacyDataFound(let count) = CloudKitMigrationHelper.shared.migrationStatus {
+                // Found legacy data - migrate it
+                await CloudKitMigrationHelper.shared.migrateLegacyData(to: store, mergeWithExisting: true)
+
+                await MainActor.run {
+                    if store.trips.count > 0 {
+                        recoveryMessage = "✅ Migrated \(count) trips from legacy iCloud format!"
+                    } else {
+                        recoveryMessage = "⚠️ Found legacy data but migration failed. Try importing a backup."
+                    }
+                    isRecovering = false
+                }
+                return
+            }
+
+            // Step 3: Try JSON file recovery
+            let jsonRecovered = store.recoverDataWithCrewMemberMigration()
+            if jsonRecovered && store.trips.count > 0 {
+                await MainActor.run {
+                    recoveryMessage = "✅ Recovered trips from local backup!"
+                    isRecovering = false
+                }
+                return
+            }
+
+            // No data found anywhere
+            await MainActor.run {
+                recoveryMessage = "⚠️ No recoverable data found. Import a backup or RAIDO export."
+                isRecovering = false
+            }
+        }
     }
     
     /// Friendly empty state for NEW users (no scary warning)
@@ -900,68 +1065,25 @@ struct ContentView: View {
     }
     
     // MARK: - Layout Variants
-    
+
     // iPhone Layout (Tab bar at bottom)
     private var iPhoneTabLayout: some View {
         CustomizableTabView { tabId in
             contentForTab(tabId)
         }
     }
-    
-    // iPad Layout (NavigationSplitView with sidebar)
+
+    // iPad Layout - Now uses bottom tab bar like iPhone!
     private var iPadNavigationLayout: some View {
-        NavigationSplitView(columnVisibility: .constant(.doubleColumn)) {
-            iPadSidebar
-                .navigationSplitViewColumnWidth(min: 250, ideal: 280, max: 320)
-        } detail: {
-            contentForTab(selectedTab)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        iPadCustomizableTabView { tabId in
+            contentForTab(tabId)
         }
-        .navigationSplitViewStyle(.balanced)
     }
-    
-    // iPad Sidebar (iOS 18 - Button-based, fully reliable)
-    private var iPadSidebar: some View {
-        List {
-            Section {
-                ForEach(tabManager.visibleTabs) { tab in
-                    Button(action: {
-                        selectedTab = tab.id
-                    }) {
-                        HStack {
-                            Label(tab.title, systemImage: tab.systemImage)
-                            Spacer()
-                            if selectedTab == tab.id {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(LogbookTheme.accentBlue)
-                            }
-                        }
-                    }
-                    .foregroundColor(selectedTab == tab.id ? LogbookTheme.accentBlue : .primary)
-                }
-            }
-            
-            if !tabManager.moreTabs.isEmpty {
-                Section("More") {
-                    ForEach(tabManager.moreTabs) { tab in
-                        Button(action: {
-                            selectedTab = tab.id
-                        }) {
-                            HStack {
-                                Label(tab.title, systemImage: tab.systemImage)
-                                Spacer()
-                                if selectedTab == tab.id {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(LogbookTheme.accentBlue)
-                                }
-                            }
-                        }
-                        .foregroundColor(selectedTab == tab.id ? LogbookTheme.accentBlue : .primary)
-                    }
-                }
-            }
-        }
-        .navigationTitle("ProPilot")
+
+    // MARK: - iPad Customizable Tab View (Bottom tabs + slide-out More panel)
+    @ViewBuilder
+    private func iPadCustomizableTabView<Content: View>(@ViewBuilder content: @escaping (String) -> Content) -> some View {
+        iPadTabViewWrapper(content: content)
     }
     
     // Content Router (shared by both layouts)
@@ -1028,7 +1150,12 @@ struct ContentView: View {
         case "nocSchedule":
             NOCSettingsView(nocSettings: nocSettings, scheduleStore: scheduleStore)
                 .preferredColorScheme(.dark)
-            
+
+        case "nocAlertSettings":
+            NOCAlertSettingsView()
+                .environmentObject(nocSettings)
+                .preferredColorScheme(.dark)
+
         case "tripGeneration":
             TripGenerationSettingsView()
                 .preferredColorScheme(.dark)
@@ -1037,7 +1164,11 @@ struct ContentView: View {
             DataBackupSettingsView()
                 .environmentObject(store)
                 .preferredColorScheme(.dark)
-            
+
+        case "monthlySummary":
+            MonthlyEmailSettingsView()
+                .preferredColorScheme(.dark)
+
         case "nocTest":
             NOCTestView(store: store)
                 .preferredColorScheme(.dark)
@@ -1046,7 +1177,11 @@ struct ContentView: View {
             GPXTestingView(speedMonitor: speedMonitor)
                 .environmentObject(locationManager)
                 .preferredColorScheme(.dark)
-        
+
+        case "flightTracks":
+            FlightTrackListView()
+                .preferredColorScheme(.dark)
+
         case "airportTest":
             AirportDatabaseTestView()
                 .preferredColorScheme(.dark)
@@ -1068,12 +1203,24 @@ struct ContentView: View {
                 .environmentObject(store)
                 .preferredColorScheme(.dark)
 
+        // ✅ NEW: Universal Search
+        case "universalSearch":
+            UniversalSearchView { tabId in
+                // Navigate to the selected tab
+                NotificationCenter.default.post(
+                    name: .navigateToTab,
+                    object: nil,
+                    userInfo: ["tabId": tabId]
+                )
+            }
+            .preferredColorScheme(.dark)
+
         // ✅ NEW: Help & Support
         case "help":
             HelpView()
                 .preferredColorScheme(.dark)
-        
-        // ✅ NEW: Search
+
+        // ✅ NEW: Search Logbook
         case "search":
             LogbookSearchView()
                 .environmentObject(store)
@@ -1098,17 +1245,10 @@ struct ContentView: View {
     
     // MARK: - Tab Views
     private var logbookTab: some View {
-        // Use NavigationStack for iPad (inside NavigationSplitView detail)
-        // Use NavigationView for iPhone (standalone)
-        Group {
-            if isPad {
-                logbookContent
-            } else {
-                NavigationView {
-                    logbookContent
-                }
-            }
-        }
+        // iPad now uses NavigationStack in iPadTabViewWrapper
+        // iPhone uses NavigationView here
+        // Both now get proper navigation - content is wrapped appropriately
+        logbookContent
     }
     
     private var logbookContent: some View {
@@ -1125,7 +1265,19 @@ struct ContentView: View {
                 GPSSpoofingStatusPill()
                     .padding(.trailing, 6)
                 // ═══════════════════════════════════════════════════════════════
-                
+
+                // 🏢 FBO Contact Icon
+                FBOIcon(
+                    activeTrip: activeTrip,
+                    isExpanded: showingFBOBanner,
+                    onTap: {
+                        withAnimation(.spring(response: 0.3)) {
+                            showingFBOBanner.toggle()
+                        }
+                    }
+                )
+                .padding(.trailing, 6)
+
                 // Weather Condition Icon
                 WeatherConditionIcon(
                     activeTrip: activeTrip,
@@ -1154,6 +1306,15 @@ struct ContentView: View {
             .padding(.vertical, 6)
             .background(LogbookTheme.navyDark)
 
+            // MARK: - FBO Banner (Collapsible)
+            if showingFBOBanner {
+                FBOBannerView(activeTrip: activeTrip)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 4)
+                    .padding(.bottom, 8)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
             // MARK: - Weather Banner (Collapsible)
             if showingWeatherBanner {
                 WeatherBannerView(activeTrip: activeTrip)
@@ -1162,7 +1323,7 @@ struct ContentView: View {
                     .padding(.bottom, 8)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            
+
             // MARK: - Active Trip Banner
             if let activeTrip = activeTrip,
                let tripIndex = store.trips.firstIndex(where: { $0.id == activeTrip.id }) {
@@ -1443,6 +1604,7 @@ struct ContentView: View {
     }
     
     // moreTab removed - now using TabManager slide-out panel
+    //New Trip Button Below
     
     private var addTripButton: some View {
         HStack(spacing: 12) {
@@ -1451,21 +1613,21 @@ struct ContentView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: trialChecker.canCreateTrip ? "airplane.departure" : "lock.fill")
-                        .font(.system(size: 10, weight: .bold))
-                    Text("New Trip")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 12, weight: .bold))
+                    Text("New")
+                        .font(.system(size: 15, weight: .semibold))
                 }
                 .foregroundColor(trialChecker.canCreateTrip ? .white : .gray)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 8)
                 .padding(.vertical, 8)
                 .background(
                     trialChecker.canCreateTrip ? 
-                    LogbookTheme.accentGreen.opacity(0.15) : 
+                    LogbookTheme.accentGreen.opacity(0.10) :
                     Color.white.opacity(0.05)
                 )
                 .cornerRadius(10)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 25)
+                    RoundedRectangle(cornerRadius: 15)
                         .stroke(trialChecker.canCreateTrip ? LogbookTheme.accentGreen.opacity(0.5) : .gray, lineWidth: 1)
                 )
             }
@@ -1479,8 +1641,51 @@ struct ContentView: View {
         .sheet(isPresented: $showingPaywall) {
             PaywallView()
         }
+        // RAIDO JSON file import
+        .fileImporter(
+            isPresented: $showingRaidoImportPicker,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                if let url = urls.first {
+                    RaidoImportHandler.shared.handleIncomingFile(url)
+                }
+            case .failure(let error):
+                print("❌ RAIDO file selection failed: \(error)")
+            }
+        }
+        // RAIDO import confirmation sheet
+        .sheet(isPresented: .init(
+            get: { RaidoImportHandler.shared.showingConfirmation },
+            set: { RaidoImportHandler.shared.showingConfirmation = $0 }
+        )) {
+            RaidoImportConfirmationView(store: store)
+        }
+        // RAIDO import success alert
+        .alert("Import Successful", isPresented: .init(
+            get: { RaidoImportHandler.shared.importSuccess },
+            set: { RaidoImportHandler.shared.importSuccess = $0 }
+        )) {
+            Button("OK") { }
+        } message: {
+            Text("Successfully imported \(RaidoImportHandler.shared.importedTripCount) trips from RAIDO!")
+        }
+        // General file import error alert
+        .alert("Import Error", isPresented: $showingImportError) {
+            Button("OK") { }
+        } message: {
+            Text(importErrorMessage ?? "Unknown error occurred")
+        }
+        // General file import success alert
+        .alert("Import Successful", isPresented: $showingImportSuccess) {
+            Button("OK") { }
+        } message: {
+            Text(importSuccessMessage ?? "Import completed successfully")
+        }
     }
-    
+
     // MARK: - Flight Type Menu Buttons (Reusable)
     @ViewBuilder
     private var flightTypeButtons: some View {
@@ -1493,14 +1698,7 @@ struct ContentView: View {
         Button(action: {
             createNewTrip(type: .deadhead)
         }) {
-            Label {
-                Text("New Deadhead")
-            } icon: {
-                // Use custom asset if you have one named "airplaneseat"
-                // Otherwise, use SF Symbol "airplane"
-                Image("airplaneseat")  // Your custom SVG from Assets.xcassets
-                    .renderingMode(.template)
-            }
+            Label("New Deadhead", systemImage: "airplaneseat")
         }
         
         Button(action: {
@@ -2013,39 +2211,79 @@ struct ContentView: View {
     // MARK: - All helper functions
     
     private func handleFileImport(content: String, filename: String) {
-        print("Attempting to import and decode \(filename)...")
-        
+        print("📁 Attempting to import and decode \(filename)...")
+
         guard let data = content.data(using: .utf8) else {
             print("Error: Could not convert file content to Data.")
             showingFileImport = false
+            importErrorMessage = "Could not read file content."
+            showingImportError = true
             return
         }
-        
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .custom { decoder throws -> Date in
-            let container = try decoder.singleValueContainer()
-            let timeInterval = try container.decode(TimeInterval.self)
-            return Date(timeIntervalSinceReferenceDate: timeInterval)
-        }
-        
-        do {
-            let importedTrips = try decoder.decode([Trip].self, from: data)
-            
-            DispatchQueue.main.async {
-                for trip in importedTrips {
-                    store.addTrip(trip)
-                }
-                print("✅ Successfully imported \(importedTrips.count) trips!")
+
+        // Step 1: Check if this is a RAIDO JSON file
+        if isRaidoJSONFormat(data) {
+            print("✅ Detected RAIDO JSON format - routing to RAIDO import handler")
+            showingFileImport = false
+
+            // Save content to temp file and route to RAIDO handler
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension("json")
+
+            do {
+                try data.write(to: tempURL)
+                RaidoImportHandler.shared.handleIncomingFile(tempURL)
+            } catch {
+                print("❌ Failed to save temp RAIDO file: \(error)")
+                importErrorMessage = "Failed to process RAIDO file: \(error.localizedDescription)"
+                showingImportError = true
             }
-            
-        } catch {
-            print("❌ JSON decoding failed: \(error)")
-            if let decodingError = error as? DecodingError {
-                print("Decoding Error Details: \(decodingError)")
-            }
+            return
         }
-        
+
+        // Step 2: Try to decode as ProPilot backup format using the store's import method
+        // This handles multiple date formats and provides smart duplicate detection
+        let result = store.importFromJSON(data, mergeWithExisting: true)
+
+        if result.success {
+            print("✅ Import complete: \(result.message)")
+            importSuccessMessage = result.message
+            showingImportSuccess = true
+        } else {
+            print("❌ Import failed: \(result.message)")
+            // Provide helpful error message
+            importErrorMessage = "This doesn't appear to be a valid ProPilot backup file or RAIDO export.\n\nSupported formats:\n• ProPilot JSON backup\n• RAIDO JSON export"
+            showingImportError = true
+        }
+
         showingFileImport = false
+    }
+
+    /// Detects if JSON data is in RAIDO format (has "Report" array with RaidoLab_ fields)
+    private func isRaidoJSONFormat(_ data: Data) -> Bool {
+        do {
+            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                if let report = json["Report"] as? [[String: Any]], !report.isEmpty {
+                    let firstRow = report[0]
+                    let keys = Set(firstRow.keys)
+
+                    // Check for RAIDO-specific key names
+                    let hasDateField = keys.contains("RaidoLab_TimeMode") || keys.contains("RaidoLab_Name")
+                    let hasFlightFields = keys.contains("RaidoLab_Code") &&
+                                          keys.contains("RaidoLab_Dep") &&
+                                          keys.contains("RaidoLab_Arr")
+
+                    if hasDateField && hasFlightFields {
+                        print("🔍 RAIDO format detected: has Report array with RaidoLab_ fields")
+                        return true
+                    }
+                }
+            }
+        } catch {
+            print("🔍 JSON parsing failed for format detection: \(error)")
+        }
+        return false
     }
     
     private func createTextImage(from text: String) -> UIImage {

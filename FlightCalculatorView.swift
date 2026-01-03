@@ -542,24 +542,26 @@ struct RunwayGraphic: View {
             }
             
             // Threshold Markings ("Piano Keys") & Numbers
+            // Runway numbers are placed at the APPROACH end (threshold) as pilots see them
+            // When the runway is rotated to heading, the numbers appear correctly oriented
             VStack {
-                // Top (Reciprocal)
+                // Top threshold - shows reciprocal number (approach end for opposite direction)
                 VStack(spacing: 2) {
                     HStack(spacing: 3) {
                         ForEach(0..<4) { _ in Rectangle().fill(.white).frame(width: 2, height: 10) }
                     }
-                    Text(runwayNum) // Actually displayed at top, visuals are rotated by parent
+                    Text(reciprocalNum)
                         .font(.system(size: 14, weight: .heavy, design: .monospaced))
                         .foregroundColor(.white)
-                        .rotationEffect(.degrees(180)) // Flip text so it reads correctly when looking "down"
+                        .rotationEffect(.degrees(180)) // Flip so it reads correctly from approach direction
                 }
                 .padding(.top, 10)
-                
+
                 Spacer()
-                
-                // Bottom (Selected Heading)
+
+                // Bottom threshold - shows runway number (approach end for selected heading)
                 VStack(spacing: 2) {
-                    Text(reciprocalNum)
+                    Text(runwayNum)
                         .font(.system(size: 14, weight: .heavy, design: .monospaced))
                         .foregroundColor(.white)
                     HStack(spacing: 3) {
@@ -846,13 +848,15 @@ struct RunwayCentricWindView: View {
                     )
                 
                 // MARK: The Vertical Runway
+                // In this view, runway is always vertical (north-up perspective)
+                // The active runway number (approach end) is shown at the bottom
                 VStack(spacing: 0) {
-                    // Top Runway Number (Reciprocal)
+                    // Top - Reciprocal number (departure end when landing on active runway)
                     Text(reciprocalNum)
                         .font(.system(size: 20, weight: .heavy, design: .monospaced))
                         .foregroundColor(.white.opacity(0.5))
                         .padding(.bottom, 8)
-                    
+
                     // Runway surface
                     ZStack {
                         // Asphalt
@@ -894,7 +898,7 @@ struct RunwayCentricWindView: View {
                         .frame(height: geo.size.height * 0.6)
                     }
                     
-                    // Bottom Runway Number (Active)
+                    // Bottom - Active runway number (approach end / threshold)
                     Text(runwayNum)
                         .font(.system(size: 24, weight: .heavy, design: .monospaced))
                         .foregroundColor(.white)

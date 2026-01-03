@@ -728,80 +728,274 @@ class BannerWeatherService: ObservableObject {
     }
 
     // MARK: - Winds Aloft Stations
-    // These are the standard FAA winds aloft reporting stations (3-letter codes, coordinates)
-    // Source: https://aviationweather.gov/data/windtemp/
+    // These are the actual FAA winds aloft reporting stations from aviationweather.gov API
+    // Updated to match actual stations returned by: https://aviationweather.gov/api/data/windtemp?region=all
+    // Note: Many major airports (DTW, ORD, LAX, etc.) are NOT winds aloft reporting stations
+    // The nearest reporting station should be used for those airports
     private static let windsAloftStations: [(code: String, lat: Double, lon: Double)] = [
-        // Northeast
-        ("ACK", 41.25, -70.07), ("ALB", 42.75, -73.80), ("BGR", 44.81, -68.82), ("BDL", 41.94, -72.68),
-        ("BOS", 42.36, -71.01), ("BTV", 44.47, -73.15), ("CAR", 46.87, -68.02), ("CON", 43.20, -71.50),
-        ("HTO", 40.96, -72.25), ("JFK", 40.64, -73.78), ("PVD", 41.72, -71.43), ("SYR", 43.11, -76.10),
-        // Mid-Atlantic
-        ("ABE", 40.65, -75.44), ("ACY", 39.45, -74.57), ("AOO", 40.30, -78.32), ("AVP", 41.34, -75.73),
-        ("BWI", 39.18, -76.67), ("DCA", 38.85, -77.04), ("EWR", 40.69, -74.17), ("HAR", 40.29, -76.87),
-        ("IAD", 38.95, -77.46), ("PHL", 39.87, -75.24), ("PIT", 40.50, -80.23), ("RIC", 37.50, -77.32),
+        // Actual reporting stations from API (alphabetical by region)
+        // Northeast / Mid-Atlantic
+        ("ACK", 41.25, -70.07),   // Nantucket, MA
+        ("ACY", 39.45, -74.57),   // Atlantic City, NJ
+        ("AGC", 40.35, -79.93),   // Pittsburgh Allegheny, PA
+        ("ALB", 42.75, -73.80),   // Albany, NY
+        ("AVP", 41.34, -75.73),   // Wilkes-Barre, PA
+        ("BDL", 41.94, -72.68),   // Hartford, CT
+        ("BGR", 44.81, -68.82),   // Bangor, ME
+        ("BML", 44.58, -71.18),   // Berlin, NH
+        ("BOS", 42.36, -71.01),   // Boston, MA
+        ("BUF", 42.94, -78.73),   // Buffalo, NY
+        ("CAR", 46.87, -68.02),   // Caribou, ME
+        ("EMI", 39.50, -76.98),   // Westminster, MD (Baltimore area)
+        ("HAT", 35.23, -75.62),   // Cape Hatteras, NC
+        ("JFK", 40.64, -73.78),   // New York JFK
+        ("ORF", 36.90, -76.21),   // Norfolk, VA
+        ("PLB", 44.69, -73.53),   // Plattsburgh, NY
+        ("PSB", 40.88, -78.09),   // Philipsburg, PA
+        ("PWM", 43.65, -70.31),   // Portland, ME
+        ("RIC", 37.50, -77.32),   // Richmond, VA
+        ("SYR", 43.11, -76.10),   // Syracuse, NY
+
         // Southeast
-        ("ATL", 33.64, -84.43), ("AVL", 35.44, -82.54), ("BNA", 36.12, -86.68), ("CAE", 33.94, -81.12),
-        ("CHS", 32.90, -80.04), ("CLT", 35.21, -80.94), ("CRW", 38.37, -81.59), ("DAB", 29.18, -81.06),
-        ("EYW", 24.56, -81.76), ("GSO", 36.10, -79.94), ("HSV", 34.64, -86.77), ("JAX", 30.49, -81.69),
-        ("LEX", 38.04, -84.60), ("MEM", 35.04, -90.00), ("MIA", 25.79, -80.29), ("MLB", 28.10, -80.65),
-        ("MOB", 30.69, -88.24), ("ORF", 36.90, -76.21), ("PBI", 26.68, -80.10), ("PNS", 30.47, -87.19),
-        ("ROA", 37.32, -79.97), ("SAV", 32.13, -81.20), ("TLH", 30.40, -84.35), ("TPA", 27.98, -82.53),
-        ("TRI", 36.48, -82.40), ("TYS", 35.81, -84.00),
+        ("ATL", 33.64, -84.43),   // Atlanta, GA
+        ("BHM", 33.56, -86.75),   // Birmingham, AL
+        ("BNA", 36.12, -86.68),   // Nashville, TN
+        ("CAE", 33.94, -81.12),   // Columbia, SC
+        ("CHS", 32.90, -80.04),   // Charleston, SC
+        ("CRW", 38.37, -81.59),   // Charleston, WV
+        ("CSG", 32.52, -84.94),   // Columbus, GA
+        ("EYW", 24.56, -81.76),   // Key West, FL
+        ("FLO", 34.19, -79.72),   // Florence, SC
+        ("GSP", 34.90, -82.22),   // Greenville-Spartanburg, SC
+        ("HSV", 34.64, -86.77),   // Huntsville, AL
+        ("ILM", 34.27, -77.90),   // Wilmington, NC
+        ("JAX", 30.49, -81.69),   // Jacksonville, FL
+        ("JAN", 32.31, -90.08),   // Jackson, MS
+        ("MGM", 32.30, -86.39),   // Montgomery, AL
+        ("MIA", 25.79, -80.29),   // Miami, FL
+        ("MLB", 28.10, -80.65),   // Melbourne, FL
+        ("MOB", 30.69, -88.24),   // Mobile, AL
+        ("PFN", 30.21, -85.68),   // Panama City, FL
+        ("PIE", 27.91, -82.69),   // St. Petersburg, FL
+        ("ROA", 37.32, -79.97),   // Roanoke, VA
+        ("SAV", 32.13, -81.20),   // Savannah, GA
+        ("TLH", 30.40, -84.35),   // Tallahassee, FL
+        ("TRI", 36.48, -82.40),   // Tri-Cities, TN
+        ("TYS", 35.81, -84.00),   // Knoxville, TN
+
         // Great Lakes / Midwest
-        ("APN", 45.07, -83.56), ("CMH", 39.98, -82.88), ("CLE", 41.41, -81.85), ("CVG", 39.05, -84.67),
-        ("DAY", 39.90, -84.22), ("DET", 42.41, -83.01), ("DTW", 42.21, -83.35), ("ECK", 43.26, -82.72),
-        ("FWA", 40.98, -85.19), ("GRB", 44.48, -88.13), ("GRR", 42.88, -85.52), ("IND", 39.72, -86.29),
-        ("LAN", 42.78, -84.59), ("MBS", 43.53, -84.08), ("MKE", 42.95, -87.90), ("MKG", 43.17, -86.24),
-        ("PLN", 45.57, -84.80), ("SBN", 41.71, -86.31), ("SSM", 46.48, -84.36), ("TOL", 41.59, -83.81),
-        ("TVC", 44.74, -85.58), ("YNG", 41.26, -80.68),
+        ("AXN", 45.87, -95.39),   // Alexandria, MN
+        ("BRL", 40.78, -91.13),   // Burlington, IA
+        ("CLE", 41.41, -81.85),   // Cleveland, OH
+        ("CMH", 39.98, -82.88),   // Columbus, OH
+        ("COU", 38.82, -92.22),   // Columbia, MO
+        ("CVG", 39.05, -84.67),   // Cincinnati, OH
+        ("DBQ", 42.40, -90.71),   // Dubuque, IA
+        ("DLH", 46.84, -92.19),   // Duluth, MN
+        ("DSM", 41.53, -93.66),   // Des Moines, IA
+        ("ECK", 43.26, -82.72),   // Peck, MI (Detroit area winds aloft)
+        ("EVV", 38.04, -87.53),   // Evansville, IN
+        ("FWA", 40.98, -85.19),   // Fort Wayne, IN
+        ("GRB", 44.48, -88.13),   // Green Bay, WI
+        ("IND", 39.72, -86.29),   // Indianapolis, IN
+        ("INL", 48.57, -93.40),   // International Falls, MN
+        ("JOT", 41.52, -88.18),   // Joliet, IL (Chicago area)
+        ("LSE", 43.88, -91.26),   // La Crosse, WI
+        ("MCW", 43.16, -93.33),   // Mason City, IA
+        ("MKC", 39.12, -94.59),   // Kansas City Downtown
+        ("MKG", 43.17, -86.24),   // Muskegon, MI
+        ("MQT", 46.53, -87.56),   // Marquette, MI
+        ("MSP", 44.88, -93.22),   // Minneapolis, MN
+        ("SPI", 39.84, -89.68),   // Springfield, IL
+        ("SSM", 46.48, -84.36),   // Sault Ste. Marie, MI
+        ("STL", 38.75, -90.37),   // St. Louis, MO
+        ("TVC", 44.74, -85.58),   // Traverse City, MI
+
         // Central / Plains
-        ("ABR", 45.45, -98.42), ("AMA", 35.22, -101.70), ("BFF", 41.89, -103.60), ("BIS", 46.77, -100.74),
-        ("DDC", 37.76, -99.97), ("DEN", 39.86, -104.67), ("DSM", 41.53, -93.66), ("FAR", 46.90, -96.80),
-        ("FSD", 43.58, -96.74), ("GCK", 37.93, -100.72), ("GFK", 47.95, -97.18), ("GLD", 39.37, -101.70),
-        ("GRI", 40.97, -98.31), ("ICT", 37.65, -97.43), ("INL", 48.57, -93.40), ("ISN", 48.18, -103.64),
-        ("LBF", 41.13, -100.68), ("MCI", 39.30, -94.71), ("MKC", 39.12, -94.59), ("MLS", 46.43, -105.89),
-        ("MOT", 48.26, -101.28), ("OFK", 41.99, -97.44), ("OMA", 41.30, -95.89), ("ONL", 42.47, -98.69),
-        ("P60", 41.87, -102.28), ("PIR", 44.38, -100.29), ("RAP", 44.04, -103.05), ("SGF", 37.24, -93.39),
-        ("SLC", 40.78, -111.97), ("STL", 38.75, -90.37), ("TOP", 39.07, -95.62),
-        // Southwest
-        ("ABQ", 35.04, -106.61), ("DFW", 32.90, -97.02), ("ELP", 31.81, -106.38), ("FTW", 32.82, -97.36),
-        ("HOU", 29.65, -95.28), ("IAH", 29.98, -95.34), ("INK", 31.78, -103.20), ("LBB", 33.66, -101.82),
-        ("MAF", 31.94, -102.20), ("MRF", 30.37, -104.02), ("OKC", 35.39, -97.60), ("PHX", 33.43, -112.01),
-        ("PRC", 34.65, -112.42), ("ROW", 33.30, -104.53), ("SAT", 29.53, -98.47), ("TCS", 33.24, -107.27),
-        ("TUS", 32.12, -110.94),
+        ("ABR", 45.45, -98.42),   // Aberdeen, SD
+        ("AMA", 35.22, -101.70),  // Amarillo, TX
+        ("BFF", 41.89, -103.60),  // Scottsbluff, NE
+        ("DEN", 39.86, -104.67),  // Denver, CO
+        ("DIK", 46.80, -102.80),  // Dickinson, ND
+        ("FSD", 43.58, -96.74),   // Sioux Falls, SD
+        ("GAG", 36.30, -99.77),   // Gage, OK
+        ("GCK", 37.93, -100.72),  // Garden City, KS
+        ("GFK", 47.95, -97.18),   // Grand Forks, ND
+        ("GGW", 48.21, -106.62),  // Glasgow, MT
+        ("GLD", 39.37, -101.70),  // Goodland, KS
+        ("GRI", 40.97, -98.31),   // Grand Island, NE
+        ("ICT", 37.65, -97.43),   // Wichita, KS
+        ("LBB", 33.66, -101.82),  // Lubbock, TX
+        ("LND", 42.81, -108.73),  // Lander, WY
+        ("MLS", 46.43, -105.89),  // Miles City, MT
+        ("MOT", 48.26, -101.28),  // Minot, ND
+        ("OMA", 41.30, -95.89),   // Omaha, NE
+        ("ONL", 42.47, -98.69),   // O'Neill, NE
+        ("PIR", 44.38, -100.29),  // Pierre, SD
+        ("PUB", 38.29, -104.50),  // Pueblo, CO
+        ("RAP", 44.04, -103.05),  // Rapid City, SD
+        ("RKS", 41.59, -109.07),  // Rock Springs, WY
+        ("SGF", 37.24, -93.39),   // Springfield, MO
+        ("SLN", 38.79, -97.65),   // Salina, KS
+
+        // Southwest / Texas
+        ("ABI", 32.41, -99.68),   // Abilene, TX
+        ("ABQ", 35.04, -106.61),  // Albuquerque, NM
+        ("BRO", 25.91, -97.43),   // Brownsville, TX
+        ("CGI", 37.23, -89.57),   // Cape Girardeau, MO
+        ("CLL", 30.59, -96.36),   // College Station, TX
+        ("CRP", 27.77, -97.50),   // Corpus Christi, TX
+        ("DAL", 32.85, -96.85),   // Dallas Love Field
+        ("DRT", 29.37, -100.93),  // Del Rio, TX
+        ("ELP", 31.81, -106.38),  // El Paso, TX
+        ("FSM", 35.34, -94.37),   // Fort Smith, AR
+        ("FMN", 36.74, -108.23),  // Farmington, NM
+        ("GJT", 39.12, -108.53),  // Grand Junction, CO
+        ("H51", 29.52, -98.28),   // San Antonio area
+        ("H52", 29.29, -94.79),   // Galveston area
+        ("H61", 28.67, -96.18),   // Victoria, TX area
+        ("HOU", 29.65, -95.28),   // Houston Hobby
+        ("INK", 31.78, -103.20),  // Wink, TX
+        ("LCH", 30.13, -93.22),   // Lake Charles, LA
+        ("LIT", 34.73, -92.22),   // Little Rock, AR
+        ("LRD", 27.54, -99.46),   // Laredo, TX
+        ("MEM", 35.04, -90.00),   // Memphis, TN
+        ("MRF", 30.37, -104.02),  // Marfa, TX
+        ("MSY", 29.99, -90.26),   // New Orleans, LA
+        ("OKC", 35.39, -97.60),   // Oklahoma City, OK
+        ("PHX", 33.43, -112.01),  // Phoenix, AZ
+        ("PRC", 34.65, -112.42),  // Prescott, AZ
+        ("PSX", 28.73, -96.25),   // Palacios, TX
+        ("ROW", 33.30, -104.53),  // Roswell, NM
+        ("SAT", 29.53, -98.47),   // San Antonio, TX
+        ("SHV", 32.45, -93.83),   // Shreveport, LA
+        ("SPS", 33.99, -98.49),   // Wichita Falls, TX
+        ("TCC", 35.18, -103.60),  // Tucumcari, NM
+        ("TUL", 36.20, -95.89),   // Tulsa, OK
+        ("TUS", 32.12, -110.94),  // Tucson, AZ
+        ("ZUN", 34.97, -109.15),  // Zuni, NM
+
         // Northwest / Mountain
-        ("BOI", 43.57, -116.22), ("BTM", 45.95, -112.50), ("BZN", 45.78, -111.15), ("DLN", 45.25, -112.55),
-        ("DNJ", 45.18, -113.20), ("EKO", 40.83, -115.79), ("ELY", 39.30, -114.84), ("GEG", 47.62, -117.53),
-        ("GTF", 47.48, -111.37), ("HLN", 46.61, -112.00), ("LKV", 42.16, -120.40), ("LVM", 45.68, -110.45),
-        ("LWS", 46.37, -117.01), ("MLP", 44.13, -115.73), ("MUO", 43.04, -115.87), ("OTH", 43.42, -124.25),
-        ("PDT", 45.69, -118.84), ("PDX", 45.59, -122.60), ("PIH", 42.91, -112.60), ("REO", 42.58, -117.87),
-        ("RNO", 39.50, -119.77), ("SEA", 47.45, -122.31), ("SFF", 47.68, -117.32), ("WMC", 42.93, -117.81),
-        ("YKM", 46.57, -120.54),
-        // California
-        ("BFL", 35.43, -119.06), ("BIH", 37.37, -118.36), ("DAG", 34.85, -116.79), ("EDW", 34.91, -117.88),
-        ("FAT", 36.78, -119.72), ("FOT", 40.55, -124.13), ("LAX", 33.94, -118.41), ("MRY", 36.59, -121.85),
-        ("OAK", 37.72, -122.22), ("ONT", 34.05, -117.60), ("RBL", 40.15, -122.25), ("SAC", 38.51, -121.49),
-        ("SAN", 32.73, -117.19), ("SBA", 34.43, -119.84), ("SFO", 37.62, -122.38), ("SIY", 41.78, -122.47),
-        ("TPH", 38.06, -117.09), ("WJF", 34.74, -118.22),
-        // Alaska
-        ("ADQ", 57.75, -152.50), ("ANC", 61.17, -150.02), ("ANI", 61.58, -159.55), ("BET", 60.78, -161.84),
-        ("BRW", 71.29, -156.77), ("BTI", 70.13, -143.58), ("CDB", 55.21, -162.72), ("FAI", 64.81, -147.86),
-        ("GAL", 64.74, -156.94), ("GKN", 62.16, -145.46), ("HOM", 59.65, -151.48), ("JNU", 58.36, -134.58),
-        ("MCG", 62.95, -155.61), ("MDO", 59.45, -146.31), ("OME", 64.51, -165.44), ("OTZ", 66.89, -162.60),
-        ("SIT", 57.05, -135.36), ("TKA", 62.32, -150.09), ("YAK", 59.51, -139.66),
-        // Hawaii
-        ("HNL", 21.32, -157.93), ("ITO", 19.72, -155.05), ("LIH", 21.98, -159.34), ("OGG", 20.90, -156.43)
+        ("BAM", 40.60, -117.87),  // Battle Mountain, NV
+        ("BCE", 37.71, -112.15),  // Bryce Canyon, UT
+        ("BIL", 45.81, -108.54),  // Billings, MT
+        ("BIH", 37.37, -118.36),  // Bishop, CA
+        ("BLH", 33.62, -114.72),  // Blythe, CA
+        ("BOI", 43.57, -116.22),  // Boise, ID
+        ("CZI", 35.61, -110.45),  // Chinle, AZ
+        ("DLN", 45.25, -112.55),  // Dillon, MT
+        ("ELY", 39.30, -114.84),  // Ely, NV
+        ("EKN", 38.89, -79.86),   // Elkins, WV
+        ("GEG", 47.62, -117.53),  // Spokane, WA
+        ("GPI", 48.31, -114.26),  // Glacier Park, MT
+        ("GTF", 47.48, -111.37),  // Great Falls, MT
+        ("IMB", 42.60, -114.66),  // Burley, ID
+        ("LAS", 36.08, -115.15),  // Las Vegas, NV
+        ("LKV", 42.16, -120.40),  // Lakeview, OR
+        ("LWS", 46.37, -117.01),  // Lewiston, ID
+        ("MBW", 43.63, -116.63),  // Mountain Home, ID area
+        ("PIH", 42.91, -112.60),  // Pocatello, ID
+        ("RDM", 44.25, -121.15),  // Redmond, OR
+        ("RNO", 39.50, -119.77),  // Reno, NV
+        ("SEA", 47.45, -122.31),  // Seattle, WA
+        ("SLC", 40.78, -111.97),  // Salt Lake City, UT
+        ("YKM", 46.57, -120.54),  // Yakima, WA
+
+        // California / Pacific
+        ("AST", 46.16, -123.88),  // Astoria, OR
+        ("FAT", 36.78, -119.72),  // Fresno, CA
+        ("FOT", 40.55, -124.13),  // Fortuna, CA
+        ("ONT", 34.05, -117.60),  // Ontario, CA
+        ("OTH", 43.42, -124.25),  // North Bend, OR
+        ("PDX", 45.59, -122.60),  // Portland, OR
+        ("RBL", 40.15, -122.25),  // Red Bluff, CA
+        ("RDU", 35.88, -78.79),   // Raleigh-Durham, NC
+        ("SAC", 38.51, -121.49),  // Sacramento, CA
+        ("SAN", 32.73, -117.19),  // San Diego, CA
+        ("SBA", 34.43, -119.84),  // Santa Barbara, CA
+        ("SFO", 37.62, -122.38),  // San Francisco, CA
+        ("SIY", 41.78, -122.47),  // Montague, CA
+        ("WJF", 34.74, -118.22),  // Lancaster, CA
+
+        // Texas special stations
+        ("T01", 30.34, -97.77),   // Austin area
+        ("T06", 33.98, -98.59),   // Sheppard AFB area
+        ("T07", 31.99, -102.08),  // Midland area
+
+        // Alaska - from region=alaska
+        ("ADK", 51.88, -176.65),  // Adak Island
+        ("ADQ", 57.75, -152.50),  // Kodiak
+        ("AFM", 67.11, -157.86),  // Ambler
+        ("AKN", 58.68, -156.65),  // King Salmon
+        ("ANC", 61.17, -150.02),  // Anchorage
+        ("ANN", 55.04, -131.57),  // Annette Island
+        ("BET", 60.78, -161.84),  // Bethel
+        ("BRW", 71.29, -156.77),  // Barrow/Utqiagvik
+        ("BTI", 70.13, -143.58),  // Barter Island
+        ("BTT", 66.91, -151.53),  // Bettles
+        ("CDB", 55.21, -162.72),  // Cold Bay
+        ("CZF", 61.78, -166.04),  // Cape Romanzof
+        ("EHM", 58.65, -162.06),  // Cape Newenham
+        ("FAI", 64.81, -147.86),  // Fairbanks
+        ("FYU", 66.57, -145.25),  // Fort Yukon
+        ("GAL", 64.74, -156.94),  // Galena
+        ("GKN", 62.16, -145.46),  // Gulkana
+        ("HOM", 59.65, -151.48),  // Homer
+        ("IKO", 52.94, -168.85),  // Nikolski
+        ("JNU", 58.36, -134.58),  // Juneau
+        ("LUR", 68.88, -166.11),  // Cape Lisburne
+        ("MCG", 62.95, -155.61),  // McGrath
+        ("MDO", 59.45, -146.31),  // Middleton Island
+        ("OME", 64.51, -165.44),  // Nome
+        ("ORT", 63.88, -141.93),  // Northway
+        ("OTZ", 66.89, -162.60),  // Kotzebue
+        ("SNP", 57.17, -170.22),  // St. Paul Island
+        ("TKA", 62.32, -150.09),  // Talkeetna
+        ("UNK", 63.89, -160.80),  // Unalakleet
+        ("YAK", 59.51, -139.66),  // Yakutat
+
+        // Hawaii - from region=hawaii
+        ("HNL", 21.32, -157.93),  // Honolulu
+        ("ITO", 19.72, -155.05),  // Hilo
+        ("KOA", 19.74, -156.05),  // Kona
+        ("LIH", 21.98, -159.34),  // Lihue
+        ("LNY", 20.79, -156.95),  // Lanai
+        ("OGG", 20.90, -156.43),  // Kahului/Maui
     ]
 
     // MARK: - Winds Aloft Fetching (aviationweather.gov)
     func fetchWindsAloft(for airport: String) async throws -> [WindsAloftData] {
         let icao = airport.uppercased()
 
+        // Determine the region based on airport location
+        var region = "all"  // Default to CONUS
+        var airportLat: Double?
+        var airportLon: Double?
+
+        if let airportInfo = AirportDatabaseManager.shared.getAirport(for: icao) {
+            airportLat = airportInfo.coordinate.latitude
+            airportLon = airportInfo.coordinate.longitude
+
+            // Determine region based on coordinates
+            if let lat = airportLat, let lon = airportLon {
+                if lat >= 50.0 && lon < -130.0 {
+                    // Alaska (north of 50°N and west of 130°W)
+                    region = "alaska"
+                } else if lat >= 18.0 && lat <= 23.0 && lon >= -161.0 && lon <= -154.0 {
+                    // Hawaii (roughly 18-23°N, 154-161°W)
+                    region = "hawaii"
+                }
+            }
+        }
+
         // Use the winds aloft API - it provides forecast winds at various altitudes
-        let urlString = "https://aviationweather.gov/api/data/windtemp?region=all&level=low,high&fcst=06,12,24"
+        // Note: The API returns text format with all altitude levels included
+        let urlString = "https://aviationweather.gov/api/data/windtemp?region=\(region)"
         guard let url = URL(string: urlString) else {
             throw WeatherBannerError.invalidURL
         }
+
+        print("🌬️ Fetching winds aloft for \(icao) from region: \(region)")
 
         let (data, _) = try await URLSession.shared.data(from: url)
 
@@ -817,12 +1011,9 @@ class BannerWeatherService: ObservableObject {
             print("🔄 No winds aloft for \(icao), looking for nearest station...")
 
             // Get the airport's coordinates from AirportDatabaseManager
-            if let airportInfo = AirportDatabaseManager.shared.getAirport(for: icao) {
-                let airportLat = airportInfo.coordinate.latitude
-                let airportLon = airportInfo.coordinate.longitude
-
+            if let lat = airportLat, let lon = airportLon {
                 // Find the nearest winds aloft station
-                if let nearestStation = findNearestWindsAloftStation(lat: airportLat, lon: airportLon) {
+                if let nearestStation = findNearestWindsAloftStation(lat: lat, lon: lon) {
                     print("📍 Found nearest station: \(nearestStation.code) at \(Int(nearestStation.distance))nm")
 
                     // Parse winds from the nearest station
@@ -935,14 +1126,50 @@ class BannerWeatherService: ObservableObject {
     }
 
     private func parseWindComponent(_ component: String, altitude: Int, sourceStation: String? = nil) -> WindsAloftData? {
-        // Winds aloft format: DDSS or DDSS+TT or DDSS-TT
-        // DD = direction (tens of degrees, so 27 = 270°)
-        // SS = speed in knots
-        // TT = temperature (optional, with sign)
+        // Winds aloft format:
+        // Low altitudes (3000-24000): DDSS or DDSS+TT or DDSS-TT
+        //   DD = direction (tens of degrees, so 27 = 270°)
+        //   SS = speed in knots
+        //   TT = temperature (optional, with sign)
+        // High altitudes (30000+): DDSSTS or DDSSTT
+        //   When speed > 99kt: DD is direction + 50, SSS is speed - 100
+        //   Example: 268237 = dir=(26-50)*10=360°, speed=82+100=182kt, temp=-37°C
+        //   (Actually: 268237 means dir=260°, speed=82kt, temp=-37°C for encoded high altitude)
 
         var windPart = component
         var temp: Int? = nil
 
+        // For high altitudes (30000+), the format is 6 digits: DDSSTS
+        // Where DDD encodes direction (if DD >= 51, subtract 50 and add 100 to speed)
+        if altitude >= 30000 && component.count == 6 {
+            // Format: DDSSTS where last 2 digits are temp (negative at these altitudes)
+            let dirStr = String(component.prefix(2))
+            let spdStr = String(component.dropFirst(2).prefix(2))
+            let tempStr = String(component.suffix(2))
+
+            guard let dirTens = Int(dirStr), let speed = Int(spdStr), let tempVal = Int(tempStr) else {
+                return nil
+            }
+
+            var direction: Int
+            var actualSpeed: Int
+
+            if dirTens >= 51 {
+                // Speed > 99kt encoding: subtract 50 from direction, add 100 to speed
+                direction = (dirTens - 50) * 10
+                actualSpeed = speed + 100
+            } else {
+                direction = dirTens * 10
+                actualSpeed = speed
+            }
+
+            // Temperature is always negative at these altitudes
+            temp = -tempVal
+
+            return WindsAloftData(altitude: altitude, direction: direction, speed: actualSpeed, temperature: temp, sourceStation: sourceStation)
+        }
+
+        // Standard format for lower altitudes
         // Extract temperature if present
         if let plusIndex = component.firstIndex(of: "+") {
             let tempString = String(component[component.index(after: plusIndex)...])
@@ -963,12 +1190,19 @@ class BannerWeatherService: ObservableObject {
 
         // Special case: 9900 means light and variable
         if dirTens == 99 && speed == 0 {
-            return WindsAloftData(altitude: altitude, direction: 990, speed: 0, temperature: temp, sourceStation: sourceStation)
+            return WindsAloftData(altitude: altitude, direction: nil, speed: 0, temperature: temp, sourceStation: sourceStation)
         }
 
-        let direction = dirTens * 10
+        var direction = dirTens * 10
+        var actualSpeed = speed
 
-        return WindsAloftData(altitude: altitude, direction: direction, speed: speed, temperature: temp, sourceStation: sourceStation)
+        // Check for high-speed encoding (direction >= 51)
+        if dirTens >= 51 {
+            direction = (dirTens - 50) * 10
+            actualSpeed = speed + 100
+        }
+
+        return WindsAloftData(altitude: altitude, direction: direction, speed: actualSpeed, temperature: temp, sourceStation: sourceStation)
     }
 
     // MARK: - Daily Forecast Fetching (weather.gov)
@@ -1015,6 +1249,8 @@ class BannerWeatherService: ObservableObject {
 
             let temperature = period["temperature"] as? Int
             let precipChance = (period["probabilityOfPrecipitation"] as? [String: Any])?["value"] as? Int
+            let windSpeed = period["windSpeed"] as? String
+            let windDirection = period["windDirection"] as? String
 
             // Parse start time
             let startTimeString = period["startTime"] as? String ?? ""
@@ -1032,7 +1268,10 @@ class BannerWeatherService: ObservableObject {
                 shortForecast: shortForecast,
                 detailedForecast: detailedForecast,
                 precipChance: precipChance,
-                icon: icon
+                icon: icon,
+                windSpeed: windSpeed,
+                windDirection: windDirection,
+                isDaytime: isDaytime
             )
 
             forecasts.append(forecast)
@@ -1256,6 +1495,8 @@ struct WeatherBannerView: View {
             }
         }
         .onChange(of: selectedAirportIndex) { _, _ in
+            // Clear daily forecast cache when airport changes (it's location-specific)
+            dailyForecastData = []
             // Load runway data for newly selected airport
             loadRunwayDataIfNeeded()
         }
@@ -1846,22 +2087,24 @@ struct WeatherBannerView: View {
                 weatherTableRow(label: "RVR", value: rvrString)
             }
 
-            // Clouds (AGL) - parse from raw METAR for accurate VV (vertical visibility) display
-            let cloudDisplay = parseCloudsFromRawMetar(weather.rawOb) ?? formatCloudLayers(weather.cover ?? "")
-            if !cloudDisplay.isEmpty {
-                weatherTableRow(label: "Clouds (AGL)", value: cloudDisplay)
-            }
+            // Clouds (AGL) - multiline display with flight category coloring
+            cloudLayersRow(rawMetar: weather.rawOb, flightCategory: weather.flightCategory)
 
             // Weather Phenomena
             if let wxString = weather.wxString, !wxString.isEmpty {
                 weatherTableRow(label: "Weather", value: formatWeatherPhenomena(wxString))
             }
 
-            // Temperature
+            // Temperature with fog/icing caution indicator
             if let temp = weather.temp {
                 let celsius = Int(temp)
                 let fahrenheit = Int((temp * 9/5) + 32)
-                weatherTableRow(label: "Temperature", value: "\(celsius)°C (\(fahrenheit)°F)")
+                let spread = weather.dewp.map { abs(temp - $0) } ?? 99
+                temperatureRowWithCaution(
+                    label: "Temperature",
+                    value: "\(celsius)°C (\(fahrenheit)°F)",
+                    showCaution: spread <= 3
+                )
             }
 
             // Dewpoint
@@ -1909,6 +2152,141 @@ struct WeatherBannerView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.cyan)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .frame(height: 22)
+    }
+
+    // MARK: - Cloud Layers Row (multiline with flight category color)
+    private func cloudLayersRow(rawMetar: String, flightCategory: String?) -> some View {
+        let layers = parseCloudLayersArray(rawMetar)
+        let lineCount = max(1, layers.count)
+        let color = flightCategoryColor(flightCategory)
+
+        return GeometryReader { geometry in
+            HStack(alignment: .top, spacing: 20) {
+                // Label: RIGHT-aligned to 35% mark
+                Text("Clouds (AGL)")
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+                    .frame(width: geometry.size.width * 0.35, alignment: .trailing)
+
+                // Cloud layers: Each on its own line, colored by flight category
+                VStack(alignment: .leading, spacing: 2) {
+                    if layers.isEmpty {
+                        Text("Clear")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(color)
+                    } else {
+                        ForEach(layers, id: \.self) { layer in
+                            Text(layer)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(color)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .frame(height: CGFloat(lineCount) * 20)
+    }
+
+    // MARK: - Parse Cloud Layers Array (sorted lowest first)
+    private func parseCloudLayersArray(_ rawMetar: String) -> [String] {
+        let components = rawMetar.uppercased().components(separatedBy: " ")
+        var cloudLayers: [(altitude: Int, description: String)] = []
+
+        for component in components {
+            if component == "SKC" || component == "CLR" || component == "CAVOK" {
+                return ["Clear"]
+            }
+
+            var cover = ""
+            var altitude = ""
+
+            if component.hasPrefix("VV") {
+                altitude = String(component.dropFirst(2))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    let feet = altNum * 100
+                    cloudLayers.append((feet, "Vertical Vis \(formatCloudAltitude(feet))"))
+                }
+                continue
+            } else if component.hasPrefix("FEW") {
+                cover = "Few"
+                altitude = String(component.dropFirst(3))
+            } else if component.hasPrefix("SCT") {
+                cover = "Scattered"
+                altitude = String(component.dropFirst(3))
+            } else if component.hasPrefix("BKN") {
+                cover = "Broken"
+                altitude = String(component.dropFirst(3))
+            } else if component.hasPrefix("OVC") {
+                cover = "Overcast"
+                altitude = String(component.dropFirst(3))
+            }
+
+            let altDigits = altitude.prefix(while: { $0.isNumber })
+            if let altNum = Int(altDigits), !cover.isEmpty {
+                let feet = altNum * 100
+                cloudLayers.append((feet, "\(cover) \(formatCloudAltitude(feet))"))
+            }
+        }
+
+        // Sort by altitude (lowest first)
+        let sorted = cloudLayers.sorted { $0.altitude < $1.altitude }
+        return sorted.map { $0.description }
+    }
+
+    // MARK: - Format Cloud Altitude (with comma for thousands)
+    private func formatCloudAltitude(_ feet: Int) -> String {
+        if feet >= 1000 {
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            return "\(formatter.string(from: NSNumber(value: feet)) ?? "\(feet)")'"
+        }
+        return "\(feet)'"
+    }
+
+    // MARK: - Flight Category Color
+    private func flightCategoryColor(_ category: String?) -> Color {
+        guard let cat = category?.uppercased() else { return .cyan }
+        switch cat {
+        case "VFR":
+            return .green
+        case "MVFR":
+            return .yellow
+        case "IFR":
+            return .red
+        case "LIFR":
+            return Color(red: 1.0, green: 0.0, blue: 1.0) // Magenta
+        default:
+            return .cyan
+        }
+    }
+
+    // Temperature row with optional fog/icing caution indicator
+    private func temperatureRowWithCaution(label: String, value: String, showCaution: Bool) -> some View {
+        GeometryReader { geometry in
+            HStack(alignment: .top, spacing: 20) {
+                // Label: RIGHT-aligned to 35% mark
+                Text(label)
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+                    .frame(width: geometry.size.width * 0.35, alignment: .trailing)
+
+                // Value with optional caution indicator
+                HStack(spacing: 4) {
+                    Text(value)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.cyan)
+
+                    if showCaution {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.yellow)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .frame(height: 22)
@@ -2831,51 +3209,68 @@ struct WeatherBannerView: View {
 
     // MARK: - Daily Forecast Row
     private func dailyForecastRow(_ forecast: DailyForecastData) -> some View {
-        HStack(spacing: 12) {
-            // Day name
-            Text(forecast.name)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(.white)
-                .frame(width: 80, alignment: .leading)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 12) {
+                // Day name
+                Text(forecast.name)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(width: 80, alignment: .leading)
 
-            // Weather icon with appropriate coloring
-            Image(systemName: forecast.icon)
-                .font(.system(size: 16))
-                .symbolRenderingMode(.multicolor)
-                .foregroundStyle(dailyForecastColor(for: forecast))
-                .frame(width: 24)
+                // Weather icon with appropriate coloring
+                Image(systemName: forecast.icon)
+                    .font(.system(size: 16))
+                    .symbolRenderingMode(.multicolor)
+                    .foregroundStyle(dailyForecastColor(for: forecast))
+                    .frame(width: 24)
 
-            // Short forecast
-            Text(forecast.shortForecast)
-                .font(.system(size: 11))
-                .foregroundColor(.gray)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                // Short forecast
+                Text(forecast.shortForecast)
+                    .font(.system(size: 11))
+                    .foregroundColor(.gray)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Temperature
-            if let high = forecast.highTemp {
-                Text("\(high)°")
-                    .font(.system(size: 13, weight: .bold, design: .monospaced))
-                    .foregroundColor(.orange)
-            } else if let low = forecast.lowTemp {
-                Text("\(low)°")
-                    .font(.system(size: 13, weight: .bold, design: .monospaced))
-                    .foregroundColor(.cyan)
+                // Temperature - orange for highs (daytime), cyan for lows (nighttime)
+                if let high = forecast.highTemp {
+                    Text("\(high)°")
+                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .foregroundColor(.orange)
+                } else if let low = forecast.lowTemp {
+                    Text("\(low)°")
+                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .foregroundColor(.cyan)
+                }
+
+                // Precip chance
+                if let precip = forecast.precipChance, precip > 0 {
+                    HStack(spacing: 2) {
+                        Image(systemName: "drop.fill")
+                            .font(.system(size: 9))
+                        Text("\(precip)%")
+                            .font(.system(size: 11))
+                    }
+                    .foregroundColor(precip > 50 ? .blue : .gray)
+                    .frame(width: 40, alignment: .trailing)
+                } else {
+                    Text("")
+                        .frame(width: 40)
+                }
             }
 
-            // Precip chance
-            if let precip = forecast.precipChance, precip > 0 {
-                HStack(spacing: 2) {
-                    Image(systemName: "drop.fill")
-                        .font(.system(size: 9))
-                    Text("\(precip)%")
-                        .font(.system(size: 11))
+            // Wind info row (if available)
+            if let windString = forecast.windString {
+                HStack(spacing: 4) {
+                    Spacer()
+                        .frame(width: 80)  // Match day name width
+                    Image(systemName: "wind")
+                        .font(.system(size: 10))
+                        .foregroundColor(.gray.opacity(0.7))
+                    Text(windString)
+                        .font(.system(size: 10))
+                        .foregroundColor(.gray.opacity(0.7))
+                    Spacer()
                 }
-                .foregroundColor(precip > 50 ? .blue : .gray)
-                .frame(width: 40, alignment: .trailing)
-            } else {
-                Text("")
-                    .frame(width: 40)
             }
         }
         .padding(.horizontal, 12)
@@ -3220,43 +3615,55 @@ struct WeatherBannerView: View {
 
     // MARK: - Helper: Parse Clouds from Raw METAR
     private func parseCloudsFromRawMetar(_ rawMetar: String) -> String? {
-        // Parse cloud layers directly from raw METAR text for accurate VV display
+        // Parse cloud layers directly from raw METAR text
+        // Format: "Scattered 900'" on line 1, "Broken 1,700'" on line 2, etc.
         let components = rawMetar.uppercased().components(separatedBy: " ")
-        var cloudLayers: [String] = []
+        var cloudLayers: [(altitude: Int, description: String)] = []
 
         for component in components {
             if component == "SKC" || component == "CLR" || component == "CAVOK" {
                 return "Clear"
             } else if component.hasPrefix("VV") {
-                // Vertical Visibility (indefinite ceiling)
                 let altitude = String(component.dropFirst(2))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
-                    cloudLayers.append("Vertical Vis \(altNum * 100)'")
+                    cloudLayers.append((altNum * 100, "Vertical Vis \(formatAltitude(altNum * 100))"))
                 }
             } else if component.hasPrefix("FEW") {
                 let altitude = String(component.dropFirst(3))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
-                    cloudLayers.append("Few \(altNum * 100)'")
+                    cloudLayers.append((altNum * 100, "Few \(formatAltitude(altNum * 100))"))
                 }
             } else if component.hasPrefix("SCT") {
                 let altitude = String(component.dropFirst(3))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
-                    cloudLayers.append("Scattered \(altNum * 100)'")
+                    cloudLayers.append((altNum * 100, "Scattered \(formatAltitude(altNum * 100))"))
                 }
             } else if component.hasPrefix("BKN") {
                 let altitude = String(component.dropFirst(3))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
-                    cloudLayers.append("Broken \(altNum * 100)'")
+                    cloudLayers.append((altNum * 100, "Broken \(formatAltitude(altNum * 100))"))
                 }
             } else if component.hasPrefix("OVC") {
                 let altitude = String(component.dropFirst(3))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
-                    cloudLayers.append("Overcast \(altNum * 100)'")
+                    cloudLayers.append((altNum * 100, "Overcast \(formatAltitude(altNum * 100))"))
                 }
             }
         }
 
-        return cloudLayers.isEmpty ? nil : cloudLayers.joined(separator: "\n")
+        // Sort by altitude (lowest first) and join with newlines
+        let sorted = cloudLayers.sorted { $0.altitude < $1.altitude }
+        return sorted.isEmpty ? nil : sorted.map { $0.description }.joined(separator: "\n")
+    }
+
+    // Format altitude with comma for thousands (e.g., 1,700')
+    private func formatAltitude(_ feet: Int) -> String {
+        if feet >= 1000 {
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            return "\(formatter.string(from: NSNumber(value: feet)) ?? "\(feet)")'"
+        }
+        return "\(feet)'"
     }
 
     // MARK: - Helper: Parse RVR (Runway Visual Range) from raw METAR
@@ -3663,64 +4070,74 @@ struct CompactRunwayWind: View {
         else { return .red }
     }
     
+    // Format runway number - drop leading zero (05 -> 5)
+    private var formattedRunwayNumber: String {
+        let cleanRunway = currentRunway.filter { $0.isNumber || $0 == "L" || $0 == "R" || $0 == "C" }
+        // Remove leading zero from numbers
+        if let firstChar = cleanRunway.first, firstChar == "0" {
+            return String(cleanRunway.dropFirst())
+        }
+        return cleanRunway
+    }
+
     var body: some View {
         VStack(spacing: 8) {
-            // Header with cycle buttons
-            HStack(spacing: 4) {
-                Button(action: previousRunway) {
-                    Image(systemName: "chevron.left")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                }
-                
-                Text("RWY \(currentRunway)")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    .foregroundColor(.white)
-                
-                Button(action: nextRunway) {
-                    Image(systemName: "chevron.right")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                }
-            }
-            
-            // Wind components
+            // Wind components at top
             VStack(spacing: 6) {
                 // Crosswind (primary)
                 HStack(spacing: 4) {
                     Image(systemName: "arrow.left.and.right")
                         .font(.system(size: 10))
                         .foregroundColor(favorabilityColor)
-                    
+
                     Text("\(Int(abs(crosswindComponent)))")
                         .font(.system(size: 18, weight: .bold, design: .rounded))
                         .foregroundColor(favorabilityColor)
-                    
+
                     Text("kt")
                         .font(.system(size: 9))
                         .foregroundColor(.gray)
                 }
-                
+
                 Text("X-WIND")
                     .font(.system(size: 8))
                     .foregroundColor(.gray)
-                
+
                 Divider()
                     .background(Color.gray.opacity(0.3))
                     .padding(.horizontal, 8)
-                
+
                 // Headwind (secondary)
                 HStack(spacing: 4) {
                     Image(systemName: headwindComponent >= 0 ? "arrow.down" : "arrow.up")
                         .font(.system(size: 8))
                         .foregroundColor(headwindComponent >= 0 ? .green : .red)
-                    
+
                     Text("\(Int(abs(headwindComponent)))")
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
-                    
+
                     Text(headwindComponent >= 0 ? "HEAD" : "TAIL")
                         .font(.system(size: 8))
+                        .foregroundColor(.gray)
+                }
+            }
+
+            // Runway number at bottom (approach end) with cycle buttons
+            HStack(spacing: 4) {
+                Button(action: previousRunway) {
+                    Image(systemName: "chevron.left")
+                        .font(.caption2)
+                        .foregroundColor(.gray)
+                }
+
+                Text("RWY \(formattedRunwayNumber)")
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+
+                Button(action: nextRunway) {
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
                         .foregroundColor(.gray)
                 }
             }
@@ -3849,6 +4266,8 @@ struct WeatherDetailSheet: View {
             loadDataForCurrentTab()
         }
         .onChange(of: selectedAirportIndex) { _, _ in
+            // Clear daily forecast cache when airport changes (it's location-specific)
+            dailyForecastData = []
             loadDataForCurrentTab()
         }
     }
@@ -4767,38 +5186,62 @@ struct WeatherDetailSheet: View {
     }
 
     private func dailyForecastRow(_ forecast: DailyForecastData) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: forecast.icon)
-                .font(.system(size: 20))
-                .symbolRenderingMode(.multicolor)
-                .foregroundStyle(dailyForecastColor(for: forecast))
-                .frame(width: 30)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 12) {
+                Image(systemName: forecast.icon)
+                    .font(.system(size: 20))
+                    .symbolRenderingMode(.multicolor)
+                    .foregroundStyle(dailyForecastColor(for: forecast))
+                    .frame(width: 30)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(forecast.name)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(forecast.name)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white)
 
-                Text(forecast.shortForecast)
-                    .font(.system(size: 11))
-                    .foregroundColor(.gray)
-                    .lineLimit(1)
+                    Text(forecast.shortForecast)
+                        .font(.system(size: 11))
+                        .foregroundColor(.gray)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                // Temperature - orange for highs (daytime), cyan for lows (nighttime)
+                if let high = forecast.highTemp {
+                    Text("\(high)°")
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .foregroundColor(.orange)
+                } else if let low = forecast.lowTemp {
+                    Text("\(low)°")
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .foregroundColor(.cyan)
+                }
+
+                if let precip = forecast.precipChance, precip > 0 {
+                    HStack(spacing: 2) {
+                        Image(systemName: "drop.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.blue)
+                        Text("\(precip)%")
+                            .font(.system(size: 11))
+                            .foregroundColor(.blue)
+                    }
+                }
             }
 
-            Spacer()
-
-            Text(forecast.temperatureString)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.cyan)
-
-            if let precip = forecast.precipChance, precip > 0 {
-                HStack(spacing: 2) {
-                    Image(systemName: "drop.fill")
+            // Wind info (if available)
+            if let windString = forecast.windString {
+                HStack(spacing: 4) {
+                    Spacer()
+                        .frame(width: 30)  // Match icon width
+                    Image(systemName: "wind")
                         .font(.system(size: 10))
-                        .foregroundColor(.blue)
-                    Text("\(precip)%")
-                        .font(.system(size: 11))
-                        .foregroundColor(.blue)
+                        .foregroundColor(.gray.opacity(0.7))
+                    Text(windString)
+                        .font(.system(size: 10))
+                        .foregroundColor(.gray.opacity(0.7))
+                    Spacer()
                 }
             }
         }
@@ -4955,21 +5398,24 @@ struct WeatherDetailSheet: View {
                 weatherTableRow(label: "RVR", value: rvrString)
             }
 
-            // Clouds (AGL) - parse from raw METAR for accurate VV display
-            let cloudDisplay = parseCloudsFromRawMetar(weather.rawOb) ?? formatCloudLayers(weather.cover ?? "")
-            if !cloudDisplay.isEmpty {
-                weatherTableRow(label: "Clouds (AGL)", value: cloudDisplay)
-            }
+            // Clouds (AGL) - multiline display with flight category coloring
+            cloudLayersRow(rawMetar: weather.rawOb, flightCategory: weather.flightCategory)
 
             // Weather Phenomena
             if let wxString = weather.wxString, !wxString.isEmpty {
                 weatherTableRow(label: "Weather", value: formatWeatherPhenomena(wxString))
             }
 
+            // Temperature with fog/icing caution indicator
             if let temp = weather.temp {
                 let celsius = Int(temp)
                 let fahrenheit = Int((temp * 9/5) + 32)
-                weatherTableRow(label: "Temperature", value: "\(celsius)°C (\(fahrenheit)°F)")
+                let spread = weather.dewp.map { abs(temp - $0) } ?? 99
+                temperatureRowWithCaution(
+                    label: "Temperature",
+                    value: "\(celsius)°C (\(fahrenheit)°F)",
+                    showCaution: spread <= 3
+                )
             }
 
             if let dewp = weather.dewp {
@@ -5010,6 +5456,141 @@ struct WeatherDetailSheet: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.cyan)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .frame(height: 22)
+    }
+
+    // MARK: - Cloud Layers Row (multiline with flight category color)
+    private func cloudLayersRow(rawMetar: String, flightCategory: String?) -> some View {
+        let layers = parseCloudLayersArray(rawMetar)
+        let lineCount = max(1, layers.count)
+        let color = flightCategoryColor(flightCategory)
+
+        return GeometryReader { geometry in
+            HStack(alignment: .top, spacing: 20) {
+                // Label: RIGHT-aligned to 35% mark
+                Text("Clouds (AGL)")
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+                    .frame(width: geometry.size.width * 0.35, alignment: .trailing)
+
+                // Cloud layers: Each on its own line, colored by flight category
+                VStack(alignment: .leading, spacing: 2) {
+                    if layers.isEmpty {
+                        Text("Clear")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(color)
+                    } else {
+                        ForEach(layers, id: \.self) { layer in
+                            Text(layer)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(color)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .frame(height: CGFloat(lineCount) * 20)
+    }
+
+    // MARK: - Parse Cloud Layers Array (sorted lowest first)
+    private func parseCloudLayersArray(_ rawMetar: String) -> [String] {
+        let components = rawMetar.uppercased().components(separatedBy: " ")
+        var cloudLayers: [(altitude: Int, description: String)] = []
+
+        for component in components {
+            if component == "SKC" || component == "CLR" || component == "CAVOK" {
+                return ["Clear"]
+            }
+
+            var cover = ""
+            var altitude = ""
+
+            if component.hasPrefix("VV") {
+                altitude = String(component.dropFirst(2))
+                if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
+                    let feet = altNum * 100
+                    cloudLayers.append((feet, "Vertical Vis \(formatCloudAltitude(feet))"))
+                }
+                continue
+            } else if component.hasPrefix("FEW") {
+                cover = "Few"
+                altitude = String(component.dropFirst(3))
+            } else if component.hasPrefix("SCT") {
+                cover = "Scattered"
+                altitude = String(component.dropFirst(3))
+            } else if component.hasPrefix("BKN") {
+                cover = "Broken"
+                altitude = String(component.dropFirst(3))
+            } else if component.hasPrefix("OVC") {
+                cover = "Overcast"
+                altitude = String(component.dropFirst(3))
+            }
+
+            let altDigits = altitude.prefix(while: { $0.isNumber })
+            if let altNum = Int(altDigits), !cover.isEmpty {
+                let feet = altNum * 100
+                cloudLayers.append((feet, "\(cover) \(formatCloudAltitude(feet))"))
+            }
+        }
+
+        // Sort by altitude (lowest first)
+        let sorted = cloudLayers.sorted { $0.altitude < $1.altitude }
+        return sorted.map { $0.description }
+    }
+
+    // MARK: - Format Cloud Altitude (with comma for thousands)
+    private func formatCloudAltitude(_ feet: Int) -> String {
+        if feet >= 1000 {
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            return "\(formatter.string(from: NSNumber(value: feet)) ?? "\(feet)")'"
+        }
+        return "\(feet)'"
+    }
+
+    // MARK: - Flight Category Color
+    private func flightCategoryColor(_ category: String?) -> Color {
+        guard let cat = category?.uppercased() else { return .cyan }
+        switch cat {
+        case "VFR":
+            return .green
+        case "MVFR":
+            return .yellow
+        case "IFR":
+            return .red
+        case "LIFR":
+            return Color(red: 1.0, green: 0.0, blue: 1.0) // Magenta
+        default:
+            return .cyan
+        }
+    }
+
+    // Temperature row with optional fog/icing caution indicator
+    private func temperatureRowWithCaution(label: String, value: String, showCaution: Bool) -> some View {
+        GeometryReader { geometry in
+            HStack(alignment: .top, spacing: 20) {
+                // Label: RIGHT-aligned to 35% mark
+                Text(label)
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+                    .frame(width: geometry.size.width * 0.35, alignment: .trailing)
+
+                // Value with optional caution indicator
+                HStack(spacing: 4) {
+                    Text(value)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.cyan)
+
+                    if showCaution {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.yellow)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .frame(height: 22)
@@ -5427,43 +6008,55 @@ struct WeatherDetailSheet: View {
 
     // MARK: - Helper: Parse Clouds from Raw METAR
     private func parseCloudsFromRawMetar(_ rawMetar: String) -> String? {
-        // Parse cloud layers directly from raw METAR text for accurate VV display
+        // Parse cloud layers directly from raw METAR text
+        // Format: "Scattered 900'" on line 1, "Broken 1,700'" on line 2, etc.
         let components = rawMetar.uppercased().components(separatedBy: " ")
-        var cloudLayers: [String] = []
+        var cloudLayers: [(altitude: Int, description: String)] = []
 
         for component in components {
             if component == "SKC" || component == "CLR" || component == "CAVOK" {
                 return "Clear"
             } else if component.hasPrefix("VV") {
-                // Vertical Visibility (indefinite ceiling)
                 let altitude = String(component.dropFirst(2))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
-                    cloudLayers.append("Vertical Vis \(altNum * 100)'")
+                    cloudLayers.append((altNum * 100, "Vertical Vis \(formatAltitude(altNum * 100))"))
                 }
             } else if component.hasPrefix("FEW") {
                 let altitude = String(component.dropFirst(3))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
-                    cloudLayers.append("Few \(altNum * 100)'")
+                    cloudLayers.append((altNum * 100, "Few \(formatAltitude(altNum * 100))"))
                 }
             } else if component.hasPrefix("SCT") {
                 let altitude = String(component.dropFirst(3))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
-                    cloudLayers.append("Scattered \(altNum * 100)'")
+                    cloudLayers.append((altNum * 100, "Scattered \(formatAltitude(altNum * 100))"))
                 }
             } else if component.hasPrefix("BKN") {
                 let altitude = String(component.dropFirst(3))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
-                    cloudLayers.append("Broken \(altNum * 100)'")
+                    cloudLayers.append((altNum * 100, "Broken \(formatAltitude(altNum * 100))"))
                 }
             } else if component.hasPrefix("OVC") {
                 let altitude = String(component.dropFirst(3))
                 if let altNum = Int(altitude.prefix(while: { $0.isNumber })) {
-                    cloudLayers.append("Overcast \(altNum * 100)'")
+                    cloudLayers.append((altNum * 100, "Overcast \(formatAltitude(altNum * 100))"))
                 }
             }
         }
 
-        return cloudLayers.isEmpty ? nil : cloudLayers.joined(separator: "\n")
+        // Sort by altitude (lowest first) and join with newlines
+        let sorted = cloudLayers.sorted { $0.altitude < $1.altitude }
+        return sorted.isEmpty ? nil : sorted.map { $0.description }.joined(separator: "\n")
+    }
+
+    // Format altitude with comma for thousands (e.g., 1,700')
+    private func formatAltitude(_ feet: Int) -> String {
+        if feet >= 1000 {
+            let formatter = NumberFormatter()
+            formatter.numberStyle = .decimal
+            return "\(formatter.string(from: NSNumber(value: feet)) ?? "\(feet)")'"
+        }
+        return "\(feet)'"
     }
 
     // MARK: - Helper: Parse RVR (Runway Visual Range) from raw METAR
@@ -5757,14 +6350,23 @@ struct WeatherDetailSheet: View {
             return
         }
         guard !isLoadingDaily else { return }
+        guard !currentAirport.isEmpty, currentAirport != "----" else { return }
 
-        print("🌐 Loading Daily Forecast...")
+        // Get airport coordinates from database
+        guard let airport = AirportDatabaseManager.shared.getAirport(for: currentAirport) else {
+            print("❌ Could not find airport coordinates for \(currentAirport)")
+            return
+        }
+
+        print("🌐 Loading Daily Forecast for \(currentAirport)...")
         isLoadingDaily = true
 
         Task {
             do {
-                // TODO: Get actual airport coordinates from database
-                let forecast = try await weatherService.fetchDailyForecast(latitude: 29.18, longitude: -81.05)
+                let forecast = try await weatherService.fetchDailyForecast(
+                    latitude: airport.coordinate.latitude,
+                    longitude: airport.coordinate.longitude
+                )
                 await MainActor.run {
                     dailyForecastData = forecast
                     isLoadingDaily = false
@@ -5906,28 +6508,29 @@ struct HSIRunwayGraphic: View {
             }
 
             // Threshold Markings & Numbers
+            // Runway numbers are at the APPROACH end (threshold) where pilots see them
             VStack {
-                // Top (runway we're landing on)
+                // Top - reciprocal runway (approach end for opposite direction)
                 VStack(spacing: 2) {
                     HStack(spacing: 2) {
                         ForEach(0..<4, id: \.self) { _ in
                             Rectangle().fill(.white).frame(width: 2, height: 8)
                         }
                     }
-                    Text(runwayIdent)
+                    Text(reciprocalIdent)
                         .font(.system(size: 12, weight: .heavy, design: .monospaced))
                         .foregroundColor(.white)
+                        .rotationEffect(.degrees(180)) // Flipped so it reads correctly from its approach direction
                 }
                 .padding(.top, 8)
 
                 Spacer()
 
-                // Bottom (reciprocal)
+                // Bottom - active runway (approach end / threshold we're landing on)
                 VStack(spacing: 2) {
-                    Text(reciprocalIdent)
+                    Text(runwayIdent)
                         .font(.system(size: 12, weight: .heavy, design: .monospaced))
                         .foregroundColor(.white)
-                        .rotationEffect(.degrees(180))
                     HStack(spacing: 2) {
                         ForEach(0..<4, id: \.self) { _ in
                             Rectangle().fill(.white).frame(width: 2, height: 8)

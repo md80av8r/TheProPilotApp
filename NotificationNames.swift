@@ -87,4 +87,7 @@ extension Notification.Name {
     static let legSyncForced = Notification.Name("legSyncForced")
     static let newLegAddedOnPhone = Notification.Name("newLegAddedOnPhone")
     static let newLegAddedOnWatch = Notification.Name("newLegAddedOnWatch")
+
+    // MARK: - Navigation
+    static let navigateToTab = Notification.Name("navigateToTab")
 }

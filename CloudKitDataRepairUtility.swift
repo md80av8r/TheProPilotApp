@@ -17,7 +17,7 @@ class CloudKitDataRepairUtility {
     private let database: CKDatabase
     
     init() {
-        self.container = CKContainer(identifier: "iCloud.com.jkadans.ProPilotApp")
+        self.container = CKContainer(identifier: "iCloud.com.jkadans.TheProPilotApp")
         self.database = container.privateCloudDatabase
     }
     

@@ -24,32 +24,20 @@ struct GPSSpoofingStatusPill: View {
     
     var body: some View {
         Button(action: { showingDetails = true }) {
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(statusColor)
-                    .frame(width: 8, height: 8)
-                    .shadow(color: statusColor.opacity(0.5), radius: monitor.currentAlertLevel == .alert ? 4 : 0)
-                
-                Text("GPS")
-                    .font(.caption2)
-                    .fontWeight(.medium)
-                
-                if monitor.currentAlertLevel != .normal {
-                    Image(systemName: monitor.currentAlertLevel.systemImage)
-                        .font(.caption2)
-                        .foregroundColor(statusColor)
+            Group {
+                if UIImage(named: "satellite") != nil {
+                    Image("satellite")
+                        .resizable()
+                        .renderingMode(.template)
+                } else {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .resizable()
+                        .symbolRenderingMode(.monochrome)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemGray6))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(statusColor.opacity(0.3), lineWidth: 1)
-            )
+            .foregroundColor(statusIconColor)
+            .frame(width: 20, height: 20)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
         .sheet(isPresented: $showingDetails) {
@@ -65,6 +53,17 @@ struct GPSSpoofingStatusPill: View {
         case .alert: return .red
         }
     }
+    
+    private var statusIconColor: Color {
+        switch monitor.currentAlertLevel {
+        case .normal:
+            return .green
+        case .caution, .warning:
+            return .orange // Amber for spoofing noticed
+        case .alert:
+            return .red
+        }
+    }
 }
 
 // MARK: - Larger Status Card (for dashboard or settings)
@@ -77,9 +76,11 @@ struct GPSSpoofingStatusCard: View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
             HStack {
-                Image(systemName: "antenna.radiowaves.left.and.right")
-                    .font(.title2)
+                Image("satellite")
+                    .resizable()
+                    .renderingMode(.template)
                     .foregroundColor(statusColor)
+                    .frame(width: 22, height: 22)
                 
                 Text("GPS Integrity")
                     .font(.headline)
@@ -347,9 +348,11 @@ struct GPSSpoofingDetailView: View {
                     .fill(statusColor.opacity(0.2))
                     .frame(width: 60, height: 60)
                 
-                Image(systemName: monitor.currentAlertLevel.systemImage)
-                    .font(.title)
+                Image("satellite")
+                    .resizable()
+                    .renderingMode(.template)
                     .foregroundColor(statusColor)
+                    .frame(width: 28, height: 28)
             }
             
             VStack(alignment: .leading, spacing: 4) {
@@ -652,3 +655,4 @@ struct GPSSpoofingShareSheet: UIViewControllerRepresentable {
     GPSSpoofingStatusCard()
         .padding()
 }
+

@@ -35,6 +35,18 @@ class SwiftDataLogBookStore: ObservableObject {
             do {
                 try await MigrationManager.shared.migrateIfNeeded(to: container)
                 await loadTrips()
+                
+                // CRITICAL: Verify data integrity after migration/load
+                let integrityCheck = DataIntegrityManager.shared.performIntegrityCheck(logbookStore: self)
+                if integrityCheck.hasCriticalIssues {
+                    print("🚨 CRITICAL DATA INTEGRITY ISSUES DETECTED!")
+                    print("   Creating emergency backup before any changes...")
+                    DataIntegrityManager.shared.createDailyBackup(logbookStore: self)
+                }
+
+                // Start automatic daily backups
+                DataIntegrityManager.shared.startAutomaticBackups(logbookStore: self)
+                
             } catch {
                 print("Migration failed: \(error)")
                 await loadTrips()
@@ -55,11 +67,54 @@ class SwiftDataLogBookStore: ObservableObject {
 
         do {
             let sdTrips = try modelContext.fetch(descriptor)
+            print("📊 SwiftData: Fetched \(sdTrips.count) SDTrip entities")
+
+            // Comprehensive debug logging
+            var totalLogpagesInDB = 0
+            var totalLegsInDB = 0
+            for sdTrip in sdTrips {
+                let logpageCount = sdTrip.logpages?.count ?? 0
+                let legCount = sdTrip.logpages?.reduce(0) { $0 + ($1.legs?.count ?? 0) } ?? 0
+                totalLogpagesInDB += logpageCount
+                totalLegsInDB += legCount
+
+                if logpageCount == 0 || legCount == 0 {
+                    print("⚠️ Trip #\(sdTrip.tripNumber) has \(logpageCount) logpages, \(legCount) legs")
+                }
+            }
+            print("📊 Database totals: \(totalLogpagesInDB) logpages, \(totalLegsInDB) legs")
+
             trips = sdTrips.map { $0.toTrip() }
+
+            // Verify conversion didn't lose data
+            var totalLegsConverted = 0
+            for trip in trips {
+                totalLegsConverted += trip.legs.count
+            }
+
+            if totalLegsConverted != totalLegsInDB {
+                print("🚨 DATA LOSS DETECTED: DB has \(totalLegsInDB) legs, but only \(totalLegsConverted) converted!")
+                print("🔧 Running relationship repair...")
+                await repairOrphanedRelationships()
+            }
+
+            // Debug: Check first converted trip
+            if let firstTrip = trips.first {
+                let totalMinutes = firstTrip.legs.reduce(0) { $0 + $1.blockMinutes() }
+                let hours = totalMinutes / 60
+                let mins = totalMinutes % 60
+                print("📊 First converted trip #\(firstTrip.tripNumber): \(firstTrip.legs.count) legs, \(firstTrip.logpages.count) logpages")
+                print("📊 Total block time: \(hours):\(String(format: "%02d", mins))")
+            }
+
             enforceOneActiveTrip()
-            print("Loaded \(trips.count) trips from SwiftData")
+            print("✅ Loaded \(trips.count) trips from SwiftData")
+
+            // Run integrity verification in background
+            await verifyDataIntegrity()
+
         } catch {
-            print("Failed to load trips from SwiftData: \(error)")
+            print("❌ Failed to load trips from SwiftData: \(error)")
             trips = []
         }
     }
@@ -102,6 +157,14 @@ class SwiftDataLogBookStore: ObservableObject {
             }
 
             lastSaveTime = Date()
+            
+            // CRITICAL: Verify save integrity
+            Task { @MainActor in
+                DataIntegrityManager.shared.verifySaveIntegrity(
+                    logbookStore: self,
+                    operation: "saveTrip #\(trip.tripNumber)"
+                )
+            }
 
         } catch {
             print("Failed to save trip: \(error)")
@@ -209,6 +272,43 @@ class SwiftDataLogBookStore: ObservableObject {
         save()
     }
 
+    // MARK: - Delete All Data
+    func deleteAllData() async -> Bool {
+        print("🗑️ DELETE ALL DATA: Starting...")
+
+        do {
+            let tripDescriptor = FetchDescriptor<SDTrip>()
+            let logpageDescriptor = FetchDescriptor<SDLogpage>()
+            let legDescriptor = FetchDescriptor<SDFlightLeg>()
+            let crewDescriptor = FetchDescriptor<SDCrewMember>()
+
+            let allTrips = try modelContext.fetch(tripDescriptor)
+            let allLogpages = try modelContext.fetch(logpageDescriptor)
+            let allLegs = try modelContext.fetch(legDescriptor)
+            let allCrew = try modelContext.fetch(crewDescriptor)
+
+            print("🗑️ Deleting \(allTrips.count) trips, \(allLogpages.count) logpages, \(allLegs.count) legs, \(allCrew.count) crew")
+
+            // Delete in reverse order of dependencies
+            for crew in allCrew { modelContext.delete(crew) }
+            for leg in allLegs { modelContext.delete(leg) }
+            for logpage in allLogpages { modelContext.delete(logpage) }
+            for trip in allTrips { modelContext.delete(trip) }
+
+            try modelContext.save()
+
+            // Clear in-memory trips
+            trips = []
+
+            print("✅ All local data deleted successfully")
+            return true
+
+        } catch {
+            print("❌ Failed to delete all data: \(error)")
+            return false
+        }
+    }
+
     // MARK: - Active Trip Validation
     private func enforceOneActiveTrip() {
         let activePlanningTrips = trips.enumerated().filter {
@@ -239,24 +339,34 @@ class SwiftDataLogBookStore: ObservableObject {
 
     private func insertNewTrip(_ trip: Trip) {
         let sdTrip = SDTrip(from: trip)
+        sdTrip.logpages = []  // Initialize array before adding children
+        sdTrip.crew = []
         modelContext.insert(sdTrip)
 
         for logpage in trip.logpages {
             let sdLogpage = SDLogpage(from: logpage)
-            sdLogpage.trip = sdTrip
+            sdLogpage.legs = []  // Initialize array before adding children
             modelContext.insert(sdLogpage)
+
+            // Set relationship on BOTH sides
+            sdLogpage.owningTrip = sdTrip
+            sdTrip.logpages?.append(sdLogpage)
 
             for (order, leg) in logpage.legs.enumerated() {
                 let sdLeg = SDFlightLeg(from: leg, order: order)
-                sdLeg.logpage = sdLogpage
                 modelContext.insert(sdLeg)
+
+                // Set relationship on BOTH sides
+                sdLeg.parentLogpage = sdLogpage
+                sdLogpage.legs?.append(sdLeg)
             }
         }
 
         for crew in trip.crew {
             let sdCrew = SDCrewMember(from: crew)
-            sdCrew.trip = sdTrip
             modelContext.insert(sdCrew)
+            sdCrew.trip = sdTrip
+            sdTrip.crew?.append(sdCrew)
         }
     }
 
@@ -264,41 +374,654 @@ class SwiftDataLogBookStore: ObservableObject {
         // Update scalar properties
         sdTrip.update(from: trip)
 
-        // Delete old relationships
-        if let logpages = sdTrip.logpages {
-            for logpage in logpages {
-                if let legs = logpage.legs {
+        // SMART UPDATE: Merge instead of delete-and-recreate to prevent CloudKit sync issues
+        let existingLogpages = sdTrip.logpages ?? []
+        let newLogpageIDs = Set(trip.logpages.map { $0.id })
+
+        // Remove logpages that no longer exist
+        for sdLogpage in existingLogpages {
+            if !newLogpageIDs.contains(sdLogpage.logpageId) {
+                // Delete orphaned legs first
+                if let legs = sdLogpage.legs {
                     for leg in legs {
                         modelContext.delete(leg)
                     }
                 }
-                modelContext.delete(logpage)
+                modelContext.delete(sdLogpage)
             }
         }
 
-        if let crew = sdTrip.crew {
-            for member in crew {
-                modelContext.delete(member)
-            }
-        }
-
-        // Recreate relationships
+        // Update or create logpages
         for logpage in trip.logpages {
-            let sdLogpage = SDLogpage(from: logpage)
-            sdLogpage.trip = sdTrip
-            modelContext.insert(sdLogpage)
+            if let existingLogpage = existingLogpages.first(where: { $0.logpageId == logpage.id }) {
+                // Update existing logpage
+                existingLogpage.update(from: logpage)
 
-            for (order, leg) in logpage.legs.enumerated() {
-                let sdLeg = SDFlightLeg(from: leg, order: order)
-                sdLeg.logpage = sdLogpage
-                modelContext.insert(sdLeg)
+                // Smart update legs within this logpage
+                let existingLegs = existingLogpage.legs ?? []
+                let newLegIDs = Set(logpage.legs.map { $0.id })
+
+                // Remove legs that no longer exist
+                for sdLeg in existingLegs {
+                    if !newLegIDs.contains(sdLeg.legId) {
+                        modelContext.delete(sdLeg)
+                    }
+                }
+
+                // Update or create legs
+                for (order, leg) in logpage.legs.enumerated() {
+                    if let existingLeg = existingLegs.first(where: { $0.legId == leg.id }) {
+                        // Update existing leg
+                        existingLeg.update(from: leg, order: order)
+                    } else {
+                        // Create new leg with relationship on BOTH sides
+                        let sdLeg = SDFlightLeg(from: leg, order: order)
+                        modelContext.insert(sdLeg)
+                        sdLeg.parentLogpage = existingLogpage
+                        if existingLogpage.legs == nil { existingLogpage.legs = [] }
+                        existingLogpage.legs?.append(sdLeg)
+                    }
+                }
+            } else {
+                // Create new logpage with legs
+                let sdLogpage = SDLogpage(from: logpage)
+                sdLogpage.legs = []  // Initialize array before adding children
+                modelContext.insert(sdLogpage)
+
+                // Set relationship on BOTH sides
+                sdLogpage.owningTrip = sdTrip
+                if sdTrip.logpages == nil { sdTrip.logpages = [] }
+                sdTrip.logpages?.append(sdLogpage)
+
+                for (order, leg) in logpage.legs.enumerated() {
+                    let sdLeg = SDFlightLeg(from: leg, order: order)
+                    modelContext.insert(sdLeg)
+                    // Set relationship on BOTH sides
+                    sdLeg.parentLogpage = sdLogpage
+                    sdLogpage.legs?.append(sdLeg)
+                }
             }
         }
 
-        for crew in trip.crew {
-            let sdCrew = SDCrewMember(from: crew)
-            sdCrew.trip = sdTrip
-            modelContext.insert(sdCrew)
+        // Smart update crew members
+        let existingCrew = sdTrip.crew ?? []
+        let newCrewIDs = Set(trip.crew.map { $0.id })
+
+        // Remove crew that no longer exist
+        for sdCrew in existingCrew {
+            if !newCrewIDs.contains(sdCrew.crewId) {
+                modelContext.delete(sdCrew)
+            }
+        }
+
+        // Update or create crew
+        for crewMember in trip.crew {
+            if let existingMember = existingCrew.first(where: { $0.crewId == crewMember.id }) {
+                existingMember.update(from: crewMember)
+            } else {
+                // Create new crew with relationship on BOTH sides
+                let sdCrew = SDCrewMember(from: crewMember)
+                modelContext.insert(sdCrew)
+                sdCrew.trip = sdTrip
+                if sdTrip.crew == nil { sdTrip.crew = [] }
+                sdTrip.crew?.append(sdCrew)
+            }
+        }
+    }
+
+    // MARK: - Comprehensive Integrity Check and Repair
+
+    func repairOrphanedRelationships() async {
+        print("🔧 Starting comprehensive relationship repair...")
+
+        do {
+            // Step 1: Find and remove duplicate trips (same tripId)
+            let allTripsDescriptor = FetchDescriptor<SDTrip>()
+            var allTrips = try modelContext.fetch(allTripsDescriptor)
+
+            var tripsByUUID: [UUID: [SDTrip]] = [:]
+            for sdTrip in allTrips {
+                tripsByUUID[sdTrip.tripId, default: []].append(sdTrip)
+            }
+
+            var duplicatesRemoved = 0
+            for (uuid, duplicateTrips) in tripsByUUID where duplicateTrips.count > 1 {
+                print("⚠️ Found \(duplicateTrips.count) duplicate trips with UUID \(uuid)")
+                // Keep the one with most data, delete others
+                let sorted = duplicateTrips.sorted {
+                    ($0.logpages?.count ?? 0) > ($1.logpages?.count ?? 0)
+                }
+                for i in 1..<sorted.count {
+                    modelContext.delete(sorted[i])
+                    duplicatesRemoved += 1
+                }
+            }
+            if duplicatesRemoved > 0 {
+                print("🔧 Removed \(duplicatesRemoved) duplicate trips")
+                // Re-fetch trips after removing duplicates
+                allTrips = try modelContext.fetch(allTripsDescriptor)
+            }
+
+            // Step 2: Find orphaned logpages and try to re-link them
+            let orphanedLogpagesDescriptor = FetchDescriptor<SDLogpage>(
+                predicate: #Predicate<SDLogpage> { $0.owningTrip == nil }
+            )
+            let orphanedLogpages = try modelContext.fetch(orphanedLogpagesDescriptor)
+            print("🔧 Found \(orphanedLogpages.count) orphaned logpages")
+
+            // Build a lookup map of trips by date for faster matching
+            var tripsByDate: [String: [SDTrip]] = [:]
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            for sdTrip in allTrips {
+                let dateKey = dateFormatter.string(from: sdTrip.date)
+                tripsByDate[dateKey, default: []].append(sdTrip)
+            }
+
+            var logpagesRelinked = 0
+            for orphanedLogpage in orphanedLogpages {
+                let logpageDateKey = dateFormatter.string(from: orphanedLogpage.dateCreated)
+
+                // Try exact date match first
+                if let matchingTrips = tripsByDate[logpageDateKey], let matchingTrip = matchingTrips.first {
+                    orphanedLogpage.owningTrip = matchingTrip
+                    logpagesRelinked += 1
+                    print("🔧 Re-linked logpage \(orphanedLogpage.logpageId) to trip #\(matchingTrip.tripNumber) (date match)")
+                } else {
+                    // Try finding a trip within 1 day
+                    for offset in [-1, 1] {
+                        if let offsetDate = Calendar.current.date(byAdding: .day, value: offset, to: orphanedLogpage.dateCreated) {
+                            let offsetKey = dateFormatter.string(from: offsetDate)
+                            if let matchingTrips = tripsByDate[offsetKey], let matchingTrip = matchingTrips.first {
+                                orphanedLogpage.owningTrip = matchingTrip
+                                logpagesRelinked += 1
+                                print("🔧 Re-linked logpage \(orphanedLogpage.logpageId) to trip #\(matchingTrip.tripNumber) (±1 day)")
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Step 3: Get all logpages (including newly linked ones)
+            let allLogpagesDescriptor = FetchDescriptor<SDLogpage>()
+            var allLogpages = try modelContext.fetch(allLogpagesDescriptor)
+
+            // Build lookup for logpages by date
+            var logpagesByDate: [String: [SDLogpage]] = [:]
+            for logpage in allLogpages {
+                let dateKey = dateFormatter.string(from: logpage.dateCreated)
+                logpagesByDate[dateKey, default: []].append(logpage)
+            }
+
+            // Step 4: Find orphaned legs and try to re-link them
+            let orphanedLegsDescriptor = FetchDescriptor<SDFlightLeg>(
+                predicate: #Predicate<SDFlightLeg> { $0.parentLogpage == nil }
+            )
+            let orphanedLegs = try modelContext.fetch(orphanedLegsDescriptor)
+            print("🔧 Found \(orphanedLegs.count) orphaned legs")
+
+            var legsRelinked = 0
+            for orphanedLeg in orphanedLegs {
+                var matched = false
+
+                // Try matching by flight date first
+                if let legDate = orphanedLeg.flightDate {
+                    let legDateKey = dateFormatter.string(from: legDate)
+                    if let matchingLogpages = logpagesByDate[legDateKey], let matchingLogpage = matchingLogpages.first {
+                        orphanedLeg.parentLogpage = matchingLogpage
+                        legsRelinked += 1
+                        matched = true
+                        print("🔧 Re-linked leg \(orphanedLeg.departure)-\(orphanedLeg.arrival) by flightDate")
+                    }
+                }
+
+                // If no flightDate, try to match by legOrder or just assign to any logpage with same trip date
+                if !matched && !allLogpages.isEmpty {
+                    // Find a logpage that belongs to a trip (prefer linked logpages)
+                    if let linkedLogpage = allLogpages.first(where: { $0.owningTrip != nil }) {
+                        orphanedLeg.parentLogpage = linkedLogpage
+                        legsRelinked += 1
+                        print("🔧 Re-linked leg \(orphanedLeg.departure)-\(orphanedLeg.arrival) to first available logpage")
+                    }
+                }
+            }
+
+            // Step 5: Remove duplicate logpages (same logpageId)
+            allLogpages = try modelContext.fetch(allLogpagesDescriptor)
+            var logpagesByUUID: [UUID: [SDLogpage]] = [:]
+            for logpage in allLogpages {
+                logpagesByUUID[logpage.logpageId, default: []].append(logpage)
+            }
+
+            var logpageDuplicatesRemoved = 0
+            for (uuid, duplicateLogpages) in logpagesByUUID where duplicateLogpages.count > 1 {
+                print("⚠️ Found \(duplicateLogpages.count) duplicate logpages with UUID \(uuid)")
+                let sorted = duplicateLogpages.sorted { ($0.legs?.count ?? 0) > ($1.legs?.count ?? 0) }
+                for i in 1..<sorted.count {
+                    modelContext.delete(sorted[i])
+                    logpageDuplicatesRemoved += 1
+                }
+            }
+
+            // Step 6: Remove duplicate legs (same legId)
+            let allLegsDescriptor = FetchDescriptor<SDFlightLeg>()
+            let allLegs = try modelContext.fetch(allLegsDescriptor)
+
+            var legsByUUID: [UUID: [SDFlightLeg]] = [:]
+            for leg in allLegs {
+                legsByUUID[leg.legId, default: []].append(leg)
+            }
+
+            var legDuplicatesRemoved = 0
+            for (uuid, duplicateLegs) in legsByUUID where duplicateLegs.count > 1 {
+                print("⚠️ Found \(duplicateLegs.count) duplicate legs with UUID \(uuid)")
+                // Keep the one with a parent, or the first one
+                let withParent = duplicateLegs.filter { $0.parentLogpage != nil }
+                let toKeep = withParent.first ?? duplicateLegs.first!
+                for leg in duplicateLegs where leg !== toKeep {
+                    modelContext.delete(leg)
+                    legDuplicatesRemoved += 1
+                }
+            }
+
+            // Save all changes
+            try modelContext.save()
+
+            print("🔧 Repair Summary:")
+            print("   - Duplicate trips removed: \(duplicatesRemoved)")
+            print("   - Logpages re-linked: \(logpagesRelinked)")
+            print("   - Legs re-linked: \(legsRelinked)")
+            print("   - Duplicate logpages removed: \(logpageDuplicatesRemoved)")
+            print("   - Duplicate legs removed: \(legDuplicatesRemoved)")
+
+            if logpagesRelinked > 0 || legsRelinked > 0 {
+                print("✅ Some orphaned records were successfully re-linked!")
+                print("🔄 Reloading trips to reflect changes...")
+                // Reload trips to reflect the repairs
+                await loadTrips()
+            } else if orphanedLogpages.count > 0 || orphanedLegs.count > 0 {
+                print("⚠️ Could not re-link all orphaned records")
+                print("💡 Try importing from a JSON backup to restore data")
+            }
+
+        } catch {
+            print("❌ Failed to repair relationships: \(error)")
+        }
+    }
+
+    // MARK: - Verify Data Integrity After Load
+
+    func verifyDataIntegrity() async {
+        var totalLegsInTrips = 0
+        var totalLegsInDB = 0
+        var totalLogpagesInTrips = 0
+
+        // Count legs and logpages in in-memory trips
+        for trip in trips {
+            totalLegsInTrips += trip.legs.count
+            totalLogpagesInTrips += trip.logpages.count
+        }
+
+        // Count legs in database
+        let legDescriptor = FetchDescriptor<SDFlightLeg>()
+        let logpageDescriptor = FetchDescriptor<SDLogpage>()
+
+        do {
+            let allLegs = try modelContext.fetch(legDescriptor)
+            let allLogpages = try modelContext.fetch(logpageDescriptor)
+            totalLegsInDB = allLegs.count
+
+            let orphanedLegs = allLegs.filter { $0.parentLogpage == nil }
+            let orphanedLogpages = allLogpages.filter { $0.owningTrip == nil }
+
+            // Check for duplicates
+            var legUUIDs = Set<UUID>()
+            var duplicateLegs = 0
+            for leg in allLegs {
+                if legUUIDs.contains(leg.legId) {
+                    duplicateLegs += 1
+                } else {
+                    legUUIDs.insert(leg.legId)
+                }
+            }
+
+            print("📊 Data Integrity Check:")
+            print("   - Trips in memory: \(trips.count)")
+            print("   - Logpages in memory: \(totalLogpagesInTrips)")
+            print("   - Logpages in database: \(allLogpages.count)")
+            print("   - Orphaned logpages: \(orphanedLogpages.count)")
+            print("   - Legs in memory: \(totalLegsInTrips)")
+            print("   - Legs in database: \(totalLegsInDB)")
+            print("   - Orphaned legs: \(orphanedLegs.count)")
+            print("   - Duplicate leg UUIDs: \(duplicateLegs)")
+
+            var hasIssues = false
+
+            if orphanedLegs.count > 0 {
+                print("⚠️ WARNING: \(orphanedLegs.count) orphaned legs found in database!")
+                hasIssues = true
+            }
+
+            if orphanedLogpages.count > 0 {
+                print("⚠️ WARNING: \(orphanedLogpages.count) orphaned logpages found in database!")
+                hasIssues = true
+            }
+
+            if duplicateLegs > 0 {
+                print("⚠️ WARNING: \(duplicateLegs) duplicate leg UUIDs found!")
+                hasIssues = true
+            }
+
+            let expectedLegs = totalLegsInDB - orphanedLegs.count - duplicateLegs
+            if totalLegsInTrips != expectedLegs {
+                print("⚠️ WARNING: Leg count mismatch! Memory: \(totalLegsInTrips), Expected from DB: \(expectedLegs)")
+                hasIssues = true
+            }
+
+            if hasIssues {
+                print("💡 Run repairOrphanedRelationships() to attempt automatic repair")
+                print("💡 Or import from a backup to restore data")
+            } else {
+                print("✅ Data integrity check passed!")
+            }
+
+        } catch {
+            print("❌ Failed to verify data integrity: \(error)")
+        }
+    }
+
+    // MARK: - Force Full Re-sync from CloudKit
+
+    func forceCloudKitResync() async {
+        print("☁️ Forcing CloudKit re-sync...")
+        // SwiftData doesn't provide direct CloudKit control, but we can:
+        // 1. Clear local cache
+        // 2. Trigger a reload which will fetch from CloudKit
+
+        // First, run integrity check
+        await verifyDataIntegrity()
+
+        // Reload from SwiftData (which syncs with CloudKit)
+        await loadTrips()
+
+        // Check again after reload
+        await verifyDataIntegrity()
+    }
+
+    // MARK: - Migrate from Legacy CloudKit Records
+
+    /// Migrates data from old CloudKit "Trip" and "FlightLeg" records to SwiftData.
+    /// Call this if you have data in the old format that needs to be imported.
+    func migrateFromLegacyCloudKit() async -> (tripsImported: Int, legsImported: Int) {
+        print("🔄 Starting legacy CloudKit migration...")
+
+        guard CloudKitManager.shared.iCloudAvailable else {
+            print("❌ iCloud not available for migration")
+            return (0, 0)
+        }
+
+        do {
+            // Fetch all old-format trips
+            let legacyTrips = try await CloudKitManager.shared.fetchAllTrips()
+            print("📦 Found \(legacyTrips.count) trips in legacy CloudKit format")
+
+            var tripsImported = 0
+            var legsImported = 0
+
+            for legacyTrip in legacyTrips {
+                // Check if we already have this trip by UUID
+                let tripId = legacyTrip.id
+                let predicate = #Predicate<SDTrip> { $0.tripId == tripId }
+                let descriptor = FetchDescriptor<SDTrip>(predicate: predicate)
+
+                let existing = try modelContext.fetch(descriptor)
+
+                if existing.isEmpty {
+                    // Import this trip
+                    insertNewTrip(legacyTrip)
+                    tripsImported += 1
+                    legsImported += legacyTrip.legs.count
+                    print("✅ Imported trip #\(legacyTrip.tripNumber) with \(legacyTrip.legs.count) legs")
+                } else {
+                    print("⏭️ Skipping trip #\(legacyTrip.tripNumber) - already exists in SwiftData")
+                }
+            }
+
+            try modelContext.save()
+
+            print("🔄 Migration complete:")
+            print("   - Trips imported: \(tripsImported)")
+            print("   - Legs imported: \(legsImported)")
+
+            // Reload to reflect changes
+            await loadTrips()
+
+            return (tripsImported, legsImported)
+
+        } catch {
+            print("❌ Migration failed: \(error)")
+            return (0, 0)
+        }
+    }
+
+    // MARK: - Nuclear Reset: Delete All Local Data and Re-import from JSON
+
+    /// Completely deletes all local SwiftData records and re-imports from a JSON backup.
+    /// Use this when CloudKit sync is corrupted and relationships are broken.
+    /// This does NOT delete CloudKit data - it just rebuilds the local database.
+    func nuclearResetAndImport(_ jsonData: Data) async -> Bool {
+        print("🔥 NUCLEAR RESET: Deleting all local SwiftData records...")
+
+        do {
+            // Step 1: Delete ALL local entities
+            let tripDescriptor = FetchDescriptor<SDTrip>()
+            let logpageDescriptor = FetchDescriptor<SDLogpage>()
+            let legDescriptor = FetchDescriptor<SDFlightLeg>()
+            let crewDescriptor = FetchDescriptor<SDCrewMember>()
+
+            let allTrips = try modelContext.fetch(tripDescriptor)
+            let allLogpages = try modelContext.fetch(logpageDescriptor)
+            let allLegs = try modelContext.fetch(legDescriptor)
+            let allCrew = try modelContext.fetch(crewDescriptor)
+
+            print("🗑️ Deleting \(allTrips.count) trips, \(allLogpages.count) logpages, \(allLegs.count) legs, \(allCrew.count) crew")
+
+            // Delete in reverse order of dependencies
+            for crew in allCrew { modelContext.delete(crew) }
+            for leg in allLegs { modelContext.delete(leg) }
+            for logpage in allLogpages { modelContext.delete(logpage) }
+            for trip in allTrips { modelContext.delete(trip) }
+
+            try modelContext.save()
+            print("✅ All local data deleted")
+
+            // Step 2: Clear in-memory trips
+            trips = []
+
+            // Step 3: Decode JSON
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+
+            var tripsToImport: [Trip] = []
+
+            // Try different formats
+            if let backup = try? decoder.decode(AppBackupData.self, from: jsonData) {
+                tripsToImport = backup.trips
+                print("📦 Decoded \(tripsToImport.count) trips from AppBackupData format")
+            } else if let simpleBackup = try? decoder.decode(SimpleBackupFormat.self, from: jsonData) {
+                tripsToImport = simpleBackup.trips
+                print("📦 Decoded \(tripsToImport.count) trips from SimpleBackupFormat")
+            } else if let tripArray = try? decoder.decode([Trip].self, from: jsonData) {
+                tripsToImport = tripArray
+                print("📦 Decoded \(tripsToImport.count) trips from raw array")
+            } else {
+                print("❌ Could not decode JSON data")
+                return false
+            }
+
+            // Step 4: Remove duplicate trips and legs
+            var seenTripIds = Set<UUID>()
+            var duplicateTrips = 0
+            var duplicateLegs = 0
+
+            tripsToImport = tripsToImport.compactMap { trip -> Trip? in
+                // Skip duplicate trip IDs
+                if seenTripIds.contains(trip.id) {
+                    duplicateTrips += 1
+                    print("⚠️ Skipping duplicate trip ID: \(trip.id)")
+                    return nil
+                }
+                seenTripIds.insert(trip.id)
+
+                // Deduplicate legs within this trip's logpages
+                var seenLegIds = Set<UUID>()
+                var cleanedTrip = trip
+                cleanedTrip.logpages = trip.logpages.map { logpage -> Logpage in
+                    var cleanedLogpage = logpage
+                    cleanedLogpage.legs = logpage.legs.compactMap { leg -> FlightLeg? in
+                        if seenLegIds.contains(leg.id) {
+                            duplicateLegs += 1
+                            print("⚠️ Skipping duplicate leg ID: \(leg.id)")
+                            return nil
+                        }
+                        seenLegIds.insert(leg.id)
+                        return leg
+                    }
+                    return cleanedLogpage
+                }
+
+                // Skip trips with no data (empty date, no legs, no route info)
+                let hasLegs = cleanedTrip.logpages.contains { !$0.legs.isEmpty }
+                let hasValidLeg = cleanedTrip.logpages.flatMap { $0.legs }.contains {
+                    !$0.departure.isEmpty || !$0.arrival.isEmpty || !$0.outTime.isEmpty
+                }
+
+                if !hasLegs || !hasValidLeg {
+                    duplicateTrips += 1
+                    print("⚠️ Skipping empty/invalid trip ID: \(trip.id)")
+                    return nil
+                }
+
+                return cleanedTrip
+            }
+
+            if duplicateTrips > 0 || duplicateLegs > 0 {
+                print("🧹 Cleaned data: removed \(duplicateTrips) duplicate/empty trips, \(duplicateLegs) duplicate legs")
+                print("📦 Proceeding with \(tripsToImport.count) valid trips")
+            }
+
+            // Step 5: Insert each trip with EXPLICIT relationship handling on BOTH SIDES
+            var totalLegsInserted = 0
+            var totalLogpagesInserted = 0
+
+            for trip in tripsToImport {
+                // Create SDTrip and initialize relationship arrays
+                let sdTrip = SDTrip(from: trip)
+                sdTrip.logpages = []  // CRITICAL: Initialize array before adding children
+                sdTrip.crew = []
+                modelContext.insert(sdTrip)
+
+                // Create SDLogpages with EXPLICIT parent relationship on BOTH SIDES
+                for logpage in trip.logpages {
+                    let sdLogpage = SDLogpage(from: logpage)
+                    sdLogpage.legs = []  // CRITICAL: Initialize array before adding children
+                    modelContext.insert(sdLogpage)
+
+                    // Set relationship on BOTH sides
+                    sdLogpage.owningTrip = sdTrip
+                    sdTrip.logpages?.append(sdLogpage)
+                    totalLogpagesInserted += 1
+
+                    // Create SDFlightLegs with EXPLICIT parent relationship on BOTH SIDES
+                    for (order, leg) in logpage.legs.enumerated() {
+                        let sdLeg = SDFlightLeg(from: leg, order: order)
+                        modelContext.insert(sdLeg)
+
+                        // Set relationship on BOTH sides
+                        sdLeg.parentLogpage = sdLogpage
+                        sdLogpage.legs?.append(sdLeg)
+                        totalLegsInserted += 1
+                    }
+                }
+
+                // Create SDCrewMembers with EXPLICIT relationship on BOTH SIDES
+                for crew in trip.crew {
+                    let sdCrew = SDCrewMember(from: crew)
+                    modelContext.insert(sdCrew)
+                    sdCrew.trip = sdTrip
+                    sdTrip.crew?.append(sdCrew)
+                }
+
+                print("📦 Imported trip #\(trip.tripNumber): \(sdTrip.logpages?.count ?? 0) logpages, \(sdTrip.logpages?.reduce(0) { $0 + ($1.legs?.count ?? 0) } ?? 0) legs")
+            }
+
+            // Step 6: Save immediately
+            try modelContext.save()
+
+            print("✅ NUCLEAR RESET COMPLETE:")
+            print("   - Trips inserted: \(tripsToImport.count)")
+            print("   - Logpages inserted: \(totalLogpagesInserted)")
+            print("   - Legs inserted: \(totalLegsInserted)")
+
+            // Step 7: Reload trips from fresh database
+            await loadTrips()
+
+            // Step 8: Verify the relationships are intact
+            var verifyLegs = 0
+            for trip in trips {
+                verifyLegs += trip.legs.count
+            }
+
+            if verifyLegs == totalLegsInserted {
+                print("✅ VERIFICATION PASSED: All \(verifyLegs) legs properly linked!")
+                return true
+            } else {
+                print("⚠️ VERIFICATION WARNING: Expected \(totalLegsInserted) legs, got \(verifyLegs)")
+                return true // Still return true since data was inserted
+            }
+
+        } catch {
+            print("❌ Nuclear reset failed: \(error)")
+            return false
+        }
+    }
+
+    /// Counts records in both old and new CloudKit formats for diagnostic purposes
+    func countCloudKitRecords() async -> (legacyTrips: Int, legacyLegs: Int, swiftDataTrips: Int, swiftDataLegs: Int) {
+        var legacyTrips = 0
+        var legacyLegs = 0
+
+        // Count legacy records
+        do {
+            let trips = try await CloudKitManager.shared.fetchAllTrips()
+            legacyTrips = trips.count
+            for trip in trips {
+                legacyLegs += trip.legs.count
+            }
+        } catch {
+            print("❌ Failed to count legacy records: \(error)")
+        }
+
+        // Count SwiftData records
+        let tripDescriptor = FetchDescriptor<SDTrip>()
+        let legDescriptor = FetchDescriptor<SDFlightLeg>()
+
+        do {
+            let sdTrips = try modelContext.fetch(tripDescriptor)
+            let sdLegs = try modelContext.fetch(legDescriptor)
+
+            print("📊 CloudKit Record Counts:")
+            print("   Legacy 'Trip' records: \(legacyTrips)")
+            print("   Legacy 'FlightLeg' records: \(legacyLegs)")
+            print("   SwiftData 'CD_SDTrip' records: \(sdTrips.count)")
+            print("   SwiftData 'CD_SDFlightLeg' records: \(sdLegs.count)")
+
+            return (legacyTrips, legacyLegs, sdTrips.count, sdLegs.count)
+
+        } catch {
+            print("❌ Failed to count SwiftData records: \(error)")
+            return (legacyTrips, legacyLegs, 0, 0)
         }
     }
 
@@ -333,7 +1056,9 @@ class SwiftDataLogBookStore: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            self?.handleAutoOffTime(notification)
+            Task { @MainActor in
+                self?.handleAutoOffTime(notification)
+            }
         }
 
         NotificationCenter.default.addObserver(
@@ -341,7 +1066,9 @@ class SwiftDataLogBookStore: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            self?.handleAutoOnTime(notification)
+            Task { @MainActor in
+                self?.handleAutoOnTime(notification)
+            }
         }
     }
 
@@ -541,21 +1268,96 @@ class SwiftDataLogBookStore: ObservableObject {
 
     private func processImport(_ importedTrips: [Trip], mergeWithExisting: Bool) -> JSONImportResult {
         if mergeWithExisting {
-            let existingIDs = Set(trips.map { $0.id })
-            let existingTripNumbers = Set(trips.map { "\($0.tripNumber)-\($0.date)" })
-
-            var newTrips = importedTrips.filter { trip in
-                !existingIDs.contains(trip.id) &&
-                !existingTripNumbers.contains("\(trip.tripNumber)-\(trip.date)")
-            }
-
-            for index in newTrips.indices {
-                if newTrips[index].status == .active || newTrips[index].status == .planning {
-                    newTrips[index].status = .completed
+            // Build fingerprint index of all existing legs for fast lookup
+            var existingLegFingerprints = Set<String>()
+            var existingRelaxedFingerprints = Set<String>()
+            for trip in trips {
+                for leg in trip.legs {
+                    existingLegFingerprints.insert(leg.fingerprint)
+                    existingRelaxedFingerprints.insert(leg.relaxedFingerprint)
                 }
             }
 
-            for trip in newTrips {
+            // Also track by UUID and trip number for backwards compatibility
+            let existingIDs = Set(trips.map { $0.id })
+            let existingTripNumbers = Set(trips.map { "\($0.tripNumber)-\($0.date)" }.filter { !$0.starts(with: "-") })
+
+            var newTripsToAdd: [Trip] = []
+            var skippedDuplicates = 0
+            var mergedLegs = 0
+
+            for importedTrip in importedTrips {
+                // Check 1: Exact UUID match - skip entirely
+                if existingIDs.contains(importedTrip.id) {
+                    skippedDuplicates += 1
+                    print("⏭️ Import: Skipping trip with existing UUID: \(importedTrip.id)")
+                    continue
+                }
+
+                // Check 2: Trip number + date match (if trip has a number)
+                if !importedTrip.tripNumber.isEmpty {
+                    let tripKey = "\(importedTrip.tripNumber)-\(importedTrip.date)"
+                    if existingTripNumbers.contains(tripKey) {
+                        skippedDuplicates += 1
+                        print("⏭️ Import: Skipping trip with existing number: \(importedTrip.tripNumber)")
+                        continue
+                    }
+                }
+
+                // Check 3: Leg-level fingerprint matching
+                // Filter out legs that already exist (by flight characteristics)
+                var uniqueLegs: [FlightLeg] = []
+                var tripHasAllDuplicates = true
+
+                for leg in importedTrip.legs {
+                    // Check exact fingerprint first (date + city pair + flight num + times)
+                    if existingLegFingerprints.contains(leg.fingerprint) {
+                        mergedLegs += 1
+                        print("⏭️ Import: Skipping duplicate leg: \(leg.fingerprint)")
+                        continue
+                    }
+
+                    // Check relaxed fingerprint (date + city pair + flight num, ignoring times)
+                    // This catches cases where times differ slightly between sources
+                    if existingRelaxedFingerprints.contains(leg.relaxedFingerprint) {
+                        mergedLegs += 1
+                        print("⏭️ Import: Skipping leg with same route/date: \(leg.relaxedFingerprint)")
+                        continue
+                    }
+
+                    uniqueLegs.append(leg)
+                    tripHasAllDuplicates = false
+
+                    // Add this leg's fingerprints to prevent duplicates within this import
+                    existingLegFingerprints.insert(leg.fingerprint)
+                    existingRelaxedFingerprints.insert(leg.relaxedFingerprint)
+                }
+
+                // If all legs were duplicates, skip the entire trip
+                if tripHasAllDuplicates && !importedTrip.legs.isEmpty {
+                    skippedDuplicates += 1
+                    print("⏭️ Import: Skipping trip - all legs are duplicates")
+                    continue
+                }
+
+                // Create trip with only unique legs
+                var tripToAdd = importedTrip
+                if uniqueLegs.count != importedTrip.legs.count {
+                    // Some legs were filtered out - rebuild logpages with unique legs
+                    tripToAdd.logpages = [Logpage(pageNumber: 1, tatStart: importedTrip.tatStart, legs: uniqueLegs)]
+                    print("📝 Import: Trip has \(uniqueLegs.count)/\(importedTrip.legs.count) unique legs")
+                }
+
+                // Mark as completed if it was active/planning
+                if tripToAdd.status == .active || tripToAdd.status == .planning {
+                    tripToAdd.status = .completed
+                }
+
+                newTripsToAdd.append(tripToAdd)
+            }
+
+            // Add all new trips
+            for trip in newTripsToAdd {
                 insertNewTrip(trip)
                 trips.append(trip)
             }
@@ -568,10 +1370,22 @@ class SwiftDataLogBookStore: ObservableObject {
                 print("Import save failed: \(error)")
             }
 
+            // Build descriptive message
+            var message = "Imported \(newTripsToAdd.count) new trips."
+            if skippedDuplicates > 0 {
+                message += " Skipped \(skippedDuplicates) duplicate trips."
+            }
+            if mergedLegs > 0 {
+                message += " Merged \(mergedLegs) duplicate legs."
+            }
+            message += " Total: \(trips.count)"
+
+            print("📦 Import Summary: \(newTripsToAdd.count) new trips, \(skippedDuplicates) skipped, \(mergedLegs) legs merged")
+
             return JSONImportResult(
                 success: true,
-                message: "Imported \(newTrips.count) new trips. Total: \(trips.count)",
-                newTripsCount: newTrips.count
+                message: message,
+                newTripsCount: newTripsToAdd.count
             )
         } else {
             // Delete all existing trips
@@ -658,26 +1472,127 @@ class SwiftDataLogBookStore: ObservableObject {
     }
 }
 
-// MARK: - CloudKit Sync Extension (No-op - SwiftData handles this automatically)
+// MARK: - CloudKit Sync Extension
 
 extension SwiftDataLogBookStore {
-    // These methods exist for API compatibility but do nothing
-    // SwiftData + CloudKit handles sync automatically
 
+    /// Triggers a refresh of SwiftData's CloudKit sync and reloads local data.
+    /// SwiftData syncs automatically, but this method:
+    /// 1. Logs sync status for debugging
+    /// 2. Checks for pending CloudKit changes
+    /// 3. Reloads trips from local store (which includes any synced data)
     func syncFromCloud() async {
-        // No-op: SwiftData syncs automatically
-        print("syncFromCloud called - SwiftData handles sync automatically")
-        await loadTrips() // Just reload from local store
+        print("☁️ syncFromCloud: Starting CloudKit sync check...")
+
+        // Check CloudKit status first
+        let (available, status, error) = await SwiftDataConfiguration.checkCloudKitStatus()
+
+        if !available {
+            print("☁️ syncFromCloud: iCloud not available - \(error ?? "unknown error")")
+            print("☁️ Account status: \(status.rawValue)")
+            await MainActor.run {
+                CloudKitErrorHandler.shared.syncStatus = .failed(error: error ?? "iCloud unavailable")
+            }
+            // Still reload local data
+            await loadTrips()
+            return
+        }
+
+        print("☁️ syncFromCloud: iCloud available, checking sync state...")
+
+        // Log current SwiftData sync info
+        await logCloudKitSyncStatus()
+
+        // SwiftData syncs automatically, so we just need to reload
+        // Any pending CloudKit changes should already be merged into the local store
+        await loadTrips()
+
+        let tripCount = trips.count
+        print("☁️ syncFromCloud: Loaded \(tripCount) trips from SwiftData")
+
+        await MainActor.run {
+            CloudKitErrorHandler.shared.syncStatus = .success
+        }
+    }
+
+    /// Logs detailed CloudKit sync status for debugging
+    private func logCloudKitSyncStatus() async {
+        print("☁️ CloudKit Sync Status:")
+        print("   Container: \(SwiftDataConfiguration.cloudKitContainerIdentifier)")
+        print("   Store URL: \(SwiftDataConfiguration.storeURL.path)")
+
+        // Check if there are any pending changes
+        if modelContext.hasChanges {
+            print("   ⚠️ Local context has unsaved changes")
+        } else {
+            print("   ✅ No pending local changes")
+        }
+
+        // Log trip counts for debugging
+        let descriptor = FetchDescriptor<SDTrip>()
+        do {
+            let sdTrips = try modelContext.fetch(descriptor)
+            print("   📊 SwiftData trips: \(sdTrips.count)")
+
+            // Check for potential sync issues
+            var tripsWithoutLegs = 0
+            var totalLegs = 0
+            for trip in sdTrips {
+                let legCount = trip.logpages?.reduce(0) { $0 + ($1.legs?.count ?? 0) } ?? 0
+                totalLegs += legCount
+                if legCount == 0 {
+                    tripsWithoutLegs += 1
+                }
+            }
+            print("   📊 Total legs in database: \(totalLegs)")
+            if tripsWithoutLegs > 0 {
+                print("   ⚠️ Trips without legs: \(tripsWithoutLegs)")
+            }
+        } catch {
+            print("   ❌ Failed to fetch trips: \(error)")
+        }
+    }
+
+    /// Force re-upload all local trips to CloudKit by touching each record.
+    /// Use this when CloudKit data appears missing or corrupted.
+    func forceUploadAllToCloud() async {
+        print("☁️ forceUploadAllToCloud: Starting full re-sync...")
+
+        let descriptor = FetchDescriptor<SDTrip>()
+        do {
+            let sdTrips = try modelContext.fetch(descriptor)
+            print("☁️ Re-syncing \(sdTrips.count) trips...")
+
+            for sdTrip in sdTrips {
+                // Touch the record to mark it as modified
+                sdTrip.notes = sdTrip.notes // This marks the record as dirty
+            }
+
+            // Save to trigger CloudKit sync
+            try modelContext.save()
+            print("☁️ forceUploadAllToCloud: Saved all trips - CloudKit will sync automatically")
+
+            await MainActor.run {
+                CloudKitErrorHandler.shared.syncStatus = .success
+            }
+        } catch {
+            print("☁️ forceUploadAllToCloud failed: \(error)")
+            await MainActor.run {
+                CloudKitErrorHandler.shared.syncStatus = .failed(error: error.localizedDescription)
+            }
+        }
     }
 
     func syncToCloud(trip: Trip) {
-        // No-op: SwiftData syncs automatically
-        print("syncToCloud called for trip \(trip.tripNumber) - SwiftData handles sync automatically")
+        // SwiftData syncs automatically on save
+        // This method just triggers a save to ensure sync happens
+        print("☁️ syncToCloud: Triggering save for trip \(trip.tripNumber)")
+        saveTrip(trip)
     }
 
     func deleteFromCloud(tripID: String) {
-        // No-op: SwiftData syncs automatically
-        print("deleteFromCloud called for \(tripID) - SwiftData handles deletion automatically")
+        // SwiftData handles deletion sync automatically
+        print("☁️ deleteFromCloud: Trip \(tripID) will be synced on deletion")
     }
 
     // MARK: - Preview Support

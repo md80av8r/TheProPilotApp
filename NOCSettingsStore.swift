@@ -58,6 +58,22 @@ class NOCSettingsStore: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var previousScheduleHash: String?
     
+    // MARK: - Notification Throttling & Configuration
+    private var lastRevisionNotificationDate: Date?
+    private var lastNotificationHash: String? // Track what we last notified about
+    
+    /// Minimum hours between revision notifications (prevents notification spam)
+    /// Default: 12 hours - won't send duplicate notifications within this window
+    @Published var minNotificationIntervalHours: Double = 12 { didSet { saveNotificationThrottleSetting() } }
+    
+    /// Only alert for changes within the next N days (ignores far-future changes)
+    /// Default: 7 days - only urgent near-term changes trigger alerts
+    @Published var revisionAlertWindowDays: Int = 7 { didSet { saveRevisionAlertWindowSetting() } }
+    
+    /// Whether to respect quiet hours for revision notifications
+    /// If enabled, checks AppStorage quiet hours before sending notifications
+    @Published var respectQuietHours: Bool = true { didSet { saveQuietHoursRespectSetting() } }
+    
     // Credential type enum for targeted saves
     private enum CredentialField {
         case username, password, rosterURL
@@ -95,6 +111,9 @@ class NOCSettingsStore: ObservableObject {
     private let applyTimeOffsetKey = "NOCApplyTimeOffset"
     private let usePressureInHgKey = "WeatherUsePressureInHg"
     private let useCelsiusKey = "WeatherUseCelsius"
+    private let minNotificationIntervalKey = "NOCMinNotificationIntervalHours"
+    private let revisionAlertWindowDaysKey = "NOCRevisionAlertWindowDays"
+    private let respectQuietHoursKey = "NOCRespectQuietHours"
     
     // MARK: - Computed Properties
     var rosterURLObject: URL? {
@@ -133,6 +152,9 @@ class NOCSettingsStore: ObservableObject {
         loadTimeOffsetSettings()
         loadPressureUnitSetting()
         loadTemperatureUnitSetting()
+        loadNotificationThrottleSetting()
+        loadRevisionAlertWindowSetting()
+        loadQuietHoursRespectSetting()
         checkOfflineStatus()
         
         // Setup Combine publisher to auto-save calendar data
@@ -497,6 +519,57 @@ class NOCSettingsStore: ObservableObject {
         print("✅ Loaded temperature unit: \(useCelsius ? "°C" : "°F")")
     }
     
+    // MARK: - Notification Throttling Settings
+    
+    private func saveNotificationThrottleSetting() {
+        userDefaults.set(minNotificationIntervalHours, forKey: minNotificationIntervalKey)
+        userDefaults.synchronize()
+        print("✅ Notification throttle saved: \(minNotificationIntervalHours) hours")
+    }
+    
+    private func loadNotificationThrottleSetting() {
+        if let savedInterval = userDefaults.object(forKey: minNotificationIntervalKey) as? Double {
+            minNotificationIntervalHours = savedInterval
+        } else {
+            minNotificationIntervalHours = 12  // Default to 12 hours
+        }
+        print("✅ Loaded notification throttle: \(minNotificationIntervalHours) hours")
+    }
+    
+    // MARK: - Revision Alert Window Settings
+    
+    private func saveRevisionAlertWindowSetting() {
+        userDefaults.set(revisionAlertWindowDays, forKey: revisionAlertWindowDaysKey)
+        userDefaults.synchronize()
+        print("✅ Revision alert window saved: \(revisionAlertWindowDays) days")
+    }
+    
+    private func loadRevisionAlertWindowSetting() {
+        if let savedDays = userDefaults.object(forKey: revisionAlertWindowDaysKey) as? Int {
+            revisionAlertWindowDays = savedDays
+        } else {
+            revisionAlertWindowDays = 7  // Default to 7 days
+        }
+        print("✅ Loaded revision alert window: \(revisionAlertWindowDays) days")
+    }
+    
+    // MARK: - Quiet Hours Respect Settings
+    
+    private func saveQuietHoursRespectSetting() {
+        userDefaults.set(respectQuietHours, forKey: respectQuietHoursKey)
+        userDefaults.synchronize()
+        print("✅ Quiet hours respect saved: \(respectQuietHours)")
+    }
+    
+    private func loadQuietHoursRespectSetting() {
+        if userDefaults.object(forKey: respectQuietHoursKey) != nil {
+            respectQuietHours = userDefaults.bool(forKey: respectQuietHoursKey)
+        } else {
+            respectQuietHours = true  // Default to respecting quiet hours
+        }
+        print("✅ Loaded quiet hours respect: \(respectQuietHours)")
+    }
+    
     /// Calculate adjusted block out time from iCal show time
     func adjustedBlockOutTime(from showTime: Date) -> Date {
         guard applyTimeOffset else { return showTime }
@@ -643,6 +716,7 @@ class NOCSettingsStore: ObservableObject {
     }
     
     /// Extract iCalendar content for events from today onwards
+    /// This filters out past events and normalizes timestamps to avoid false positives
     private func extractFutureEventsContent(from content: String) -> String {
         var futureEvents: [String] = []
         
@@ -662,7 +736,7 @@ class NOCSettingsStore: ObservableObject {
         
         for match in matches {
             if let eventRange = Range(match.range, in: content) {
-                let eventBlock = String(content[eventRange])
+                var eventBlock = String(content[eventRange])
                 
                 // Extract DTSTART from this event
                 let dtPattern = "DTSTART[^:]*:([0-9]{8})"
@@ -674,6 +748,24 @@ class NOCSettingsStore: ObservableObject {
                     if let eventDate = dateFormatter.date(from: dateString) {
                         // Only include events from today onwards
                         if eventDate >= today {
+                            // 🔥 NORMALIZE: Strip out DTSTAMP and LAST-MODIFIED to prevent false change detection
+                            // These fields update on every sync but don't represent actual schedule changes
+                            eventBlock = eventBlock.replacingOccurrences(
+                                of: "DTSTAMP:[^\r\n]*[\r\n]+",
+                                with: "",
+                                options: .regularExpression
+                            )
+                            eventBlock = eventBlock.replacingOccurrences(
+                                of: "LAST-MODIFIED:[^\r\n]*[\r\n]+",
+                                with: "",
+                                options: .regularExpression
+                            )
+                            eventBlock = eventBlock.replacingOccurrences(
+                                of: "CREATED:[^\r\n]*[\r\n]+",
+                                with: "",
+                                options: .regularExpression
+                            )
+                            
                             futureEvents.append(eventBlock)
                         }
                     }
@@ -700,11 +792,22 @@ class NOCSettingsStore: ObservableObject {
                 print("   Old hash: \(oldHash.prefix(16))...")
                 print("   New hash: \(newHash.prefix(16))...")
                 
+                // 🔥 IMPORTANT: Check if we already have a pending revision with the same hash
+                // This prevents re-alerting on the same revision that hasn't been confirmed yet
+                if hasPendingRevision, let lastHash = lastNotificationHash, lastHash == newHash {
+                    print("🔇 Revision already pending for this schedule version - skipping duplicate alert")
+                    return
+                }
+                
                 // Verify there are actually future changes worth alerting about
                 if let changeInfo = getRelevantFutureChanges(newData: newData) {
-                    handleScheduleRevisionDetected(oldData: calendarData, newData: newData, changeInfo: changeInfo)
+                    handleScheduleRevisionDetected(oldData: calendarData, newData: newData, changeInfo: changeInfo, newHash: newHash)
                 } else {
                     print("📝 Hash changed but no actionable future changes - skipping alert")
+                    // Still update the hash to avoid repeated checks
+                    previousScheduleHash = newHash
+                    userDefaults.set(newHash, forKey: scheduleHashKey)
+                    userDefaults.synchronize()
                 }
             } else {
                 print("✅ Future schedule unchanged (hash match)")
@@ -737,12 +840,12 @@ class NOCSettingsStore: ObservableObject {
         
         let upcomingDates = extractUpcomingEventDates(from: content)
         
-        // Only alert if there are changes within the next 7 days
-        let oneWeekFromNow = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
-        let relevantDates = upcomingDates.filter { $0 <= oneWeekFromNow }
+        // Only alert if there are changes within the configured alert window
+        let alertWindowEnd = Calendar.current.date(byAdding: .day, value: revisionAlertWindowDays, to: Date()) ?? Date()
+        let relevantDates = upcomingDates.filter { $0 <= alertWindowEnd }
         
         if relevantDates.isEmpty {
-            return nil // No changes in the next week - not urgent
+            return nil // No changes in the alert window - not urgent
         }
         
         let formatter = DateFormatter()
@@ -752,26 +855,54 @@ class NOCSettingsStore: ObservableObject {
     }
     
     /// Handle when a schedule revision is detected
-    private func handleScheduleRevisionDetected(oldData: Data?, newData: Data, changeInfo: String) {
-        // Set pending revision flag
-        hasPendingRevision = true
-        pendingRevisionDetectedAt = Date()
-        saveRevisionState()
+    private func handleScheduleRevisionDetected(oldData: Data?, newData: Data, changeInfo: String, newHash: String) {
+        print("🔔 SCHEDULE REVISION DETECTED")
+        print("   Change info: \(changeInfo)")
+        print("   Pending revision flag: \(hasPendingRevision)")
         
-        // Send notification if enabled
-        if revisionNotificationsEnabled {
-            sendRevisionNotification(changeInfo: changeInfo)
+        // 🔥 CRITICAL: Only set pending revision and send notification if we haven't already alerted about this
+        // This prevents duplicate alerts when the same revision is synced multiple times
+        let shouldAlert: Bool
+        
+        if hasPendingRevision {
+            // Already have a pending revision - check if it's the same one
+            if let lastHash = lastNotificationHash, lastHash == newHash {
+                print("🔇 Already alerted about this revision version - skipping duplicate")
+                shouldAlert = false
+            } else {
+                print("⚠️ New revision detected while previous revision still pending")
+                shouldAlert = true
+            }
+        } else {
+            // No pending revision - this is new
+            shouldAlert = true
         }
         
-        // Post internal notification for UI updates
-        NotificationCenter.default.post(
-            name: .nocRevisionDetected,
-            object: nil,
-            userInfo: [
-                "detectedAt": pendingRevisionDetectedAt as Any,
-                "changeInfo": changeInfo
-            ]
-        )
+        if shouldAlert {
+            // Set pending revision flag
+            hasPendingRevision = true
+            pendingRevisionDetectedAt = Date()
+            saveRevisionState()
+            
+            // Send notification if enabled (with throttling)
+            if revisionNotificationsEnabled {
+                sendRevisionNotification(changeInfo: changeInfo, scheduleHash: newHash)
+            } else {
+                print("🔇 Notifications disabled - skipping alert")
+                // Still store the hash to prevent re-alerting if notifications are re-enabled
+                lastNotificationHash = newHash
+            }
+            
+            // Post internal notification for UI updates
+            NotificationCenter.default.post(
+                name: .nocRevisionDetected,
+                object: nil,
+                userInfo: [
+                    "detectedAt": pendingRevisionDetectedAt as Any,
+                    "changeInfo": changeInfo
+                ]
+            )
+        }
     }
     
     /// Parse calendar data to identify what changed (legacy - kept for compatibility)
@@ -829,7 +960,31 @@ class NOCSettingsStore: ObservableObject {
     }
     
     /// Send a local notification about the schedule revision
-    private func sendRevisionNotification(changeInfo: String) {
+    private func sendRevisionNotification(changeInfo: String, scheduleHash: String) {
+        // 🔥 QUIET HOURS: Check if we should suppress notifications
+        if respectQuietHours && isInQuietHours() {
+            print("🔇 Notification suppressed - currently in quiet hours")
+            // Still store the hash so we don't re-alert when quiet hours end
+            lastNotificationHash = scheduleHash
+            return
+        }
+        
+        // 🔥 THROTTLING: Check if we've sent a notification recently
+        if let lastNotif = lastRevisionNotificationDate {
+            let hoursSinceLastNotif = Date().timeIntervalSince(lastNotif) / 3600
+            if hoursSinceLastNotif < minNotificationIntervalHours {
+                print("🔇 Notification throttled - sent \(String(format: "%.1f", hoursSinceLastNotif))h ago (min: \(minNotificationIntervalHours)h)")
+                return
+            }
+        }
+        
+        // 🔥 DEDUPLICATION: Check if this is the same schedule version we already notified about
+        if let lastHash = lastNotificationHash, lastHash == scheduleHash {
+            print("🔇 Notification skipped - already notified about this schedule version")
+            return
+        }
+        
+        // Proceed with notification
         let content = UNMutableNotificationContent()
         content.title = "📅 Schedule Revision Pending"
         content.body = "\(changeInfo)\nTap to confirm in NOC."
@@ -853,8 +1008,34 @@ class NOCSettingsStore: ObservableObject {
             if let error = error {
                 print("❌ Failed to send revision notification: \(error.localizedDescription)")
             } else {
-                print("✅ Revision notification sent")
+                print("✅ Revision notification sent: \(changeInfo)")
+                // Update throttling trackers with the schedule hash for accurate deduplication
+                self.lastRevisionNotificationDate = Date()
+                self.lastNotificationHash = scheduleHash
             }
+        }
+    }
+    
+    /// Check if current time is within quiet hours
+    private func isInQuietHours() -> Bool {
+        guard respectQuietHours else { return false }
+        
+        // Get quiet hours settings from AppStorage (used by NOCAlertSettingsView)
+        let quietHoursEnabled = userDefaults.bool(forKey: "nocQuietHoursEnabled")
+        guard quietHoursEnabled else { return false }
+        
+        let quietStart = userDefaults.integer(forKey: "nocQuietHoursStart")
+        let quietEnd = userDefaults.integer(forKey: "nocQuietHoursEnd")
+        
+        let calendar = Calendar.current
+        let now = Date()
+        let currentHour = calendar.component(.hour, from: now)
+        
+        // Handle overnight quiet hours (e.g., 22:00 - 06:00)
+        if quietStart > quietEnd {
+            return currentHour >= quietStart || currentHour < quietEnd
+        } else {
+            return currentHour >= quietStart && currentHour < quietEnd
         }
     }
     

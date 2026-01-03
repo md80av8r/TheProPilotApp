@@ -29,71 +29,77 @@ struct DataBackupSettingsView: View {
     @State private var showingImportModeChoice = false  // 🔥 NEW: Show merge vs replace choice
     
     var body: some View {
-        ZStack {
-            LogbookTheme.navy.ignoresSafeArea()
-            
-            ScrollView {
-                VStack(spacing: 20) {
-                    // CloudKit Status Banner (if there are issues)
-                    CloudKitStatusBanner()
-                    
-                    // iCloud Sync Section
-                    iCloudSyncSection
-                    
-                    // Local Backup Section
-                    localBackupSection
-                    
-                    // 🆕 Data Management Section (NEW)
-                    dataManagementSection
-                    
-                    // About Section
-                    aboutSection
+        NavigationView {
+            ZStack {
+                LogbookTheme.navy.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // 🚨 Container Migration Warning (temporarily disabled)
+                        // See FIX_MIGRATION_WARNING_SCOPE_ERROR.md for instructions
+                        // MigrationWarningSettingsRow()
+                        
+                        // CloudKit Status Banner (temporarily disabled)
+                        // CloudKitStatusBanner()
+
+                        // iCloud Sync Section
+                        iCloudSyncSection
+
+                        // Local Backup Section
+                        localBackupSection
+
+                        // 🆕 Data Management Section (NEW)
+                        dataManagementSection
+
+                        // About Section
+                        aboutSection
+                    }
+                    .padding()
                 }
-                .padding()
             }
-        }
-        .navigationTitle("Data & Backup")
-        .navigationBarTitleDisplayMode(.inline)
-        .fileImporter(
-            isPresented: $showingImportPicker,
-            allowedContentTypes: [.json],
-            allowsMultipleSelection: false
-        ) { result in
-            handleImportResult(result)
-        }
-        .sheet(isPresented: $showingExportSheet) {
-            if let url = exportedFileURL {
-                ActivityView(items: [url])
+            .navigationTitle("Data & Backup")
+            .navigationBarTitleDisplayMode(.inline)
+            .fileImporter(
+                isPresented: $showingImportPicker,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false
+            ) { result in
+                handleImportResult(result)
             }
-        }
-        .sheet(isPresented: $showingDataIntegrityReport) {
-            DataIntegrityReportView(report: dataIntegrityReport)
-        }
-        .alert(alertTitle, isPresented: $showingAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(alertMessage)
-        }
-        .alert("Delete All Trip Data?", isPresented: $showingDeleteConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete Everything", role: .destructive) {
-                deleteAllTripData()
+            .sheet(isPresented: $showingExportSheet) {
+                if let url = exportedFileURL {
+                    ActivityView(items: [url])
+                }
             }
-        } message: {
-            Text("This will permanently delete all \(store.trips.count) trips from your device. This action cannot be undone!\n\nMake sure you have a backup first.")
-        }
-        .alert("Import Mode", isPresented: $showingImportModeChoice) {
-            Button("Cancel", role: .cancel) {}
-            Button("Merge with Existing") {
-                forceReplaceMode = false
-                showingImportPicker = true
+            .sheet(isPresented: $showingDataIntegrityReport) {
+                DataIntegrityReportView(report: dataIntegrityReport)
             }
-            Button("Replace All", role: .destructive) {
-                forceReplaceMode = true
-                showingImportPicker = true
+            .alert(alertTitle, isPresented: $showingAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(alertMessage)
             }
-        } message: {
-            Text("Merge: Add new trips from backup (keeps existing trips)\n\nReplace: Delete all current trips and restore from backup")
+            .alert("Delete All Trip Data?", isPresented: $showingDeleteConfirmation) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete Everything", role: .destructive) {
+                    deleteAllTripData()
+                }
+            } message: {
+                Text("This will permanently delete all \(store.trips.count) trips from your device. This action cannot be undone!\n\nMake sure you have a backup first.")
+            }
+            .alert("Import Mode", isPresented: $showingImportModeChoice) {
+                Button("Cancel", role: .cancel) {}
+                Button("Merge with Existing") {
+                    forceReplaceMode = false
+                    showingImportPicker = true
+                }
+                Button("Replace All", role: .destructive) {
+                    forceReplaceMode = true
+                    showingImportPicker = true
+                }
+            } message: {
+                Text("Merge: Add new trips from backup (keeps existing trips)\n\nReplace: Delete all current trips and restore from backup")
+            }
         }
     }
     
@@ -140,10 +146,13 @@ struct DataBackupSettingsView: View {
             // Sync actions
             if cloudSync.iCloudAvailable {
                 VStack(spacing: 12) {
-                    // Manual sync button
+                    // Manual sync button - triggers SwiftData CloudKit sync check
                     Button {
                         Task {
                             await store.syncFromCloud()
+                            alertTitle = "Sync Complete"
+                            alertMessage = "Loaded \(store.trips.count) trips from SwiftData.\n\nSwiftData syncs automatically with iCloud. If trips are missing, they may still be downloading."
+                            showingAlert = true
                         }
                     } label: {
                         HStack {
@@ -157,16 +166,19 @@ struct DataBackupSettingsView: View {
                         .background(LogbookTheme.accentBlue)
                         .cornerRadius(10)
                     }
-                    
-                    // Upload all button
+
+                    // Force re-upload all trips to CloudKit
                     Button {
                         Task {
-                            await uploadAllTrips()
+                            await store.forceUploadAllToCloud()
+                            alertTitle = "Upload Triggered"
+                            alertMessage = "Marked \(store.trips.count) trips for re-sync to iCloud.\n\nSwiftData will upload them automatically in the background."
+                            showingAlert = true
                         }
                     } label: {
                         HStack {
                             Image(systemName: "icloud.and.arrow.up")
-                            Text("Upload All Trips to iCloud")
+                            Text("Force Re-Upload All Trips")
                         }
                         .font(.subheadline.weight(.medium))
                         .foregroundColor(.white)
@@ -336,8 +348,26 @@ struct DataBackupSettingsView: View {
                 .background(Color.gray.opacity(0.3))
             
             VStack(spacing: 12) {
+                // Data Protection & Integrity
+                NavigationLink(destination: DataProtectionSettingsView(logbookStore: store)) {
+                    HStack {
+                        Image(systemName: "shield.checkered")
+                        Text("Data Protection & Integrity")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(Color.cyan)
+                    .cornerRadius(10)
+                }
+
                 // CloudKit Advanced Settings
-                NavigationLink(destination: CloudKitSettingsView()) {
+                NavigationLink(destination: CloudKitSettingsView().environmentObject(store)) {
                     HStack {
                         Image(systemName: "icloud.and.arrow.up.and.arrow.down")
                         Text("iCloud Sync Settings")
@@ -439,19 +469,8 @@ struct DataBackupSettingsView: View {
     
     // MARK: - Helper Functions
     
-    private func uploadAllTrips() async {
-        for trip in store.trips {
-            do {
-                try await CloudKitManager.shared.saveTrip(trip)
-            } catch {
-                print("❌ Failed to upload trip \(trip.tripNumber): \(error)")
-            }
-        }
-        
-        alertTitle = "Upload Complete"
-        alertMessage = "Successfully uploaded \(store.trips.count) trips to iCloud"
-        showingAlert = true
-    }
+    // REMOVED: uploadAllTrips() - was using deprecated CloudKitManager.saveTrip()
+    // SwiftData handles CloudKit sync automatically. Use store.forceUploadAllToCloud() instead.
     
     private func importFromPasteboard() {
         print("📋 Clipboard import started")

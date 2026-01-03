@@ -36,6 +36,9 @@ struct DataEntryView: View {
     var onScanLogPage: (() -> Void)?
     var onAddLeg: (() -> Void)?
 
+    // Document management for thumbnails
+    @ObservedObject var documentManager: TripDocumentManager = TripDocumentManager()
+
     @FocusState private var focusedField: Field?
     @AppStorage("savedAircraft") private var savedAircraftData: Data = Data()
     @State private var isLandscape = false
@@ -295,6 +298,17 @@ struct DataEntryView: View {
                     flightLegsSection
                 }
                 notesSection
+
+                // Track logs section (show if we have legs with track data)
+                if tripType != .simulator && !legs.isEmpty {
+                    trackLogsSection
+                }
+
+                // Document thumbnails section (only show if we have a trip number)
+                if !tripNumber.isEmpty {
+                    documentThumbnailsSection
+                }
+
                 totalsSection
                 actionButtonsSection
             }
@@ -1142,7 +1156,7 @@ struct DataEntryView: View {
             Text("Notes")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             TextField("Additional notes...", text: $notes, axis: .vertical)
                 .textFieldStyle(LogbookTextFieldStyle())
                 .focused($focusedField, equals: .notes)
@@ -1152,7 +1166,53 @@ struct DataEntryView: View {
         .background(LogbookTheme.navyLight)
         .cornerRadius(12)
     }
-    
+
+    // MARK: - Track Logs Section
+    @ViewBuilder
+    private var trackLogsSection: some View {
+        let trackRecorder = FlightTrackRecorder.shared
+        let legTracks = legs.compactMap { leg -> RecordedFlightTrack? in
+            trackRecorder.loadTrack(for: leg.id)
+        }
+
+        if !legTracks.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "location.north.line.fill")
+                        .foregroundColor(LogbookTheme.accentBlue)
+                    Text("GPS Track Logs")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    Spacer()
+                    Text("\(legTracks.count)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(LogbookTheme.accentBlue.opacity(0.2)))
+                }
+
+                ForEach(legTracks) { track in
+                    TrackLogSummaryRow(track: track)
+                }
+            }
+            .padding()
+            .background(LogbookTheme.navyLight)
+            .cornerRadius(12)
+        }
+    }
+
+    // MARK: - Document Thumbnails Section
+    private var documentThumbnailsSection: some View {
+        TripDocumentThumbnailStrip(
+            tripNumber: tripNumber,
+            documentManager: documentManager,
+            onScanDocument: {
+                onScanLogPage?()
+            }
+        )
+    }
+
     @ViewBuilder
     private var totalsSection: some View {
         if tripType == .simulator {
@@ -1818,6 +1878,127 @@ struct TimeEntryField: View {
  - Added .presentationBackgroundInteraction for dismissal on background tap
  - Properly centered the TranslucentTimePicker
  */
+
+// MARK: - Track Log Summary Row
+struct TrackLogSummaryRow: View {
+    let track: RecordedFlightTrack
+    @State private var showingDetail = false
+
+    var body: some View {
+        Button(action: { showingDetail = true }) {
+            VStack(alignment: .leading, spacing: 8) {
+                // Route and flight info
+                HStack {
+                    // Route
+                    HStack(spacing: 4) {
+                        Text(track.departure)
+                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white)
+                        Image(systemName: "arrow.right")
+                            .font(.caption2)
+                            .foregroundColor(LogbookTheme.accentBlue)
+                        Text(track.arrival)
+                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white)
+                    }
+
+                    Spacer()
+
+                    // Distance
+                    Text("\(String(format: "%.0f", track.totalDistanceNM)) NM")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                // Times row
+                HStack(spacing: 16) {
+                    // Detected takeoff time
+                    if let offTime = track.detectedTakeoffTimeString {
+                        HStack(spacing: 4) {
+                            Image(systemName: "airplane.departure")
+                                .font(.caption2)
+                                .foregroundColor(.green)
+                            Text("OFF")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                            Text(offTime)
+                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(.green)
+                        }
+                    }
+
+                    // Detected landing time
+                    if let onTime = track.detectedLandingTimeString {
+                        HStack(spacing: 4) {
+                            Image(systemName: "airplane.arrival")
+                                .font(.caption2)
+                                .foregroundColor(.orange)
+                            Text("ON")
+                                .font(.caption2)
+                                .foregroundColor(.gray)
+                            Text(onTime)
+                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(.orange)
+                        }
+                    }
+
+                    Spacer()
+
+                    // Track points count
+                    HStack(spacing: 2) {
+                        Image(systemName: "location.fill")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        Text("\(track.trackPoints.count) pts")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                // Duration and stats
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        Text(track.durationFormatted)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    if track.maxAltitude > 0 {
+                        Text("•")
+                            .foregroundColor(.secondary)
+                        Text("Max \(Int(track.maxAltitude)) ft")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    if track.maxSpeed > 0 {
+                        Text("•")
+                            .foregroundColor(.secondary)
+                        Text("\(Int(track.maxSpeed)) kts")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(12)
+            .background(LogbookTheme.fieldBackground)
+            .cornerRadius(8)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .sheet(isPresented: $showingDetail) {
+            FlightTrackDetailView(track: track)
+        }
+    }
+}
 
 // MARK: - LogbookTextFieldStyle
 struct LogbookTextFieldStyle: TextFieldStyle {

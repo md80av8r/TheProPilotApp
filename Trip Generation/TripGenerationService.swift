@@ -938,17 +938,16 @@ extension TripGenerationService {
             forName: .rosterDataReadyForTripGeneration,
             object: nil,
             queue: .main
-        ) { [weak self, weak logbookStore] notification in
-            guard let self = self,
-                  let logbookStore = logbookStore,
-                  self.settings.enableRosterTripGeneration,
+        ) { [weak logbookStore] notification in
+            guard let logbookStore = logbookStore,
+                  TripGenerationService.shared.settings.enableRosterTripGeneration,
                   let items = notification.userInfo?["items"] as? [BasicScheduleItem] else {
                 return
             }
             print("📅 Received roster data - checking for new trips...")
             // Access trips on main actor
             Task { @MainActor in
-                self.processRosterItems(items, existingTrips: logbookStore.trips)
+                TripGenerationService.shared.processRosterItems(items, existingTrips: logbookStore.trips)
             }
         }
         print("✅ Trip generation roster listener setup complete")

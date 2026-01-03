@@ -30,6 +30,12 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
     @Published var inKnownSpoofingZone: Bool = false
     @Published var currentSpoofingZoneName: String? = nil
     // ═══════════════════════════════════════════════════════════════════════════
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 📍 Flight Track Recording Integration
+    // ═══════════════════════════════════════════════════════════════════════════
+    private let trackRecorder = FlightTrackRecorder.shared
+    // ═══════════════════════════════════════════════════════════════════════════
     
     // Debug tracking
     @Published var debugInfo = ""
@@ -254,7 +260,13 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
             self.inKnownSpoofingZone = self.spoofingMonitor.currentZone != nil
             self.currentSpoofingZoneName = self.spoofingMonitor.currentZone?.name
             // ═══════════════════════════════════════════════════════════════════
-            
+
+            // ═══════════════════════════════════════════════════════════════════
+            // 📍 Forward location to track recorder if recording
+            // ═══════════════════════════════════════════════════════════════════
+            self.trackRecorder.processLocationUpdate(location)
+            // ═══════════════════════════════════════════════════════════════════
+
             // 🔥 Speed-trigger logic (knots)
             let speedMS = max(0, location.speed)
             let speedKt = speedMS * 1.94384

@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var showingAirlineSetup = false
     @State private var showingScannerEmailSettings = false
     @State private var showingAutoTimeSettings = false
+    @State private var showingProximitySettings = false
     @State private var roundTimesToFiveMinutes = UserDefaults.appGroup?.roundTimesToFiveMinutes ?? false
     @ObservedObject private var autoTimeSettings = AutoTimeSettings.shared
     @StateObject private var speedMonitor = GPSSpeedMonitor()
@@ -278,7 +279,63 @@ struct SettingsView: View {
                                 }
                                 .listRowBackground(LogbookTheme.navyLight)
                                 .textCase(nil)
-                
+
+                // MARK: - Airport Proximity Section
+                Section(header: Text("Airport Proximity").foregroundColor(.white)) {
+                    // Proximity Settings Row
+                    HStack {
+                        Image(systemName: "location.circle")
+                            .foregroundColor(LogbookTheme.accentBlue)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Proximity Alerts")
+                                .font(.headline)
+                            Text("Auto-detect airport arrival, duty prompts, OPS calling")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray)
+                            .font(.caption)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        showingProximitySettings = true
+                    }
+
+                    // Quick status preview
+                    VStack(spacing: 8) {
+                        HStack {
+                            Image(systemName: "antenna.radiowaves.left.and.right")
+                                .foregroundColor(LogbookTheme.accentGreen)
+                                .frame(width: 20)
+                            Text("Geofencing:")
+                                .foregroundColor(.gray)
+                                .font(.caption)
+                            Spacer()
+                            Text("Active")
+                                .foregroundColor(LogbookTheme.accentGreen)
+                                .font(.caption)
+                        }
+
+                        HStack {
+                            Image(systemName: "building.2")
+                                .foregroundColor(LogbookTheme.accentBlue)
+                                .frame(width: 20)
+                            Text("Monitored Airports:")
+                                .foregroundColor(.gray)
+                                .font(.caption)
+                            Spacer()
+                            Text("20 priority")
+                                .foregroundColor(LogbookTheme.accentBlue)
+                                .font(.caption)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                .listRowBackground(LogbookTheme.navyLight)
+                .textCase(nil)
+
                 // MARK: - Trip Creation Settings Section
                 Section(header: Text("Trip Creation").foregroundColor(.white)) {
                     @ObservedObject var tripSettings = TripCreationSettings.shared
@@ -574,6 +631,9 @@ struct SettingsView: View {
                         }
                         .sheet(isPresented: $showingAutoTimeSettings) {
                             AutoTimeSettingsView(autoTimeSettings: autoTimeSettings, speedMonitor: speedMonitor)
+                        }
+                        .sheet(isPresented: $showingProximitySettings) {
+                            ProximitySettingsView()
                         }
         }
     }

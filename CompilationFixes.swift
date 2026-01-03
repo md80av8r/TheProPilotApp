@@ -215,33 +215,6 @@ struct PerDiemSummaryView: View {
     }
 }
 
-struct MoreTabView: View {
-    let store: SwiftDataLogBookStore
-    let emailSettings: EmailSettingsStore
-    let airlineSettings: AirlineSettingsStore
-    let nocSettings: NOCSettingsStore
-    let scheduleStore: ScheduleStore
-    let activityManager: PilotActivityManager
-    @Binding var sharedDutyStartTime: Date?
-    @Binding var showingElectronicLogbook: Bool
-    let phoneWatchConnectivity: PhoneWatchConnectivity
-    let locationManager: PilotLocationManager
-    let opsManager: OPSCallingManager
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                Text("More Options")
-                    .font(.title)
-                    .foregroundColor(.white)
-                Spacer()
-            }
-            .background(LogbookTheme.navy)
-            .navigationTitle("More")
-        }
-    }
-}
-
 struct ScheduleCalendarView: View {
     let scheduleStore: ScheduleStore
     

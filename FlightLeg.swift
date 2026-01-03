@@ -114,7 +114,11 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
     // MARK: - Night Operations Tracking
     var nightTakeoff: Bool = false      // Was takeoff at night? (for currency)
     var nightLanding: Bool = false      // Was landing at night? (for currency)
-    
+
+    // MARK: - GPS Track Data
+    var trackData: Data?                // Encoded FlightTrack JSON for CloudKit sync
+    var hasRecordedTrack: Bool = false  // Quick flag to check if track exists
+
     // MARK: - Initializers
     
     /// Default memberwise initializer (must be explicit when custom init(from:) exists)
@@ -150,8 +154,10 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
          deadheadFlightHours: Double = 0.0,
          legPilotRole: LegPilotRole = .notSet,
          nightTakeoff: Bool = false,
-         nightLanding: Bool = false) {
-        
+         nightLanding: Bool = false,
+         trackData: Data? = nil,
+         hasRecordedTrack: Bool = false) {
+
         self.id = id
         self.departure = departure
         self.arrival = arrival
@@ -185,8 +191,10 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
         self.legPilotRole = legPilotRole
         self.nightTakeoff = nightTakeoff
         self.nightLanding = nightLanding
+        self.trackData = trackData
+        self.hasRecordedTrack = hasRecordedTrack
     }
-    
+
     // MARK: - Custom Decoder for Legacy Data Compatibility
     enum CodingKeys: String, CodingKey {
         case id, departure, arrival, outTime, offTime, onTime, inTime
@@ -198,6 +206,7 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
         case scheduledFlightMinutes, aircraftType, tailNumber
         case deadheadOutTime, deadheadInTime, deadheadFlightHours
         case legPilotRole, nightTakeoff, nightLanding
+        case trackData, hasRecordedTrack
     }
     
     init(from decoder: Decoder) throws {
@@ -259,6 +268,10 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
         // Night operations
         nightTakeoff = (try? container.decode(Bool.self, forKey: .nightTakeoff)) ?? false
         nightLanding = (try? container.decode(Bool.self, forKey: .nightLanding)) ?? false
+
+        // GPS Track data
+        trackData = try? container.decode(Data.self, forKey: .trackData)
+        hasRecordedTrack = (try? container.decode(Bool.self, forKey: .hasRecordedTrack)) ?? false
     }
 
     var isValid: Bool {
@@ -267,7 +280,71 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
                 !deadheadOutTime.isEmpty || !deadheadInTime.isEmpty ||
                 deadheadFlightHours > 0)
     }
-    
+
+    // MARK: - Fingerprint for Duplicate Detection
+
+    /// Creates a unique fingerprint based on flight characteristics for duplicate detection.
+    /// This allows matching flights from different sources (RAIDO, NOC, backup) even if they have different UUIDs.
+    /// Format: "DATE|DEP-ARR|FLIGHTNUM|OUT|IN" e.g., "2024-01-03|KYIP-KLRD|UJ1302|1535|1910"
+    var fingerprint: String {
+        let dateStr: String
+        if let date = flightDate {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.timeZone = TimeZone(identifier: "UTC")
+            dateStr = formatter.string(from: date)
+        } else {
+            dateStr = "nodate"
+        }
+
+        // Normalize times - strip whitespace and newlines
+        let normalizedOut = outTime.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedIn = inTime.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // For deadheads, use deadhead times
+        let effectiveOut = isDeadhead ? deadheadOutTime.trimmingCharacters(in: .whitespacesAndNewlines) : normalizedOut
+        let effectiveIn = isDeadhead ? deadheadInTime.trimmingCharacters(in: .whitespacesAndNewlines) : normalizedIn
+
+        return "\(dateStr)|\(departure)-\(arrival)|\(flightNumber)|\(effectiveOut)|\(effectiveIn)"
+    }
+
+    /// Creates a relaxed fingerprint that ignores exact times - useful for matching scheduled vs actual flights.
+    /// Format: "DATE|DEP-ARR|FLIGHTNUM" e.g., "2024-01-03|KYIP-KLRD|UJ1302"
+    var relaxedFingerprint: String {
+        let dateStr: String
+        if let date = flightDate {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.timeZone = TimeZone(identifier: "UTC")
+            dateStr = formatter.string(from: date)
+        } else {
+            dateStr = "nodate"
+        }
+        return "\(dateStr)|\(departure)-\(arrival)|\(flightNumber)"
+    }
+
+    /// Checks if this leg matches another leg by flight characteristics (not UUID).
+    /// Uses relaxed matching: same date, city pair, and flight number.
+    func matchesFlight(_ other: FlightLeg) -> Bool {
+        // Must have same city pair
+        guard departure == other.departure && arrival == other.arrival else { return false }
+
+        // Must have same or similar flight number (handle empty flight numbers)
+        let flightNumMatch = flightNumber == other.flightNumber ||
+                            flightNumber.isEmpty || other.flightNumber.isEmpty
+
+        guard flightNumMatch else { return false }
+
+        // Must be on same date (within same calendar day)
+        if let date1 = flightDate, let date2 = other.flightDate {
+            let calendar = Calendar(identifier: .gregorian)
+            return calendar.isDate(date1, inSameDayAs: date2)
+        }
+
+        // If no dates, can't match
+        return false
+    }
+
     // MARK: - Schedule Variance Calculations
     
     /// Returns the variance in minutes between scheduled and actual OUT time

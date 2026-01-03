@@ -58,14 +58,15 @@ struct AirportDatabaseView: View {
                 }
             }
         }
-        .sheet(item: $selectedAirport) { airport in
-            let _ = print("🟢 SHEET OPENED - Loading AirportDetailViewEnhanced for: \(airport.icaoCode)")
+        .sheet(item: $selectedAirport, onDismiss: {
+            // Refresh favorites when sheet is dismissed (in case user toggled favorite)
+            viewModel.loadFavorites()
+        }) { airport in
             AirportDetailViewEnhanced(airport: airport)
         }
         .sheet(isPresented: $showSettings) {
-            let _ = print("🔴 DIAGNOSTICS SHEET OPENED")
             NavigationStack {
-                CloudKitDiagnosticView()
+                AirportDatabaseSettingsView()
             }
         }
         .onAppear {
@@ -551,6 +552,73 @@ class AirportDatabaseViewModel: ObservableObject {
         
         UserDefaults.standard.set(favorites, forKey: "FavoriteAirports")
         loadFavorites()
+    }
+}
+
+// MARK: - Airport Database Settings View
+
+struct AirportDatabaseSettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var showDiagnostics = false
+
+    var body: some View {
+        ZStack {
+            LogbookTheme.navy.ignoresSafeArea()
+
+            List {
+                Section {
+                    NavigationLink(destination: CloudKitDiagnosticView()) {
+                        HStack {
+                            Image(systemName: "stethoscope")
+                                .foregroundColor(LogbookTheme.accentBlue)
+                                .frame(width: 24)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("System Diagnostics")
+                                    .foregroundColor(.white)
+
+                                Text("CloudKit & Database Tests")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Developer Tools")
+                }
+
+                Section {
+                    HStack {
+                        Text("Total Airports")
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Text("\(AirportDatabaseManager.shared.getAllAirports().count)")
+                            .foregroundColor(.white)
+                    }
+
+                    HStack {
+                        Text("Favorites")
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Text("\(UserDefaults.standard.stringArray(forKey: "FavoriteAirports")?.count ?? 0)")
+                            .foregroundColor(.white)
+                    }
+                } header: {
+                    Text("Database Info")
+                }
+            }
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Airport Database Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Done") {
+                    dismiss()
+                }
+                .foregroundColor(LogbookTheme.accentGreen)
+            }
+        }
     }
 }
 

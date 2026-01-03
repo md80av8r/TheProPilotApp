@@ -48,7 +48,6 @@
 		97366B392EFF072700C1A7A0 /* CloudKitDataRepairUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B382EFF072700C1A7A0 /* CloudKitDataRepairUtility.swift */; };
 		97366B3B2EFF091800C1A7A0 /* CloudKitErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B3A2EFF091800C1A7A0 /* CloudKitErrorHandler.swift */; };
 		97366B3D2EFF094700C1A7A0 /* CloudKitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B3C2EFF094700C1A7A0 /* CloudKitSettingsView.swift */; };
-		97366B412EFF0AD600C1A7A0 /* CLOUDKIT_ERROR_HANDLING_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 97366B402EFF0AD600C1A7A0 /* CLOUDKIT_ERROR_HANDLING_SUMMARY.md */; };
 		97366B432EFF25E900C1A7A0 /* SubscriptionDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B422EFF25E900C1A7A0 /* SubscriptionDebugView.swift */; };
 		97366B452EFF36B300C1A7A0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B442EFF36B300C1A7A0 /* SettingsView.swift */; };
 		9738A28A2EE8E35200C6CA28 /* RestStatusManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9738A2892EE8E35200C6CA28 /* RestStatusManager.swift */; };
@@ -71,6 +70,19 @@
 		975582302EE8B80C0009D2CF /* DutyLimitSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9755822F2EE8B80C0009D2CF /* DutyLimitSettings.swift */; };
 		975582322EE8B88A0009D2CF /* DutyLimitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975582312EE8B88A0009D2CF /* DutyLimitSettingsView.swift */; };
 		9756B82E2E95CC0800F59538 /* TabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9756B82D2E95CC0800F59538 /* TabManager.swift */; };
+		975B17462F01A8FD00EAE976 /* FBOBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B17452F01A8FD00EAE976 /* FBOBannerView.swift */; };
+		975B174A2F01A92100EAE976 /* RaidoImportHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B17482F01A92100EAE976 /* RaidoImportHandler.swift */; };
+		975B174B2F01A92100EAE976 /* FBOProximityNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B17472F01A92100EAE976 /* FBOProximityNotificationService.swift */; };
+		975B174C2F01A92100EAE976 /* RaidoImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B17492F01A92100EAE976 /* RaidoImportService.swift */; };
+		975B18FF2F01FDF200EAE976 /* DataRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B18FE2F01FDF200EAE976 /* DataRecoveryView.swift */; };
+		975B19012F01FE6800EAE976 /* DataIntegrityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B19002F01FE6800EAE976 /* DataIntegrityManager.swift */; };
+		975B19032F01FEA100EAE976 /* DataProtectionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B19022F01FEA100EAE976 /* DataProtectionSettingsView.swift */; };
+		975B19432F0441B300EAE976 /* debug.txt in Resources */ = {isa = PBXBuildFile; fileRef = 975B19422F0441B300EAE976 /* debug.txt */; };
+		975B19482F044B7500EAE976 /* MonthlyEmailSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B19472F044B7500EAE976 /* MonthlyEmailSettingsView.swift */; };
+		975B19492F044B7500EAE976 /* BackupPromptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B19442F044B7500EAE976 /* BackupPromptManager.swift */; };
+		975B194A2F044B7500EAE976 /* BackupPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B19452F044B7500EAE976 /* BackupPromptView.swift */; };
+		975B194B2F044B7500EAE976 /* ExcelExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B19462F044B7500EAE976 /* ExcelExportService.swift */; };
+		975B194E2F0450AF00EAE976 /* TripDocumentThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975B194D2F0450AF00EAE976 /* TripDocumentThumbnailView.swift */; };
 		975C23C32ECD4F2D0092249D /* YIP_DTW.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 976A7D592E8C7B3D00E2676E /* YIP_DTW.gpx */; };
 		975C23D02ECD70F50092249D /* NOCSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C23CF2ECD70F50092249D /* NOCSettingsStore.swift */; };
 		975C23D22ECDF6460092249D /* NOCRosterGanttView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975C23D12ECDF6460092249D /* NOCRosterGanttView.swift */; };
@@ -96,6 +108,26 @@
 		9763B30C2EE38465003865D6 /* AreaGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9763B30B2EE38465003865D6 /* AreaGuideView.swift */; };
 		9763CEDA2E52B5C800344E7D /* ProPilotWatchApp Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 97D75B7E2E50C15F00EF6DB3 /* ProPilotWatchApp Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		9763CEDE2E54D34D00344E7D /* DocumentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9763CEDD2E54D34D00344E7D /* DocumentStore.swift */; };
+		976654B22F05E0E1006BC7FD /* NOCAlertSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976654B02F05E0E1006BC7FD /* NOCAlertSettingsView.swift */; };
+		976656422F05E5C1006BC7FD /* DTW_ORD.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 976656412F05E5C1006BC7FD /* DTW_ORD.gpx */; };
+		976656442F05E662006BC7FD /* UniversalSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976656432F05E662006BC7FD /* UniversalSearchView.swift */; };
+		976656482F06115D006BC7FD /* assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 976656472F06115D006BC7FD /* assets.xcassets */; };
+		976659022F06DA51006BC7FD /* KDTW_KORD.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 976659012F06DA51006BC7FD /* KDTW_KORD.gpx */; };
+		97665A902F0761B3006BC7FD /* SDImportProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97665A8F2F0761B3006BC7FD /* SDImportProfile.swift */; };
+		97665A932F0761E6006BC7FD /* ImportTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97665A922F0761E6006BC7FD /* ImportTemplates.swift */; };
+		97665A952F076235006BC7FD /* ICalFieldParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97665A942F076235006BC7FD /* ICalFieldParser.swift */; };
+		97665A972F0763AF006BC7FD /* FieldMappingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97665A962F0763AF006BC7FD /* FieldMappingViews.swift */; };
+		97665A992F076706006BC7FD /* FlightTrackSyncView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97665A982F076706006BC7FD /* FlightTrackSyncView.swift */; };
+		97665A9D2F0957A6006BC7FD /* REVISION_DETECTION_FIX.md in Resources */ = {isa = PBXBuildFile; fileRef = 97665A9C2F0957A6006BC7FD /* REVISION_DETECTION_FIX.md */; };
+		97665A9F2F095954006BC7FD /* NOC_NOTIFICATION_SYSTEM.md in Resources */ = {isa = PBXBuildFile; fileRef = 97665A9E2F095954006BC7FD /* NOC_NOTIFICATION_SYSTEM.md */; };
+		97665AA12F09597F006BC7FD /* NOCNotificationInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97665AA02F09597F006BC7FD /* NOCNotificationInfoView.swift */; };
+		97665AA32F0959C8006BC7FD /* NOC_NOTIFICATION_ENHANCEMENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = 97665AA22F0959C8006BC7FD /* NOC_NOTIFICATION_ENHANCEMENTS.md */; };
+		97665AA92F095A9B006BC7FD /* ImportTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97665AA62F095A9B006BC7FD /* ImportTemplates.swift */; };
+		97665AAA2F095A9B006BC7FD /* SDImportProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97665AA72F095A9B006BC7FD /* SDImportProfile.swift */; };
+		97665AAB2F095A9B006BC7FD /* ICalFieldParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97665AA52F095A9B006BC7FD /* ICalFieldParser.swift */; };
+		97665AAC2F095A9B006BC7FD /* FieldMappingViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97665AA42F095A9B006BC7FD /* FieldMappingViews.swift */; };
+		97665AAE2F095AA3006BC7FD /* FIX_MIGRATION_WARNING_SCOPE_ERROR.md in Resources */ = {isa = PBXBuildFile; fileRef = 97665AAD2F095AA3006BC7FD /* FIX_MIGRATION_WARNING_SCOPE_ERROR.md */; };
+		97665AB02F095B9A006BC7FD /* BUILD_ERRORS_FIXED.md in Resources */ = {isa = PBXBuildFile; fileRef = 97665AAF2F095B9A006BC7FD /* BUILD_ERRORS_FIXED.md */; };
 		97690F482EA45DDA00FA9775 /* TripDocumentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97690F472EA45DDA00FA9775 /* TripDocumentManager.swift */; };
 		97690F4A2EA45F2600FA9775 /* AircraftHistoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97690F492EA45F2600FA9775 /* AircraftHistoryManager.swift */; };
 		97690F4E2EA5A3CC00FA9775 /* TimeRoundingUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97690F4D2EA5A3CC00FA9775 /* TimeRoundingUtility.swift */; };
@@ -191,7 +223,6 @@
 		9782BFF82EF39A16007BE2CE /* CloudKitDiagnosticView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9782BFF72EF39A16007BE2CE /* CloudKitDiagnosticView.swift */; };
 		978B5C222EED9FDE00316AE1 /* WatchTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 976052AC2ECAA638007CB9C5 /* WatchTheme.swift */; };
 		978DB39F2EFEBE5800552684 /* SubscriptionPromptBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 978DB39E2EFEBE5800552684 /* SubscriptionPromptBanner.swift */; };
-		978DB3A12EFEBE7D00552684 /* SUBSCRIPTION_BANNER_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 978DB3A02EFEBE7D00552684 /* SUBSCRIPTION_BANNER_GUIDE.md */; };
 		9799E7402EAE5B8600F0FADE /* TripFolderBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9799E73F2EAE5B8600F0FADE /* TripFolderBrowserView.swift */; };
 		9799E7422EAE68ED00F0FADE /* PDFThumbnailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9799E7412EAE68ED00F0FADE /* PDFThumbnailView.swift */; };
 		9799E7442EAE6A0500F0FADE /* PDFThumbnailGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9799E7432EAE6A0500F0FADE /* PDFThumbnailGenerator.swift */; };
@@ -212,7 +243,6 @@
 		97BCC3AD2E29549600D36E5B /* TripScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BCC3AC2E29549600D36E5B /* TripScannerView.swift */; };
 		97BCC3B32E29A81A00D36E5B /* TemplateGeneratorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BCC3B22E29A81A00D36E5B /* TemplateGeneratorView.swift */; };
 		97BCC3B72E29A83500D36E5B /* DataValidatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97BCC3B62E29A83500D36E5B /* DataValidatorView.swift */; };
-		97C37E142EE1F9F900975E84 /* schema.json in Resources */ = {isa = PBXBuildFile; fileRef = 97C37E132EE1F9F900975E84 /* schema.json */; };
 		97C759AD2E2A69210048549B /* OPSCallingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C759AC2E2A69210048549B /* OPSCallingManager.swift */; };
 		97D696DD2EF3A56B004675D0 /* AirportDatabaseTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D696DC2EF3A56B004675D0 /* AirportDatabaseTestView.swift */; };
 		97D69EBE2E3D735600FFF195 /* UserDefaults+AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D69EBD2E3D735600FFF195 /* UserDefaults+AppGroup.swift */; };
@@ -251,7 +281,6 @@
 		97F93D552EFB17B600855419 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D542EFB17B200855419 /* WeatherService.swift */; };
 		97F93D572EFB17CA00855419 /* AirportReviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D562EFB17CA00855419 /* AirportReviewSheet.swift */; };
 		97F93D5B2EFB181B00855419 /* AirportDatabaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D5A2EFB181B00855419 /* AirportDatabaseView.swift */; };
-		97F93D612EFB199600855419 /* SettingsIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D602EFB199600855419 /* SettingsIntegration.swift */; };
 		97F93D7F2EFB353200855419 /* WeatherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D7E2EFB353200855419 /* WeatherView.swift */; };
 		97F93D882EFB78F500855419 /* ICalendarImportExample.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D872EFB78F500855419 /* ICalendarImportExample.swift */; };
 		97F93D8A2EFB790800855419 /* ICalendarImportWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93D892EFB790800855419 /* ICalendarImportWizardView.swift */; };
@@ -265,18 +294,13 @@
 		97F93DB52EFC23D100855419 /* AirportDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93DB42EFC23D100855419 /* AirportDetailView.swift */; };
 		97F93E212EFC5CDA00855419 /* GPSSpoofingAlertLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93E1F2EFC584F00855419 /* GPSSpoofingAlertLevel.swift */; };
 		97F93E222EFC5CDE00855419 /* GPSSpoofingStatusPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93E202EFC586100855419 /* GPSSpoofingStatusPill.swift */; };
-		97F93E242EFC65B000855419 /* WEATHER_CONDITION_ICON.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E232EFC65B000855419 /* WEATHER_CONDITION_ICON.md */; };
 		97F93E262EFC683B00855419 /* WeatherIconHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93E252EFC683B00855419 /* WeatherIconHelper.swift */; };
-		97F93E282EFC689300855419 /* WEATHER_ICON_SYSTEM.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E272EFC689300855419 /* WEATHER_ICON_SYSTEM.md */; };
-		97F93E2A2EFC68B500855419 /* WEATHER_ICON_REFERENCE.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E292EFC68B500855419 /* WEATHER_ICON_REFERENCE.md */; };
 		97F93E2C2EFC68E200855419 /* WeatherIconHelper_Examples.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97F93E2B2EFC68E200855419 /* WeatherIconHelper_Examples.swift */; };
-		97F93E2E2EFCD25900855419 /* SCHEDULE_VIEW_REORDER_SUMMARY.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E2D2EFCD25900855419 /* SCHEDULE_VIEW_REORDER_SUMMARY.md */; };
-		97F93E302EFCD27C00855419 /* SCHEDULE_VIEW_REORDER_UI_GUIDE.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E2F2EFCD27C00855419 /* SCHEDULE_VIEW_REORDER_UI_GUIDE.md */; };
-		97F93E322EFCD57500855419 /* MONTH_VIEW_NAVIGATION_UPDATE.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E312EFCD57500855419 /* MONTH_VIEW_NAVIGATION_UPDATE.md */; };
-		97F93E342EFCD5EB00855419 /* BUG_FIX_SPLIT_VIEW.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E332EFCD5EB00855419 /* BUG_FIX_SPLIT_VIEW.md */; };
-		97F93E362EFCD72F00855419 /* REMOVED_SPLIT_VIEW.md in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E352EFCD72F00855419 /* REMOVED_SPLIT_VIEW.md */; };
 		97F93E3C2EFD7C3C00855419 /* airplaneseat.svg in Resources */ = {isa = PBXBuildFile; fileRef = 97F93E3B2EFD7C3C00855419 /* airplaneseat.svg */; };
 		97FB7C2F2EF07DFF0050C5E4 /* WeatherBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97FB7C2E2EF07DFF0050C5E4 /* WeatherBannerView.swift */; };
+		97FTR0042F0000000000004 /* FlightTrackRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97FTR0012F0000000000001 /* FlightTrackRecorder.swift */; };
+		97FTR0052F0000000000005 /* FlightTrackViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97FTR0022F0000000000002 /* FlightTrackViewerView.swift */; };
+		C27DD9590F6781E91969AE6F /* AirportWeatherTabContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D57D9D34519FA98262DB8780 /* AirportWeatherTabContent.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -393,6 +417,20 @@
 		975582312EE8B88A0009D2CF /* DutyLimitSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DutyLimitSettingsView.swift; sourceTree = "<group>"; };
 		9756B82D2E95CC0800F59538 /* TabManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabManager.swift; sourceTree = "<group>"; };
 		9756EE422E2D987E00810911 /* ProPilotApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ProPilotApp.entitlements; sourceTree = "<group>"; };
+		975B17452F01A8FD00EAE976 /* FBOBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBOBannerView.swift; sourceTree = "<group>"; };
+		975B17472F01A92100EAE976 /* FBOProximityNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FBOProximityNotificationService.swift; sourceTree = "<group>"; };
+		975B17482F01A92100EAE976 /* RaidoImportHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaidoImportHandler.swift; sourceTree = "<group>"; };
+		975B17492F01A92100EAE976 /* RaidoImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaidoImportService.swift; sourceTree = "<group>"; };
+		975B18FE2F01FDF200EAE976 /* DataRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataRecoveryView.swift; sourceTree = "<group>"; };
+		975B19002F01FE6800EAE976 /* DataIntegrityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataIntegrityManager.swift; sourceTree = "<group>"; };
+		975B19022F01FEA100EAE976 /* DataProtectionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataProtectionSettingsView.swift; sourceTree = "<group>"; };
+		975B19042F0220EF00EAE976 /* logbook.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = logbook.json; sourceTree = "<group>"; };
+		975B19422F0441B300EAE976 /* debug.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = debug.txt; sourceTree = "<group>"; };
+		975B19442F044B7500EAE976 /* BackupPromptManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupPromptManager.swift; sourceTree = "<group>"; };
+		975B19452F044B7500EAE976 /* BackupPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupPromptView.swift; sourceTree = "<group>"; };
+		975B19462F044B7500EAE976 /* ExcelExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcelExportService.swift; sourceTree = "<group>"; };
+		975B19472F044B7500EAE976 /* MonthlyEmailSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyEmailSettingsView.swift; sourceTree = "<group>"; };
+		975B194D2F0450AF00EAE976 /* TripDocumentThumbnailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDocumentThumbnailView.swift; sourceTree = "<group>"; };
 		975C23CF2ECD70F50092249D /* NOCSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCSettingsStore.swift; sourceTree = "<group>"; };
 		975C23D12ECDF6460092249D /* NOCRosterGanttView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCRosterGanttView.swift; sourceTree = "<group>"; };
 		975C23D32ECE00390092249D /* NOCWebPortalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCWebPortalView.swift; sourceTree = "<group>"; };
@@ -419,6 +457,29 @@
 		9763CEDD2E54D34D00344E7D /* DocumentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentStore.swift; sourceTree = "<group>"; };
 		97655AF32E50BB23007F4CDB /* TheProPilotApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TheProPilotApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		97655AF42E50BB29007F4CDB /* ProPilotWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ProPilotWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		976654B02F05E0E1006BC7FD /* NOCAlertSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCAlertSettingsView.swift; sourceTree = "<group>"; };
+		976656412F05E5C1006BC7FD /* DTW_ORD.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = DTW_ORD.gpx; sourceTree = "<group>"; };
+		976656432F05E662006BC7FD /* UniversalSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniversalSearchView.swift; sourceTree = "<group>"; };
+		976656472F06115D006BC7FD /* assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = assets.xcassets; sourceTree = "<group>"; };
+		976656492F0612EE006BC7FD /* Satellite_plain.svg */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Satellite_plain.svg; sourceTree = "<group>"; };
+		9766564B2F06CEAC006BC7FD /* Satellite.svg */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Satellite.svg; sourceTree = "<group>"; };
+		976659012F06DA51006BC7FD /* KDTW_KORD.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = KDTW_KORD.gpx; sourceTree = "<group>"; };
+		97665A8F2F0761B3006BC7FD /* SDImportProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDImportProfile.swift; sourceTree = "<group>"; };
+		97665A922F0761E6006BC7FD /* ImportTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportTemplates.swift; sourceTree = "<group>"; };
+		97665A942F076235006BC7FD /* ICalFieldParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICalFieldParser.swift; sourceTree = "<group>"; };
+		97665A962F0763AF006BC7FD /* FieldMappingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldMappingViews.swift; sourceTree = "<group>"; };
+		97665A982F076706006BC7FD /* FlightTrackSyncView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightTrackSyncView.swift; sourceTree = "<group>"; };
+		97665A9A2F076736006BC7FD /* FLIGHT_TRACK_SYNC_IMPLEMENTATION.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FLIGHT_TRACK_SYNC_IMPLEMENTATION.md; sourceTree = "<group>"; };
+		97665A9C2F0957A6006BC7FD /* REVISION_DETECTION_FIX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = REVISION_DETECTION_FIX.md; sourceTree = "<group>"; };
+		97665A9E2F095954006BC7FD /* NOC_NOTIFICATION_SYSTEM.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOC_NOTIFICATION_SYSTEM.md; sourceTree = "<group>"; };
+		97665AA02F09597F006BC7FD /* NOCNotificationInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NOCNotificationInfoView.swift; sourceTree = "<group>"; };
+		97665AA22F0959C8006BC7FD /* NOC_NOTIFICATION_ENHANCEMENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = NOC_NOTIFICATION_ENHANCEMENTS.md; sourceTree = "<group>"; };
+		97665AA42F095A9B006BC7FD /* FieldMappingViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FieldMappingViews.swift; sourceTree = "<group>"; };
+		97665AA52F095A9B006BC7FD /* ICalFieldParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICalFieldParser.swift; sourceTree = "<group>"; };
+		97665AA62F095A9B006BC7FD /* ImportTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportTemplates.swift; sourceTree = "<group>"; };
+		97665AA72F095A9B006BC7FD /* SDImportProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDImportProfile.swift; sourceTree = "<group>"; };
+		97665AAD2F095AA3006BC7FD /* FIX_MIGRATION_WARNING_SCOPE_ERROR.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FIX_MIGRATION_WARNING_SCOPE_ERROR.md; sourceTree = "<group>"; };
+		97665AAF2F095B9A006BC7FD /* BUILD_ERRORS_FIXED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = BUILD_ERRORS_FIXED.md; sourceTree = "<group>"; };
 		97690F472EA45DDA00FA9775 /* TripDocumentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDocumentManager.swift; sourceTree = "<group>"; };
 		97690F492EA45F2600FA9775 /* AircraftHistoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AircraftHistoryManager.swift; sourceTree = "<group>"; };
 		97690F4D2EA5A3CC00FA9775 /* TimeRoundingUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeRoundingUtility.swift; sourceTree = "<group>"; };
@@ -451,7 +512,6 @@
 		97747CE82ED8E73800126113 /* ForeFlightStyleTimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForeFlightStyleTimerView.swift; sourceTree = "<group>"; };
 		97747CEC2ED9137B00126113 /* FlexibleTimerView 2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FlexibleTimerView 2.swift"; sourceTree = "<group>"; };
 		97747CEE2ED9318600126113 /* ElectronicLogbookViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElectronicLogbookViewer.swift; sourceTree = "<group>"; };
-		9777E2FE2EEFAC67000AF7C4 /* privacy.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = privacy.md; sourceTree = "<group>"; };
 		977992EB2EC8D76F00A8CA39 /* SnappingScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnappingScrollView.swift; sourceTree = "<group>"; };
 		977992F32EC91A7C00A8CA39 /* SmartTimeEntryField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTimeEntryField.swift; sourceTree = "<group>"; };
 		977C64EB2E81A663002B9552 /* AppBackupData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackupData.swift; sourceTree = "<group>"; };
@@ -551,7 +611,6 @@
 		97BCC3AC2E29549600D36E5B /* TripScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripScannerView.swift; sourceTree = "<group>"; };
 		97BCC3B22E29A81A00D36E5B /* TemplateGeneratorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateGeneratorView.swift; sourceTree = "<group>"; };
 		97BCC3B62E29A83500D36E5B /* DataValidatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataValidatorView.swift; sourceTree = "<group>"; };
-		97C37E132EE1F9F900975E84 /* schema.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = schema.json; sourceTree = "<group>"; };
 		97C759AC2E2A69210048549B /* OPSCallingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OPSCallingManager.swift; sourceTree = "<group>"; };
 		97C759B32E2ABB0A0048549B /* AppIcon.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AppIcon.xcassets; sourceTree = "<group>"; };
 		97D696DC2EF3A56B004675D0 /* AirportDatabaseTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportDatabaseTestView.swift; sourceTree = "<group>"; };
@@ -607,7 +666,6 @@
 		97F93D562EFB17CA00855419 /* AirportReviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportReviewSheet.swift; sourceTree = "<group>"; };
 		97F93D5A2EFB181B00855419 /* AirportDatabaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportDatabaseView.swift; sourceTree = "<group>"; };
 		97F93D5C2EFB183500855419 /* PilotReview.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = PilotReview.md; sourceTree = "<group>"; };
-		97F93D602EFB199600855419 /* SettingsIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsIntegration.swift; sourceTree = "<group>"; };
 		97F93D622EFB19CD00855419 /* FIXES_APPLIED.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = FIXES_APPLIED.md; sourceTree = "<group>"; };
 		97F93D642EFB19F400855419 /* WEATHER_SERVICES_ARCHITECTURE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WEATHER_SERVICES_ARCHITECTURE.md; sourceTree = "<group>"; };
 		97F93D662EFB1B8900855419 /* AIRPORTDETAILVIEW_FIXES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AIRPORTDETAILVIEW_FIXES.md; sourceTree = "<group>"; };
@@ -677,6 +735,9 @@
 		97F93E352EFCD72F00855419 /* REMOVED_SPLIT_VIEW.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = REMOVED_SPLIT_VIEW.md; sourceTree = "<group>"; };
 		97F93E3B2EFD7C3C00855419 /* airplaneseat.svg */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = airplaneseat.svg; sourceTree = "<group>"; };
 		97FB7C2E2EF07DFF0050C5E4 /* WeatherBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherBannerView.swift; sourceTree = "<group>"; };
+		97FTR0012F0000000000001 /* FlightTrackRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightTrackRecorder.swift; sourceTree = "<group>"; };
+		97FTR0022F0000000000002 /* FlightTrackViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightTrackViewerView.swift; sourceTree = "<group>"; };
+		D57D9D34519FA98262DB8780 /* AirportWeatherTabContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportWeatherTabContent.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -725,7 +786,10 @@
 		97F93E1D2EFC4CC800855419 /* Exceptions for "New Group" folder in "TheProPilotApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				DEBUG_LOGGING_ADDED.md,
+				FLIGHT_DUTY_PERIOD_LOGIC_DOCUMENTATION.md,
 				flow.txt,
+				Reviews.csv,
 			);
 			target = 9770D6612E07A62500D18769 /* TheProPilotApp */;
 		};
@@ -804,28 +868,84 @@
 			path = SwiftDataModels;
 			sourceTree = "<group>";
 		};
+		975B19062F02AE4B00EAE976 /* Data Recovery */ = {
+			isa = PBXGroup;
+			children = (
+				97747CDC2ED8C8FB00126113 /* DataBackupSettingsView.swift */,
+				975B19002F01FE6800EAE976 /* DataIntegrityManager.swift */,
+				975B19022F01FEA100EAE976 /* DataProtectionSettingsView.swift */,
+				975B18FE2F01FDF200EAE976 /* DataRecoveryView.swift */,
+				97665AAD2F095AA3006BC7FD /* FIX_MIGRATION_WARNING_SCOPE_ERROR.md */,
+			);
+			path = "Data Recovery";
+			sourceTree = "<group>";
+		};
+		975B194C2F044B9700EAE976 /* MonthlyBackup */ = {
+			isa = PBXGroup;
+			children = (
+				972D01922ECBF2840064BD51 /* TimeFormattingUtilities.swift */,
+				975B19442F044B7500EAE976 /* BackupPromptManager.swift */,
+				975B19452F044B7500EAE976 /* BackupPromptView.swift */,
+				975B19462F044B7500EAE976 /* ExcelExportService.swift */,
+				975B19472F044B7500EAE976 /* MonthlyEmailSettingsView.swift */,
+			);
+			path = MonthlyBackup;
+			sourceTree = "<group>";
+		};
+		97665A912F0761BB006BC7FD /* Noc Flexible Import */ = {
+			isa = PBXGroup;
+			children = (
+				97665A942F076235006BC7FD /* ICalFieldParser.swift */,
+				97665A922F0761E6006BC7FD /* ImportTemplates.swift */,
+				97665A8F2F0761B3006BC7FD /* SDImportProfile.swift */,
+				97665A962F0763AF006BC7FD /* FieldMappingViews.swift */,
+			);
+			path = "Noc Flexible Import";
+			sourceTree = "<group>";
+		};
+		97665AA82F095A9B006BC7FD /* Noc Flexible Import */ = {
+			isa = PBXGroup;
+			children = (
+				97665AA42F095A9B006BC7FD /* FieldMappingViews.swift */,
+				97665AA52F095A9B006BC7FD /* ICalFieldParser.swift */,
+				97665AA62F095A9B006BC7FD /* ImportTemplates.swift */,
+				97665AA72F095A9B006BC7FD /* SDImportProfile.swift */,
+			);
+			path = "Noc Flexible Import";
+			sourceTree = "<group>";
+		};
 		9770D6592E07A62500D18769 = {
 			isa = PBXGroup;
 			children = (
 				97AFBB902EE6558100C63E38 /* Jumpseat */,
 				975C77D12EE21BEE0060728C /* EAPIS */,
-				97C37E132EE1F9F900975E84 /* schema.json */,
 				976A7D592E8C7B3D00E2676E /* YIP_DTW.gpx */,
+				976656412F05E5C1006BC7FD /* DTW_ORD.gpx */,
 				9772E6642E4028C500B5A0B4 /* ProPilotWidgets */,
 				976052982ECA59E1007CB9C5 /* ActiveTripBannerView.swift */,
 				97F93DB42EFC23D100855419 /* AirportDetailView.swift */,
 				977C7BD62E1E9B9F0040362B /* AircraftManagementView.swift */,
 				97F93D4F2EFAF1E000855419 /* propilot_airports.csv */,
 				976052942ECA11BF007CB9C5 /* AirlineConfigurationView.swift */,
+				97665AA82F095A9B006BC7FD /* Noc Flexible Import */,
+				976654B02F05E0E1006BC7FD /* NOCAlertSettingsView.swift */,
+				976656492F0612EE006BC7FD /* Satellite_plain.svg */,
+				9766564B2F06CEAC006BC7FD /* Satellite.svg */,
 				97F93D7E2EFB353200855419 /* WeatherView.swift */,
 				977C7BD72E1E9B9F0040362B /* AirlineSettings.swift */,
+				976656432F05E662006BC7FD /* UniversalSearchView.swift */,
+				97665A912F0761BB006BC7FD /* Noc Flexible Import */,
 				977C7BD82E1E9B9F0040362B /* AirlineSettingsView.swift */,
+				976656472F06115D006BC7FD /* assets.xcassets */,
 				97F93D532EFB178800855419 /* AirportDatabase */,
 				976052922ECA112A007CB9C5 /* AllLegsView.swift */,
 				977D00732EEA5C560036EAD0 /* AircraftDefinition.swift */,
+				977C7BD92E1E9B9F0040362B /* AppMonitor.swift */,
 				97D696DC2EF3A56B004675D0 /* AirportDatabaseTestView.swift */,
 				977D00792EEA63180036EAD0 /* UnifiedAircraftDatabase.swift */,
+				975B19042F0220EF00EAE976 /* logbook.json */,
 				97F93D1E2EFA2F6B00855419 /* LogbookWelcomeView.swift */,
+				975B19422F0441B300EAE976 /* debug.txt */,
 				977D007A2EEA63180036EAD0 /* UnifiedAircraftView.swift */,
 				977D00742EEA5C560036EAD0 /* AircraftLibraryStore.swift */,
 				977D00752EEA5C560036EAD0 /* AircraftLibraryView.swift */,
@@ -833,7 +953,6 @@
 				974ED36B2E2BE20B00901DA7 /* AppConstants.swift */,
 				97C759B32E2ABB0A0048549B /* AppIcon.xcassets */,
 				97747CE02ED8D68E00126113 /* AppleWatchStatusView.swift */,
-				977C7BD92E1E9B9F0040362B /* AppMonitor.swift */,
 				9763B30B2EE38465003865D6 /* AreaGuideView.swift */,
 				977C7BDA2E1E9B9F0040362B /* AutoCompleteTestView.swift */,
 				97A4F7A42E8380E900EBE49E /* AutoTimeSettingsView.swift */,
@@ -862,7 +981,7 @@
 				9754938A2E93652800C80B17 /* CrewImportHelperView.swift */,
 				975493882E92E68700C80B17 /* CrewContactManager.swift */,
 				9703AF8C2EAFEEAF002E9E26 /* CurrencyRate.swift */,
-				97747CDC2ED8C8FB00126113 /* DataBackupSettingsView.swift */,
+				975B19062F02AE4B00EAE976 /* Data Recovery */,
 				977C7BDF2E1E9B9F0040362B /* DataEntryView.swift */,
 				977056FB2E5CCA54000C607C /* DataManagementView.swift */,
 				97BCC3B62E29A83500D36E5B /* DataValidatorView.swift */,
@@ -886,7 +1005,11 @@
 				97A617D92E7F335800BAE84A /* EmailComposerView.swift */,
 				977C7BE22E1E9B9F0040362B /* EnhancedICAOTextField.swift */,
 				977C7BE42E1E9B9F0040362B /* ExportView.swift */,
+				975B17472F01A92100EAE976 /* FBOProximityNotificationService.swift */,
+				975B17482F01A92100EAE976 /* RaidoImportHandler.swift */,
+				975B17492F01A92100EAE976 /* RaidoImportService.swift */,
 				97F2C3F12EDE1D16002B9BD6 /* FAR117ComplianceView.swift */,
+				975B17452F01A8FD00EAE976 /* FBOBannerView.swift */,
 				977D007E2EEAFD1A0036EAD0 /* FAR117StatusBanner.swift */,
 				97449E852EDA3E3200CB038A /* FAR117SettingsView.swift */,
 				977D00802EEAFD590036EAD0 /* GroupedRosterDisplay.swift */,
@@ -1006,9 +1129,10 @@
 				976052A82ECAA5E9007CB9C5 /* WatchTripSummaryView.swift */,
 				976052AC2ECAA638007CB9C5 /* WatchTheme.swift */,
 				976052B92ECAB442007CB9C5 /* WatchConnectivityStatusView.swift */,
-				972D01922ECBF2840064BD51 /* TimeFormattingUtilities.swift */,
 				97F2C3E22EDDE3DC002B9BD6 /* LiveActivityDebugView.swift */,
 				973AFA0C2EE097BF00CDF4AB /* GMTClockSettings.swift */,
+				975B194D2F0450AF00EAE976 /* TripDocumentThumbnailView.swift */,
+				975B194C2F044B9700EAE976 /* MonthlyBackup */,
 				973AFA0E2EE097BF00CDF4AB /* GMTClockPill.swift */,
 				973AFA102EE097BF00CDF4AB /* GMTClockOverlay.swift */,
 				973AFA122EE097BF00CDF4AB /* ClocksAndTimersSettingsView.swift */,
@@ -1030,6 +1154,14 @@
 				97366B3C2EFF094700C1A7A0 /* CloudKitSettingsView.swift */,
 				97366B402EFF0AD600C1A7A0 /* CLOUDKIT_ERROR_HANDLING_SUMMARY.md */,
 				97366B422EFF25E900C1A7A0 /* SubscriptionDebugView.swift */,
+				976659012F06DA51006BC7FD /* KDTW_KORD.gpx */,
+				97665A982F076706006BC7FD /* FlightTrackSyncView.swift */,
+				97665A9A2F076736006BC7FD /* FLIGHT_TRACK_SYNC_IMPLEMENTATION.md */,
+				97665A9C2F0957A6006BC7FD /* REVISION_DETECTION_FIX.md */,
+				97665A9E2F095954006BC7FD /* NOC_NOTIFICATION_SYSTEM.md */,
+				97665AA02F09597F006BC7FD /* NOCNotificationInfoView.swift */,
+				97665AA22F0959C8006BC7FD /* NOC_NOTIFICATION_ENHANCEMENTS.md */,
+				97665AAF2F095B9A006BC7FD /* BUILD_ERRORS_FIXED.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1076,7 +1208,6 @@
 			children = (
 				9782BF742EF25C53007BE2CE /* INTEGRATION_SUMMARY.md */,
 				9782BF762EF25C6D007BE2CE /* QUICK_REFERENCE.md */,
-				9777E2FE2EEFAC67000AF7C4 /* privacy.md */,
 				9782BF782EF25D39007BE2CE /* NAMING_CONFLICT_FIX.md */,
 				9782BF7A2EF25D95007BE2CE /* JUMPSEAT_ERRORS_FIXED.md */,
 				9782BF122EF0BB87007BE2CE /* TRIP_GROUPING_FIX.md */,
@@ -1146,7 +1277,6 @@
 				97F93D542EFB17B200855419 /* WeatherService.swift */,
 				97F93D5A2EFB181B00855419 /* AirportDatabaseView.swift */,
 				97F93D562EFB17CA00855419 /* AirportReviewSheet.swift */,
-				97F93D602EFB199600855419 /* SettingsIntegration.swift */,
 				97F93D5C2EFB183500855419 /* PilotReview.md */,
 				97F93D622EFB19CD00855419 /* FIXES_APPLIED.md */,
 				97F93D642EFB19F400855419 /* WEATHER_SERVICES_ARCHITECTURE.md */,
@@ -1185,6 +1315,7 @@
 		97F93DA82EFC1AAD00855419 /* Weather */ = {
 			isa = PBXGroup;
 			children = (
+				D57D9D34519FA98262DB8780 /* AirportWeatherTabContent.swift */,
 				97FB7C2E2EF07DFF0050C5E4 /* WeatherBannerView.swift */,
 				97F93DAD2EFC1E2A00855419 /* WeatherSettingsView_EXAMPLE.swift */,
 				97F93E252EFC683B00855419 /* WeatherIconHelper.swift */,
@@ -1210,6 +1341,8 @@
 				9747C2512ECC0DBE00953014 /* GPXTestPlayer.swift */,
 				97F93E1F2EFC584F00855419 /* GPSSpoofingAlertLevel.swift */,
 				97F93E202EFC586100855419 /* GPSSpoofingStatusPill.swift */,
+				97FTR0012F0000000000001 /* FlightTrackRecorder.swift */,
+				97FTR0022F0000000000002 /* FlightTrackViewerView.swift */,
 			);
 			path = GPS;
 			sourceTree = "<group>";
@@ -1340,23 +1473,21 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				97F93E282EFC689300855419 /* WEATHER_ICON_SYSTEM.md in Resources */,
-				97F93E342EFCD5EB00855419 /* BUG_FIX_SPLIT_VIEW.md in Resources */,
-				97F93E302EFCD27C00855419 /* SCHEDULE_VIEW_REORDER_UI_GUIDE.md in Resources */,
-				97366B412EFF0AD600C1A7A0 /* CLOUDKIT_ERROR_HANDLING_SUMMARY.md in Resources */,
+				976656482F06115D006BC7FD /* assets.xcassets in Resources */,
 				975C23C32ECD4F2D0092249D /* YIP_DTW.gpx in Resources */,
-				97F93E2E2EFCD25900855419 /* SCHEDULE_VIEW_REORDER_SUMMARY.md in Resources */,
 				97046B162ECD4D880066DC9F /* KDTW_KCLE.gpx in Resources */,
 				97F93E3C2EFD7C3C00855419 /* airplaneseat.svg in Resources */,
-				97C37E142EE1F9F900975E84 /* schema.json in Resources */,
-				978DB3A12EFEBE7D00552684 /* SUBSCRIPTION_BANNER_GUIDE.md in Resources */,
-				97F93E362EFCD72F00855419 /* REMOVED_SPLIT_VIEW.md in Resources */,
+				97665AA32F0959C8006BC7FD /* NOC_NOTIFICATION_ENHANCEMENTS.md in Resources */,
+				976659022F06DA51006BC7FD /* KDTW_KORD.gpx in Resources */,
+				97665A9F2F095954006BC7FD /* NOC_NOTIFICATION_SYSTEM.md in Resources */,
+				976656422F05E5C1006BC7FD /* DTW_ORD.gpx in Resources */,
 				97126E122EEF4E5300D6D150 /* CLE_to_YIP.gpx in Resources */,
 				97D75BB52E528F6900EF6DB3 /* AppIcon.xcassets in Resources */,
-				97F93E242EFC65B000855419 /* WEATHER_CONDITION_ICON.md in Resources */,
-				97F93E2A2EFC68B500855419 /* WEATHER_ICON_REFERENCE.md in Resources */,
 				97F93D502EFAF1E000855419 /* propilot_airports.csv in Resources */,
-				97F93E322EFCD57500855419 /* MONTH_VIEW_NAVIGATION_UPDATE.md in Resources */,
+				975B19432F0441B300EAE976 /* debug.txt in Resources */,
+				97665A9D2F0957A6006BC7FD /* REVISION_DETECTION_FIX.md in Resources */,
+				97665AAE2F095AA3006BC7FD /* FIX_MIGRATION_WARNING_SCOPE_ERROR.md in Resources */,
+				97665AB02F095B9A006BC7FD /* BUILD_ERRORS_FIXED.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1394,6 +1525,7 @@
 				97F93DAE2EFC1E2A00855419 /* WeatherSettingsView_EXAMPLE.swift in Sources */,
 				97AFBB852EE5466600C63E38 /* PendingTripsHelperView.swift in Sources */,
 				97F2C3E32EDDE3DC002B9BD6 /* LiveActivityDebugView.swift in Sources */,
+				975B19012F01FE6800EAE976 /* DataIntegrityManager.swift in Sources */,
 				977C7C082E1E9B9F0040362B /* ScheduleCalendarView.swift in Sources */,
 				9782BF6D2EF25B88007BE2CE /* JumpseatFinderView.swift in Sources */,
 				97F93D942EFB7C2800855419 /* ImportMappingSettingsView.swift in Sources */,
@@ -1403,6 +1535,7 @@
 				97A617DA2E7F335800BAE84A /* EmailComposerView.swift in Sources */,
 				9747C2522ECC0DBE00953014 /* GPXTestPlayer.swift in Sources */,
 				97FB7C2F2EF07DFF0050C5E4 /* WeatherBannerView.swift in Sources */,
+				C27DD9590F6781E91969AE6F /* AirportWeatherTabContent.swift in Sources */,
 				9703AF852EAFC758002E9E26 /* TripDocumentListView.swift in Sources */,
 				97F93E212EFC5CDA00855419 /* GPSSpoofingAlertLevel.swift in Sources */,
 				977C7C0A2E1E9B9F0040362B /* LegsReportView.swift in Sources */,
@@ -1421,6 +1554,11 @@
 				973AFA132EE097BF00CDF4AB /* ClocksAndTimersSettingsView.swift in Sources */,
 				9760529D2ECA81E6007CB9C5 /* CloudKitManager.swift in Sources */,
 				97F93D552EFB17B600855419 /* WeatherService.swift in Sources */,
+				97665AA12F09597F006BC7FD /* NOCNotificationInfoView.swift in Sources */,
+				975B19482F044B7500EAE976 /* MonthlyEmailSettingsView.swift in Sources */,
+				975B19492F044B7500EAE976 /* BackupPromptManager.swift in Sources */,
+				975B194A2F044B7500EAE976 /* BackupPromptView.swift in Sources */,
+				975B194B2F044B7500EAE976 /* ExcelExportService.swift in Sources */,
 				975C23DA2ECE00F70092249D /* NOC_WEBVIEW_QUICK_START.swift in Sources */,
 				9703AF8B2EAFEE9F002E9E26 /* FlightCalculatorView.swift in Sources */,
 				9782BF6B2EF25B3F007BE2CE /* FlightScheduleService.swift in Sources */,
@@ -1436,10 +1574,13 @@
 				976D546A2EDA894700A7D60C /* iPhoneWatchSettingsView.swift in Sources */,
 				975C23D82ECE00A40092249D /* NOCQuickAccessButton.swift in Sources */,
 				976F1C802E64A23A00F15444 /* UnifiedLogbookManager.swift in Sources */,
+				975B17462F01A8FD00EAE976 /* FBOBannerView.swift in Sources */,
 				9714610D2EE4AFD100751961 /* ParsedFlightData.swift in Sources */,
 				977C7C102E1E9B9F0040362B /* SimpleGPSSignalView.swift in Sources */,
 				97AFBBA52EE7812900C63E38 /* UserAirportCodeMappings.swift in Sources */,
 				97F93E222EFC5CDE00855419 /* GPSSpoofingStatusPill.swift in Sources */,
+				97FTR0042F0000000000004 /* FlightTrackRecorder.swift in Sources */,
+				97FTR0052F0000000000005 /* FlightTrackViewerView.swift in Sources */,
 				976A7D5D2E8D658600E2676E /* TripCreationSettings.swift in Sources */,
 				97F93D572EFB17CA00855419 /* AirportReviewSheet.swift in Sources */,
 				977992F42EC91A7C00A8CA39 /* SmartTimeEntryField.swift in Sources */,
@@ -1467,6 +1608,7 @@
 				97F93D7F2EFB353200855419 /* WeatherView.swift in Sources */,
 				97747CDD2ED8C8FB00126113 /* DataBackupSettingsView.swift in Sources */,
 				97F93D922EFB7BAB00855419 /* ImportMappingStore.swift in Sources */,
+				97665A992F076706006BC7FD /* FlightTrackSyncView.swift in Sources */,
 				97F93D292EFA341A00855419 /* HelpView.swift in Sources */,
 				977C7C142E1E9B9F0040362B /* Helpers.swift in Sources */,
 				97A4F79E2E8291F400EBE49E /* GPSSpeedMonitor.swift in Sources */,
@@ -1488,6 +1630,7 @@
 				977C7C182E1E9B9F0040362B /* FlightLeg.swift in Sources */,
 				977C64EE2E81ABAA002B9552 /* ShareSheet.swift in Sources */,
 				97698C132EC82EF8003523F6 /* TimerSettingsView.swift in Sources */,
+				975B18FF2F01FDF200EAE976 /* DataRecoveryView.swift in Sources */,
 				97F93D2B2EFA342800855419 /* LogbookSearchView.swift in Sources */,
 				97F93DAA2EFC1D5000855419 /* WeatherModels.swift in Sources */,
 				975C23D02ECD70F50092249D /* NOCSettingsStore.swift in Sources */,
@@ -1503,10 +1646,12 @@
 				9763CEDE2E54D34D00344E7D /* DocumentStore.swift in Sources */,
 				976052A52ECAA46B007CB9C5 /* WatchPhoneLegSyncManager.swift in Sources */,
 				9703AF8D2EAFEEAF002E9E26 /* CurrencyRate.swift in Sources */,
+				976654B22F05E0E1006BC7FD /* NOCAlertSettingsView.swift in Sources */,
 				97F2C3F22EDE1D16002B9BD6 /* FAR117ComplianceView.swift in Sources */,
 				97EC0B312E22F45500EFE8F5 /* ContentView.swift in Sources */,
 				97690F4A2EA45F2600FA9775 /* AircraftHistoryManager.swift in Sources */,
 				97BCC3AD2E29549600D36E5B /* TripScannerView.swift in Sources */,
+				97665A952F076235006BC7FD /* ICalFieldParser.swift in Sources */,
 				97D69EBE2E3D735600FFF195 /* UserDefaults+AppGroup.swift in Sources */,
 				9782BF582EF240D3007BE2CE /* PendingTripCard.swift in Sources */,
 				97D75BB12E50E6FE00EF6DB3 /* AuthenticatedExcelViewer.swift in Sources */,
@@ -1520,9 +1665,17 @@
 				97D69EC02E3D954C00FFF195 /* DutyTimerLiveActivity.swift in Sources */,
 				977C7C212E1E9B9F0040362B /* AutoCompleteTestView.swift in Sources */,
 				97F93D882EFB78F500855419 /* ICalendarImportExample.swift in Sources */,
+				975B174A2F01A92100EAE976 /* RaidoImportHandler.swift in Sources */,
+				975B174B2F01A92100EAE976 /* FBOProximityNotificationService.swift in Sources */,
+				975B174C2F01A92100EAE976 /* RaidoImportService.swift in Sources */,
 				976D54722EDB45DB00A7D60C /* TripGenerationSettingsView.swift in Sources */,
+				97665A932F0761E6006BC7FD /* ImportTemplates.swift in Sources */,
 				9703AF7F2EAEE0C5002E9E26 /* DocumentCropProcessor.swift in Sources */,
 				97747CEF2ED9318600126113 /* ElectronicLogbookViewer.swift in Sources */,
+				97665AA92F095A9B006BC7FD /* ImportTemplates.swift in Sources */,
+				97665AAA2F095A9B006BC7FD /* SDImportProfile.swift in Sources */,
+				97665AAB2F095A9B006BC7FD /* ICalFieldParser.swift in Sources */,
+				97665AAC2F095A9B006BC7FD /* FieldMappingViews.swift in Sources */,
 				977C7C222E1E9B9F0040362B /* LogPageTableView.swift in Sources */,
 				9703AF8F2EAFEFC7002E9E26 /* FlightOperationsView.swift in Sources */,
 				97EC0B2C2E22D2D900EFE8F5 /* PilotLocationManager.swift in Sources */,
@@ -1547,7 +1700,7 @@
 				976D54772EDB54EE00A7D60C /* TripGenerationAlertModifier.swift in Sources */,
 				975582322EE8B88A0009D2CF /* DutyLimitSettingsView.swift in Sources */,
 				97698C172EC833C0003523F6 /* TripDateUtility.swift in Sources */,
-				97F93D612EFB199600855419 /* SettingsIntegration.swift in Sources */,
+				975B194E2F0450AF00EAE976 /* TripDocumentThumbnailView.swift in Sources */,
 				976052A32ECAA448007CB9C5 /* TripCompletionSummaryView.swift in Sources */,
 				9703AF952EB07357002E9E26 /* FlightLegsView.swift in Sources */,
 				9703AF892EAFEE8E002E9E26 /* ProPilotDocument.swift in Sources */,
@@ -1574,6 +1727,7 @@
 				97F93D8C2EFB791C00855419 /* ICalendarImportEngine.swift in Sources */,
 				977C7C2B2E1E9B9F0040362B /* Trip.swift in Sources */,
 				976D546E2EDB452300A7D60C /* TripGenerationSettings.swift in Sources */,
+				97665A972F0763AF006BC7FD /* FieldMappingViews.swift in Sources */,
 				97F93D5B2EFB181B00855419 /* AirportDatabaseView.swift in Sources */,
 				977C7C2C2E1E9B9F0040362B /* FlightTrackingUtility.swift in Sources */,
 				977C7C2D2E1E9B9F0040362B /* AirlineSettings.swift in Sources */,
@@ -1604,6 +1758,7 @@
 				977C7C312E1E9B9F0040362B /* FlightAwareIntegration.swift in Sources */,
 				97F2C3F62EDE5020002B9BD6 /* ContinuationPrompt.swift in Sources */,
 				971974EA2ED49D8500CC1511 /* NotificationNames.swift in Sources */,
+				976656442F05E662006BC7FD /* UniversalSearchView.swift in Sources */,
 				97690F4E2EA5A3CC00FA9775 /* TimeRoundingUtility.swift in Sources */,
 				97747C8D2ED7D3CB00126113 /* BackupFileHandler.swift in Sources */,
 				97D75BAF2E50D6DD00EF6DB3 /* CompleteExcelViewer.swift in Sources */,
@@ -1613,10 +1768,12 @@
 				97DC6EE92E3323890002F472 /* ScannerIntegrationsExtensions.swift in Sources */,
 				973AFA0F2EE097BF00CDF4AB /* GMTClockPill.swift in Sources */,
 				9756B82E2E95CC0800F59538 /* TabManager.swift in Sources */,
+				97665A902F0761B3006BC7FD /* SDImportProfile.swift in Sources */,
 				974ED36C2E2BE20B00901DA7 /* AppConstants.swift in Sources */,
 				9703AF932EB0606B002E9E26 /* LegsExportView.swift in Sources */,
 				97747C8B2ED7B19800126113 /* TripSharingManager.swift in Sources */,
 				9760529B2ECA6C02007CB9C5 /* BottomSheetTripsView.swift in Sources */,
+				975B19032F01FEA100EAE976 /* DataProtectionSettingsView.swift in Sources */,
 				9782BF712EF25BFE007BE2CE /* SubscriptionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1853,7 +2010,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0.5;
+				MARKETING_VERSION = 3.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1904,7 +2061,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0.5;
+				MARKETING_VERSION = 3.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1949,7 +2106,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 3.0.5;
+				MARKETING_VERSION = 3.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.ProPilotWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1995,7 +2152,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 3.0.5;
+				MARKETING_VERSION = 3.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.ProPilotWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2033,7 +2190,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0.5;
+				MARKETING_VERSION = 3.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -2069,7 +2226,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 3.0.5;
+				MARKETING_VERSION = 3.0.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jkadans.TheProPilotApp.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;

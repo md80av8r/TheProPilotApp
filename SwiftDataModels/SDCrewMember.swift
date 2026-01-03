@@ -19,6 +19,8 @@ final class SDCrewMember {
     var email: String = ""
 
     // MARK: - Relationship (optional for CloudKit)
+    // Explicit @Relationship required for CloudKit to create REFERENCE type instead of STRING
+    @Relationship
     var trip: SDTrip?
 
     // MARK: - Default Initializer (required for SwiftData)

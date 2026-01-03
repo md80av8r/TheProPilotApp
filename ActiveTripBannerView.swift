@@ -345,10 +345,10 @@ struct ActiveTripBanner: View {
                 Text(AutoTimeSettings.shared.useZuluTime ? "ZULU" : "LOCAL")
                     .font(.caption.bold())
             }
-            .foregroundColor(LogbookTheme.accentBlue.opacity(0.8))
+            .foregroundColor(LogbookTheme.accentBlue.opacity(0.4))
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
     }
     
     // MARK: - Column Headers

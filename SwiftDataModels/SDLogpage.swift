@@ -20,9 +20,11 @@ final class SDLogpage {
     var dateCreated: Date = Date()
 
     // MARK: - Relationships (optional for CloudKit)
-    var trip: SDTrip?
+    // Explicit @Relationship required for CloudKit to create REFERENCE type instead of STRING
+    @Relationship
+    var owningTrip: SDTrip?
 
-    @Relationship(deleteRule: .cascade, inverse: \SDFlightLeg.logpage)
+    @Relationship(deleteRule: .cascade, inverse: \SDFlightLeg.parentLogpage)
     var legs: [SDFlightLeg]?
 
     // MARK: - Default Initializer (required for SwiftData)

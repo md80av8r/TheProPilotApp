@@ -325,7 +325,7 @@ class CloudKitDiagnostic: ObservableObject {
     @Published var isRunning = false
     @Published var currentTest = ""
     
-    private let container = CKContainer(identifier: "iCloud.com.jkadans.ProPilotApp")
+    private let container = CKContainer(identifier: "iCloud.com.jkadans.TheProPilotApp")
     
     // MARK: - Run All Tests
     

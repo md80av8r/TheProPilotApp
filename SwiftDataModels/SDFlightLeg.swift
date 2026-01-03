@@ -46,8 +46,14 @@ final class SDFlightLeg {
     var nightTakeoff: Bool = false
     var nightLanding: Bool = false
 
+    // MARK: - GPS Track Data (stored as JSON Data for CloudKit)
+    var trackData: Data?
+    var hasRecordedTrack: Bool = false
+
     // MARK: - Relationship (optional for CloudKit)
-    var logpage: SDLogpage?
+    // Explicit @Relationship required for CloudKit to create REFERENCE type instead of STRING
+    @Relationship
+    var parentLogpage: SDLogpage?
 
     // MARK: - Computed Properties (Transient)
     var status: LegStatus {
@@ -87,6 +93,8 @@ final class SDFlightLeg {
         self.deadheadFlightHours = leg.deadheadFlightHours
         self.nightTakeoff = leg.nightTakeoff
         self.nightLanding = leg.nightLanding
+        self.trackData = leg.trackData
+        self.hasRecordedTrack = leg.hasRecordedTrack
     }
 
     // MARK: - Convert to View Model (FlightLeg struct)
@@ -113,6 +121,8 @@ final class SDFlightLeg {
         leg.deadheadFlightHours = deadheadFlightHours
         leg.nightTakeoff = nightTakeoff
         leg.nightLanding = nightLanding
+        leg.trackData = trackData
+        leg.hasRecordedTrack = hasRecordedTrack
         return leg
     }
 
@@ -139,5 +149,7 @@ final class SDFlightLeg {
         self.deadheadFlightHours = leg.deadheadFlightHours
         self.nightTakeoff = leg.nightTakeoff
         self.nightLanding = leg.nightLanding
+        self.trackData = leg.trackData
+        self.hasRecordedTrack = leg.hasRecordedTrack
     }
 }

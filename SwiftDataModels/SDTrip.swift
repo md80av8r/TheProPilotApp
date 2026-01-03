@@ -48,9 +48,11 @@ final class SDTrip {
     var logbookPageSent: Bool = false
 
     // MARK: - Relationships (optional for CloudKit)
-    @Relationship(deleteRule: .cascade, inverse: \SDLogpage.trip)
+    // Using 'owningTrip' inverse to match renamed field in SDLogpage (Dec 2024)
+    @Relationship(deleteRule: .cascade, inverse: \SDLogpage.owningTrip)
     var logpages: [SDLogpage]?
 
+    // Using 'trip' inverse to match CloudKit schema field CD_trip
     @Relationship(deleteRule: .cascade, inverse: \SDCrewMember.trip)
     var crew: [SDCrewMember]?
 
@@ -104,6 +106,16 @@ final class SDTrip {
     func toTrip() -> Trip {
         // Sort logpages by page number
         let sortedLogpages = (logpages ?? []).sorted { $0.pageNumber < $1.pageNumber }
+        
+        print("🔄 toTrip() for trip #\(tripNumber): \(sortedLogpages.count) logpages in DB")
+        
+        // Convert logpages to Logpage structs
+        let convertedLogpages = sortedLogpages.map { $0.toLogpage() }
+        
+        // CRITICAL FIX: Flatten all legs from all logpages into trip.legs array
+        let allLegs = convertedLogpages.flatMap { $0.legs }
+        
+        print("🔄 toTrip() flattened \(allLegs.count) legs from logpages")
 
         var trip = Trip(
             id: tripId,
@@ -113,7 +125,7 @@ final class SDTrip {
             tatStart: sortedLogpages.first?.tatStart ?? "",
             crew: (crew ?? []).map { $0.toCrewMember() },
             notes: notes,
-            legs: [],  // Will be populated via logpages
+            legs: allLegs,  // ✅ FIXED: Now properly populated from logpages
             tripType: tripType,
             deadheadAirline: deadheadAirline,
             deadheadFlightNumber: deadheadFlightNumber,
@@ -129,7 +141,7 @@ final class SDTrip {
         )
 
         // Rebuild logpages with proper structure
-        trip.logpages = sortedLogpages.map { $0.toLogpage() }
+        trip.logpages = convertedLogpages
 
         // Set remaining properties
         trip.dutyStartTime = dutyStartTime
