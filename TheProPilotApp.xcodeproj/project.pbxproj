@@ -32,6 +32,7 @@
 		9719753D2ED76D0D00CC1511 /* DocumentEmailData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719753C2ED76D0D00CC1511 /* DocumentEmailData.swift */; };
 		9719753F2ED76DBD00CC1511 /* TripType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719753E2ED76DBD00CC1511 /* TripType.swift */; };
 		971975402ED772CF00CC1511 /* TripType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9719753E2ED76DBD00CC1511 /* TripType.swift */; };
+		971FF5652F09FFBC00509673 /* propilot_fbos.csv in Resources */ = {isa = PBXBuildFile; fileRef = 971FF5642F09FFBC00509673 /* propilot_fbos.csv */; };
 		972D01932ECBF2850064BD51 /* TimeFormattingUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 972D01922ECBF2840064BD51 /* TimeFormattingUtilities.swift */; };
 		97366B2A2EFED52000C1A7A0 /* SDTrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B262EFED52000C1A7A0 /* SDTrip.swift */; };
 		97366B2B2EFED52000C1A7A0 /* SwiftDataLogBookStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97366B282EFED52000C1A7A0 /* SwiftDataLogBookStore.swift */; };
@@ -382,6 +383,7 @@
 		971975382ED76B9900CC1511 /* DocumentEmailConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEmailConfig.swift; sourceTree = "<group>"; };
 		9719753C2ED76D0D00CC1511 /* DocumentEmailData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentEmailData.swift; sourceTree = "<group>"; };
 		9719753E2ED76DBD00CC1511 /* TripType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripType.swift; sourceTree = "<group>"; };
+		971FF5642F09FFBC00509673 /* propilot_fbos.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = propilot_fbos.csv; sourceTree = "<group>"; };
 		972D01922ECBF2840064BD51 /* TimeFormattingUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormattingUtilities.swift; sourceTree = "<group>"; };
 		97366B222EFED52000C1A7A0 /* MigrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigrationManager.swift; sourceTree = "<group>"; };
 		97366B232EFED52000C1A7A0 /* SDCrewMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDCrewMember.swift; sourceTree = "<group>"; };
@@ -1069,6 +1071,7 @@
 				97D75BB22E50F2BE00EF6DB3 /* NotificationNames.swift */,
 				97C759AC2E2A69210048549B /* OPSCallingManager.swift */,
 				977C7BFA2E1E9B9F0040362B /* PerDiemSummaryView.swift */,
+				971FF5642F09FFBC00509673 /* propilot_fbos.csv */,
 				97449E832EDA3DD600CB038A /* PerDiemSettingsView.swift */,
 				9799E7432EAE6A0500F0FADE /* PDFThumbnailGenerator.swift */,
 				9799E7412EAE68ED00F0FADE /* PDFThumbnailView.swift */,
@@ -1481,6 +1484,7 @@
 				976659022F06DA51006BC7FD /* KDTW_KORD.gpx in Resources */,
 				97665A9F2F095954006BC7FD /* NOC_NOTIFICATION_SYSTEM.md in Resources */,
 				976656422F05E5C1006BC7FD /* DTW_ORD.gpx in Resources */,
+				971FF5652F09FFBC00509673 /* propilot_fbos.csv in Resources */,
 				97126E122EEF4E5300D6D150 /* CLE_to_YIP.gpx in Resources */,
 				97D75BB52E528F6900EF6DB3 /* AppIcon.xcassets in Resources */,
 				97F93D502EFAF1E000855419 /* propilot_airports.csv in Resources */,

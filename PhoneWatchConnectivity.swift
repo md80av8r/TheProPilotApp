@@ -622,7 +622,16 @@ extension PhoneWatchConnectivity: WCSessionDelegate {
                 } else {
                     replyHandler(["status": "received"])
                 }
-                
+
+            case "clearTime":
+                self.handleClearTimeMessage(message)
+                self.updateSyncMetrics(success: true)
+                if let reply = self.createFlightUpdateMessage() {
+                    replyHandler(reply)
+                } else {
+                    replyHandler(["status": "received"])
+                }
+
             case "requestNextLeg":
                 self.handleRequestNextLeg(message)
                 if let reply = self.createFlightUpdateMessage() {
@@ -1144,7 +1153,50 @@ extension PhoneWatchConnectivity {
             self.syncCurrentLegToWatch()
         }
     }
-    
+
+    /// Handle clear time message from watch - sets time to empty string (nil)
+    private func handleClearTimeMessage(_ message: [String: Any]) {
+        guard let timeType = message["timeType"] as? String else {
+            print("❌ Invalid clearTime message format")
+            return
+        }
+
+        let legIndex = message["legIndex"] as? Int ?? currentLegIndex
+
+        print("📱 Clearing \(timeType) time for leg \(legIndex)")
+
+        // Run on main actor for SwiftData store access
+        Task { @MainActor in
+            guard var trip = self.findActiveTrip(),
+                  legIndex < trip.legs.count else {
+                print("❌ No active trip or invalid leg index")
+                return
+            }
+
+            switch timeType {
+            case "OUT":
+                trip.legs[legIndex].outTime = ""
+            case "OFF":
+                trip.legs[legIndex].offTime = ""
+            case "ON":
+                trip.legs[legIndex].onTime = ""
+            case "IN":
+                trip.legs[legIndex].inTime = ""
+            default:
+                print("❌ Unknown time type: \(timeType)")
+                return
+            }
+
+            self.saveTrip(trip)
+            self.markDataForSync(type: .flightTimes)
+
+            print("📱 ✅ Cleared \(timeType) time for leg \(legIndex + 1)")
+
+            // Send confirmation back with updated data
+            self.syncCurrentLegToWatch()
+        }
+    }
+
     private func handleRequestNextLeg(_ message: [String: Any]) {
         // Run on main actor for SwiftData store access
         Task { @MainActor in
@@ -1437,6 +1489,44 @@ extension PhoneWatchConnectivity {
         }
     }
     
+    // MARK: - FBO Alert to Watch
+
+    /// Send FBO contact alert to watch with haptic notification
+    func sendFBOAlertToWatch(airportCode: String, fboName: String, distanceNM: Double, unicomFrequency: String?) {
+        guard let session = session else { return }
+
+        var message: [String: Any] = [
+            "type": "fboAlert",
+            "airportCode": airportCode,
+            "fboName": fboName,
+            "distanceNM": distanceNM,
+            "timestamp": Date().timeIntervalSince1970
+        ]
+
+        if let unicom = unicomFrequency {
+            message["unicomFrequency"] = unicom
+        }
+
+        // Send via direct message for immediate haptic
+        if session.isReachable {
+            session.sendMessage(message, replyHandler: { _ in
+                print("✅ FBO alert sent to watch: \(airportCode)")
+            }) { error in
+                print("⚠️ Failed to send FBO alert to watch: \(error.localizedDescription)")
+            }
+        }
+
+        // Also send via application context for guaranteed delivery
+        do {
+            try session.updateApplicationContext(message)
+            print("✅ FBO alert saved to context for watch")
+        } catch {
+            print("❌ Failed to update FBO alert context: \(error.localizedDescription)")
+        }
+
+        markDataForSync(type: .fboAlert)
+    }
+
     /// Send clear trip message to watch
     func sendClearTripToWatch() {
         guard let session = session else { return }
@@ -1804,7 +1894,7 @@ class PendingSyncQueue {
 }
 
 enum DataType {
-    case trip, flightTimes, dutyTimer, crew, settings
+    case trip, flightTimes, dutyTimer, crew, settings, fboAlert
 }
 
 // MARK: - Notification Names

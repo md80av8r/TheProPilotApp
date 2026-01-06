@@ -1683,6 +1683,18 @@ struct CrowdsourcedFBOCard: View {
     let fbo: CrowdsourcedFBO
     var onEdit: () -> Void
     var onUpdateFuel: () -> Void
+    @ObservedObject private var airportDB = AirportDatabaseManager.shared
+    @State private var notifyDistance: Double = 120  // User-configurable notification distance
+
+    /// Check if this FBO is set as the preferred FBO for notifications
+    private var isPreferredFBO: Bool {
+        airportDB.getPreferredFBO(for: fbo.airportCode)?.fboName == fbo.name
+    }
+
+    /// Get current notification distance from preferred FBO
+    private var currentNotifyDistance: Double {
+        airportDB.getPreferredFBO(for: fbo.airportCode)?.notifyAtDistance ?? 120
+    }
 
     var body: some View {
         SectionCard(title: fbo.name) {
@@ -1800,7 +1812,76 @@ struct CrowdsourcedFBOCard: View {
                     }
                 }
 
-                // Edit button
+                // Set as My FBO button (for proximity notifications)
+                Divider().background(Color.gray.opacity(0.3))
+                VStack(spacing: 8) {
+                    Button(action: togglePreferredFBO) {
+                        HStack {
+                            Image(systemName: isPreferredFBO ? "bell.fill" : "bell")
+                                .foregroundColor(isPreferredFBO ? LogbookTheme.accentGreen : .gray)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(isPreferredFBO ? "My FBO - Notifications On" : "Set as My FBO")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(isPreferredFBO ? LogbookTheme.accentGreen : .white)
+                                Text(isPreferredFBO ? "Notify at \(Int(notifyDistance)) nm" : "Get notified when approaching this airport")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                            }
+                            Spacer()
+                            Image(systemName: isPreferredFBO ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(isPreferredFBO ? LogbookTheme.accentGreen : .gray)
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 12)
+                        .background(isPreferredFBO ? LogbookTheme.accentGreen.opacity(0.15) : Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                    }
+
+                    // Distance slider (only shown when FBO is set as preferred)
+                    if isPreferredFBO {
+                        VStack(spacing: 4) {
+                            HStack {
+                                Text("Notify at:")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                Spacer()
+                                Text("\(Int(notifyDistance)) nm")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(LogbookTheme.accentGreen)
+                            }
+                            Slider(value: $notifyDistance, in: 20...200, step: 5)
+                                .tint(LogbookTheme.accentGreen)
+                                .onChange(of: notifyDistance) { _, newValue in
+                                    updateNotifyDistance(newValue)
+                                }
+                            HStack {
+                                Text("20 nm")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                                Spacer()
+                                Text("Turboprop")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray.opacity(0.7))
+                                Spacer()
+                                Text("200 nm")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                    }
+                }
+                .onAppear {
+                    // Initialize slider with current saved value
+                    notifyDistance = currentNotifyDistance
+                }
+
+                // Edit button row
                 Divider().background(Color.gray.opacity(0.3))
                 HStack {
                     if fbo.isVerified {
@@ -1824,6 +1905,38 @@ struct CrowdsourcedFBOCard: View {
                 }
             }
         }
+    }
+
+    private func togglePreferredFBO() {
+        if isPreferredFBO {
+            // Remove preferred FBO
+            airportDB.removePreferredFBO(for: fbo.airportCode)
+        } else {
+            // Set this FBO as preferred for notifications
+            let preferredFBO = PreferredFBO(
+                airportCode: fbo.airportCode,
+                fboName: fbo.name,
+                unicomFrequency: fbo.unicomFrequency,
+                phoneNumber: fbo.phoneNumber,
+                notes: nil,
+                notifyAtDistance: notifyDistance  // Use current slider value
+            )
+            airportDB.setPreferredFBO(preferredFBO)
+        }
+    }
+
+    /// Update the notification distance for the preferred FBO
+    private func updateNotifyDistance(_ distance: Double) {
+        guard let existingFBO = airportDB.getPreferredFBO(for: fbo.airportCode) else { return }
+        let updatedFBO = PreferredFBO(
+            airportCode: existingFBO.airportCode,
+            fboName: existingFBO.fboName,
+            unicomFrequency: existingFBO.unicomFrequency,
+            phoneNumber: existingFBO.phoneNumber,
+            notes: existingFBO.notes,
+            notifyAtDistance: distance
+        )
+        airportDB.setPreferredFBO(updatedFBO)
     }
 
     private func getAmenities() -> [(String, String)] {

@@ -4,30 +4,125 @@ import SwiftUI
 struct WatchMainView: View {
     @EnvironmentObject var connectivityManager: WatchConnectivityManager
     @State private var selectedTab = 0
-    
+    @State private var showingFBOAlert = false
+
     var body: some View {
-        TabView(selection: $selectedTab) {
-            // Tab 1: Duty Timer
-            ModernDutyTimerView()
-                .environmentObject(connectivityManager)
-                .tag(0)
-            
-            // Tab 2: Flight Times - ✅ FIXED: Using FlightTimesWatchView with 2x2 grid
-            FlightTimesWatchView()
-                .environmentObject(connectivityManager)
-                .tag(1)
-            
-            // Tab 3: OPS
-            ModernOPSView()
-                .environmentObject(connectivityManager)
-                .tag(2)
-            
-            // Tab 4: Settings
-            ModernWatchSettingsView()
-                .environmentObject(connectivityManager)
-                .tag(3)
+        ZStack {
+            TabView(selection: $selectedTab) {
+                // Tab 1: Duty Timer
+                ModernDutyTimerView()
+                    .environmentObject(connectivityManager)
+                    .tag(0)
+
+                // Tab 2: Flight Times - ✅ FIXED: Using FlightTimesWatchView with 2x2 grid
+                FlightTimesWatchView()
+                    .environmentObject(connectivityManager)
+                    .tag(1)
+
+                // Tab 3: OPS
+                ModernOPSView()
+                    .environmentObject(connectivityManager)
+                    .tag(2)
+
+                // Tab 4: Settings
+                ModernWatchSettingsView()
+                    .environmentObject(connectivityManager)
+                    .tag(3)
+            }
+            .tabViewStyle(.page)
+
+            // FBO Alert Overlay
+            if showingFBOAlert, let alert = connectivityManager.pendingFBOAlert {
+                FBOAlertWatchView(alert: alert) {
+                    withAnimation {
+                        showingFBOAlert = false
+                        connectivityManager.dismissFBOAlert()
+                    }
+                }
+                .transition(.opacity.combined(with: .scale))
+            }
         }
-        .tabViewStyle(.page)
+        .onChange(of: connectivityManager.pendingFBOAlert?.id) { _, newValue in
+            if newValue != nil {
+                withAnimation {
+                    showingFBOAlert = true
+                }
+            }
+        }
+    }
+}
+
+// MARK: - FBO Alert Watch View
+struct FBOAlertWatchView: View {
+    let alert: FBOAlertData
+    let onDismiss: () -> Void
+
+    var body: some View {
+        ZStack {
+            // Semi-transparent background
+            Color.black.opacity(0.85)
+                .ignoresSafeArea()
+
+            VStack(spacing: 12) {
+                // Radio icon
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                    .font(.system(size: 36))
+                    .foregroundColor(.cyan)
+
+                // FBO Name
+                Text("Contact \(alert.fboName)")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+
+                // Airport and distance
+                HStack(spacing: 8) {
+                    Text(alert.airportCode)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.green)
+
+                    Text("•")
+                        .foregroundColor(.gray)
+
+                    Text("\(String(format: "%.0f", alert.distanceNM)) nm")
+                        .font(.callout)
+                        .foregroundColor(.gray)
+                }
+
+                // UNICOM Frequency
+                if let unicom = alert.unicomFrequency {
+                    HStack {
+                        Text("UNICOM:")
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                        Text(unicom)
+                            .font(.callout)
+                            .fontWeight(.bold)
+                            .foregroundColor(.cyan)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.cyan.opacity(0.2))
+                    .cornerRadius(8)
+                }
+
+                // Dismiss button
+                Button(action: onDismiss) {
+                    Text("Dismiss")
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(Color.gray.opacity(0.5))
+                        .cornerRadius(20)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+            }
+            .padding()
+        }
     }
 }
 

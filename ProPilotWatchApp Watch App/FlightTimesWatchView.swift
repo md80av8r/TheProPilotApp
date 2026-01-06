@@ -169,22 +169,26 @@ struct FlightTimesWatchView: View {
                     HStack(spacing: 8) {
                         CompactSmartTimeButton(
                             label: "OUT", time: outTime, color: .blue,
-                            onTimeSet: { time in connectivityManager.sendTimeEntry(timeType: "OUT", time: time) }
+                            onTimeSet: { time in connectivityManager.sendTimeEntry(timeType: "OUT", time: time) },
+                            onTimeClear: { connectivityManager.clearTimeEntry(timeType: "OUT") }
                         )
                         CompactSmartTimeButton(
                             label: "OFF", time: offTime, color: .orange,
-                            onTimeSet: { time in connectivityManager.sendTimeEntry(timeType: "OFF", time: time) }
+                            onTimeSet: { time in connectivityManager.sendTimeEntry(timeType: "OFF", time: time) },
+                            onTimeClear: { connectivityManager.clearTimeEntry(timeType: "OFF") }
                         )
                     }
-                    
+
                     HStack(spacing: 8) {
                         CompactSmartTimeButton(
                             label: "ON", time: onTime, color: .purple,
-                            onTimeSet: { time in connectivityManager.sendTimeEntry(timeType: "ON", time: time) }
+                            onTimeSet: { time in connectivityManager.sendTimeEntry(timeType: "ON", time: time) },
+                            onTimeClear: { connectivityManager.clearTimeEntry(timeType: "ON") }
                         )
                         CompactSmartTimeButton(
                             label: "IN", time: inTime, color: .green,
-                            onTimeSet: { time in connectivityManager.sendTimeEntry(timeType: "IN", time: time) }
+                            onTimeSet: { time in connectivityManager.sendTimeEntry(timeType: "IN", time: time) },
+                            onTimeClear: { connectivityManager.clearTimeEntry(timeType: "IN") }
                         )
                     }
                 }
@@ -241,23 +245,10 @@ struct FlightTimesWatchView: View {
         }
     }
     
-    // MARK: - Current Leg Totals
+    // MARK: - Current Leg Totals (Flight & Block times only - no duplicate OUT/OFF/ON/IN)
     private var legTotalsView: some View {
         VStack(spacing: 8) {
-            Divider().padding(.vertical, 4)
-            
-            VStack(spacing: 8) {
-                HStack(spacing: 8) {
-                    timeCell(label: "OUT", time: outTime, color: .blue)
-                    timeCell(label: "OFF", time: offTime, color: .orange)
-                }
-                HStack(spacing: 8) {
-                    timeCell(label: "ON", time: onTime, color: .purple)
-                    timeCell(label: "IN", time: inTime, color: .green)
-                }
-            }
-            
-            Text("LEG TOTALS").font(.caption2).foregroundColor(.secondary).padding(.top, 4)
+            Text("LEG TOTALS").font(.caption2).foregroundColor(.secondary)
             HStack(spacing: 12) {
                 if let off = offTime, let on = onTime {
                     totalBox(label: "✈️ Flight", value: formatDuration(from: off, to: on), color: .green)
@@ -740,7 +731,8 @@ struct CompactSmartTimeButton: View {
     let time: Date?
     let color: Color
     let onTimeSet: (Date) -> Void
-    
+    var onTimeClear: (() -> Void)? = nil  // Optional clear callback
+
     @State private var showingPicker = false
     @State private var tempTime = Date()
     @State private var justTapped = false
@@ -844,7 +836,7 @@ struct CompactSmartTimeButton: View {
                 HStack(spacing: 12) {
                     // Clear Button - Large and Red
                     Button {
-                        onTimeSet(Date(timeIntervalSince1970: 0))
+                        onTimeClear?()  // Call clear callback to set time to nil
                         showingPicker = false
                         WKInterfaceDevice.current().play(.success)
                     } label: {
@@ -862,6 +854,7 @@ struct CompactSmartTimeButton: View {
                         .cornerRadius(10)
                     }
                     .buttonStyle(.plain)
+                    .disabled(onTimeClear == nil)  // Disable if no clear callback
                     
                     // Set Button - Large and Green
                     Button {

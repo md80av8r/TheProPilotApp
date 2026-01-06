@@ -20,7 +20,7 @@ class FBOProximityNotificationService: NSObject, ObservableObject, CLLocationMan
 
     private let locationManager = CLLocationManager()
     private let airportDB = AirportDatabaseManager.shared
-    private var notifiedAirports: Set<String> = []  // Track which airports we've already notified about
+    private var notifiedAirports: Set<String> = []  // Track which airports we've already sent notification
     private var lastCheckLocation: CLLocation?
     private var checkTimer: Timer?
 
@@ -64,7 +64,8 @@ class FBOProximityNotificationService: NSObject, ObservableObject, CLLocationMan
 
     /// Reset notifications for a specific airport (allows re-notification)
     func resetNotification(for icaoCode: String) {
-        notifiedAirports.remove(icaoCode.uppercased())
+        let icao = icaoCode.uppercased()
+        notifiedAirports.remove(icao)
     }
 
     /// Reset all notifications (e.g., when starting a new trip)
@@ -96,31 +97,51 @@ class FBOProximityNotificationService: NSObject, ObservableObject, CLLocationMan
     private func checkProximity() {
         guard let currentLocation = lastCheckLocation else { return }
 
-        // Get airports needing FBO contact
+        // NOTE: This service ONLY alerts for airports with a PreferredFBO set.
+        // To get notified when approaching an airport, the user must set a preferred FBO
+        // for that airport in the app settings (Airport Details -> Set as Preferred FBO).
+
+        // Get airports needing FBO contact (only returns airports with preferred FBOs set)
         let nearbyAirports = airportDB.getAirportsNeedingFBOContact(
             from: currentLocation,
             withinNM: 200  // Check up to 200nm out
         )
 
+        // Debug: Log how many preferred FBOs are being monitored
+        if nearbyAirports.isEmpty {
+            let totalPreferredFBOs = airportDB.preferredFBOs.count
+            if totalPreferredFBOs == 0 {
+                print("📡 FBO Proximity: No preferred FBOs set - notifications will not trigger")
+            } else {
+                print("📡 FBO Proximity: \(totalPreferredFBOs) preferred FBO(s) set, none within 200nm")
+            }
+        } else {
+            print("📡 FBO Proximity: Found \(nearbyAirports.count) airport(s) with preferred FBOs within range")
+        }
+
         DispatchQueue.main.async {
             self.nearbyFBOAlerts = nearbyAirports
         }
 
-        // Check each airport for notification threshold
+        // Check each airport for notification threshold (user-configured distance)
         for item in nearbyAirports {
             let icao = item.airport.icaoCode.uppercased()
+            let distance = item.distanceNM
 
-            // Skip if we've already notified for this airport
+            // Skip if we've already sent notification for this airport
             guard !notifiedAirports.contains(icao) else { continue }
 
-            // Check if within notification distance
-            if item.distanceNM <= item.fbo.notifyAtDistance {
+            // Check if within user-configured notification distance
+            if distance <= item.fbo.notifyAtDistance {
+                print("📻 FBO Alert triggering for \(icao) at \(String(format: "%.1f", distance))nm (threshold: \(item.fbo.notifyAtDistance)nm)")
                 sendFBOContactNotification(
                     airport: item.airport,
                     fbo: item.fbo,
-                    distanceNM: item.distanceNM
+                    distanceNM: distance
                 )
                 notifiedAirports.insert(icao)
+            } else {
+                print("📡 \(icao): \(String(format: "%.1f", distance))nm away, notification at \(item.fbo.notifyAtDistance)nm")
             }
         }
     }
@@ -144,8 +165,9 @@ class FBOProximityNotificationService: NSObject, ObservableObject, CLLocationMan
 
         // Build body with UNICOM frequency
         var bodyParts: [String] = []
+        let unicomFrequency = fbo.unicomFrequency ?? airport.unicomFrequency ?? airport.primaryContactFrequency
 
-        if let unicom = fbo.unicomFrequency ?? airport.unicomFrequency ?? airport.primaryContactFrequency {
+        if let unicom = unicomFrequency {
             bodyParts.append("UNICOM: \(unicom)")
         }
 
@@ -192,6 +214,14 @@ class FBOProximityNotificationService: NSObject, ObservableObject, CLLocationMan
                 print("📬 FBO Contact notification sent for \(airport.icaoCode)")
             }
         }
+
+        // Send alert to Apple Watch with haptic vibration
+        PhoneWatchConnectivity.shared.sendFBOAlertToWatch(
+            airportCode: airport.icaoCode,
+            fboName: fbo.fboName,
+            distanceNM: distanceNM,
+            unicomFrequency: unicomFrequency
+        )
     }
 }
 

@@ -2,6 +2,7 @@
 // October's simple approach + November leg sync improvements
 import Foundation
 import WatchConnectivity
+import WatchKit
 
 // MARK: - Connection State
 enum ConnectionState {
@@ -48,6 +49,9 @@ class WatchConnectivityManager: NSObject, ObservableObject {
     @Published var lastMessageReceived: String = ""
     @Published var lastSyncTime: Date?
     @Published var syncStatus: SyncStatus = .disconnected  // ✅ ADDED for WatchSyncStatusView
+
+    // FBO Alert State
+    @Published var pendingFBOAlert: FBOAlertData?
     
     // Duty Timer
     @Published var isDutyTimerRunning = false  // ✅ ADDED for PilotWatchApp & DutyTimerWatchView
@@ -99,7 +103,7 @@ class WatchConnectivityManager: NSObject, ObservableObject {
             print("⚠️ No active trip to send time for")
             return
         }
-        
+
         let message: [String: Any] = [
             "type": "setTime",
             "timeType": timeType,
@@ -108,8 +112,26 @@ class WatchConnectivityManager: NSObject, ObservableObject {
             "legIndex": currentLegIndex,  // ← CRITICAL: Always include current leg
             "messageTimestamp": Date().timeIntervalSince1970
         ]
-        
+
         sendMessageToPhoneInternal(message, description: "set \(timeType) time on leg \(currentLegIndex)")
+    }
+
+    /// Clear a time entry on phone - sets time to nil
+    func clearTimeEntry(timeType: String) {
+        guard let tripId = currentFlight?.flightNumber else {
+            print("⚠️ No active trip to clear time for")
+            return
+        }
+
+        let message: [String: Any] = [
+            "type": "clearTime",
+            "timeType": timeType,
+            "tripId": tripId,
+            "legIndex": currentLegIndex,
+            "messageTimestamp": Date().timeIntervalSince1970
+        ]
+
+        sendMessageToPhoneInternal(message, description: "clear \(timeType) time on leg \(currentLegIndex)")
     }
     
     /// Request next leg from phone
@@ -744,7 +766,7 @@ class WatchConnectivityManager: NSObject, ObservableObject {
     /// Handle clear trip message from phone
     private func handleClearTrip() {
         print("🗑️ Clearing trip data from watch")
-        
+
         // ✅ Clear in the right order to prevent UI crashes
         DispatchQueue.main.async {
             // First clear the flight data (this will trigger onChange to reset page)
@@ -753,26 +775,77 @@ class WatchConnectivityManager: NSObject, ObservableObject {
             self.totalLegs = 0
             self.hasMoreLegs = false
             self.currentTripId = nil
-            
+
             // Then clear completed legs after a tiny delay to let UI update
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.completedLegs.removeAll()
                 print("⌚ ✅ Cleared all completed legs")
             }
         }
-        
+
         // Stop any duty-related timers/state
         stopDutyTimer()
         isDutyTimerRunning = false
         dutyStartTime = nil
-        
+
         // Stop extended runtime session to avoid re-activation
         ExtensionDelegate.shared.performStopExtendedSession()
-        
+
         // Reset sync status
         syncStatus = .synced
-        
+
         print("✅ Trip data cleared from watch and extended session stopped")
+    }
+
+    /// Handle FBO contact alert from phone - triggers haptic and displays alert
+    private func handleFBOAlert(_ message: [String: Any]) {
+        print("📻 Received FBO contact alert from phone")
+
+        guard let airportCode = message["airportCode"] as? String,
+              let fboName = message["fboName"] as? String,
+              let distanceNM = message["distanceNM"] as? Double else {
+            print("⚠️ Invalid FBO alert message format")
+            return
+        }
+
+        let unicomFrequency = message["unicomFrequency"] as? String
+
+        // Create FBO alert data
+        let alertData = FBOAlertData(
+            airportCode: airportCode,
+            fboName: fboName,
+            distanceNM: distanceNM,
+            unicomFrequency: unicomFrequency,
+            timestamp: Date()
+        )
+
+        // Play haptic notification - strong vibration to get pilot's attention
+        WKInterfaceDevice.current().play(.notification)
+
+        // Play additional haptic after brief delay for emphasis
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            WKInterfaceDevice.current().play(.directionUp)
+        }
+
+        // Update published property to trigger UI update
+        DispatchQueue.main.async {
+            self.pendingFBOAlert = alertData
+            self.lastMessageReceived = "FBO Alert: \(airportCode)"
+            self.lastSyncTime = Date()
+        }
+
+        // Log the alert details
+        if let unicom = unicomFrequency {
+            print("📻 Contact \(fboName) at \(airportCode) - \(String(format: "%.0f", distanceNM))nm - UNICOM: \(unicom)")
+        } else {
+            print("📻 Contact \(fboName) at \(airportCode) - \(String(format: "%.0f", distanceNM))nm")
+        }
+    }
+
+    /// Dismiss the current FBO alert
+    func dismissFBOAlert() {
+        pendingFBOAlert = nil
+        print("⌚ FBO alert dismissed")
     }
     
     // ALSO: Update the message handler in the delegate
@@ -790,26 +863,30 @@ class WatchConnectivityManager: NSObject, ObservableObject {
             switch type {
             case "flightUpdate":
                 self.handleFlightUpdateMessage(message)
-                
+
             case "tripStarted":
                 print("✅ Trip started on phone")
                 self.handleFlightUpdateMessage(message)
-                
+
             case "dutyStatus":
                 self.handleDutyTimerMessage(message)
-                
+
             case "locationUpdate":
                 self.handleLocationUpdateMessage(message)
-                
+
             case "ping":
                 print("✅ Ping received from phone")
                 self.connectionState = .connected
                 self.syncStatus = .synced
-                
+
             case "clearTrip", "tripDeleted", "tripEnded":
                 print("📥 Received terminal trip event (clear/delete/end)")
                 self.handleClearTrip()
-                
+
+            case "fboAlert":
+                print("📻 Received FBO alert from phone")
+                self.handleFBOAlert(message)
+
             default:
                 print("⚠️ Unknown message type: \(type)")
             }
@@ -889,11 +966,11 @@ extension WatchConnectivityManager: WCSessionDelegate {
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
         DispatchQueue.main.async {
             print("📥 Received application context from phone")
-            
+
             // Application context might have flight data
             if let type = applicationContext["type"] as? String {
                 print("📥 Context type: \(type)")
-                
+
                 switch type {
                 case "flightUpdate":
                     self.handleFlightUpdateMessage(applicationContext)
@@ -901,10 +978,12 @@ extension WatchConnectivityManager: WCSessionDelegate {
                     self.handleDutyTimerMessage(applicationContext)
                 case "clearTrip", "tripDeleted", "tripEnded":
                     self.handleClearTrip()
+                case "fboAlert":
+                    self.handleFBOAlert(applicationContext)
                 default:
                     print("⚠️ Unknown context type: \(type)")
                 }
-                
+
                 // Fallback: if context explicitly indicates no active trip, clear state
                 if applicationContext["activeTrip"] is NSNull || (applicationContext["activeTripID"] as? String)?.isEmpty == true {
                     print("📥 Context indicates no active trip — clearing locally")
@@ -951,5 +1030,15 @@ struct CompletedLegData: Identifiable, Codable {
     let offTime: Date?
     let onTime: Date?
     let inTime: Date?
+}
+
+/// FBO Alert data for watch display
+struct FBOAlertData: Identifiable {
+    let id = UUID()
+    let airportCode: String
+    let fboName: String
+    let distanceNM: Double
+    let unicomFrequency: String?
+    let timestamp: Date
 }
 

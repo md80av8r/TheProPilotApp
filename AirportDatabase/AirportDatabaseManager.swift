@@ -488,9 +488,11 @@ class AirportDatabaseManager: ObservableObject {
     private let lastUpdateKey = "AirportDatabaseLastUpdate"
     private let userDefaults = UserDefaults.shared
     private let csvLoadedKey = "CSVAirportsLoaded"
+    private let fboCSVLoadedKey = "CSVFBOsLoaded"
 
     private init() {
         loadLocalData()
+        loadFBOsFromCSV()  // Load bundled FBOs before cached ones
         loadCachedPreferredFBOs()
         loadCachedCrowdsourcedFBOs()
     }
@@ -604,7 +606,126 @@ class AirportDatabaseManager: ObservableObject {
             print("❌ Failed to load CSV: \(error)")
         }
     }
-    
+
+    /// Load FBOs from local CSV file (propilot_fbos.csv)
+    private func loadFBOsFromCSV() {
+        // Only load once - CSV FBOs are baseline, user edits/CloudKit will add to them
+        guard !userDefaults.bool(forKey: fboCSVLoadedKey) else {
+            print("📦 FBO CSV already loaded, skipping")
+            return
+        }
+
+        print("📦 Loading FBOs from CSV...")
+
+        guard let url = Bundle.main.url(forResource: "propilot_fbos", withExtension: "csv") else {
+            print("⚠️ propilot_fbos.csv not found in bundle (optional)")
+            return
+        }
+
+        print("✅ Found FBO CSV file at: \(url.path)")
+
+        do {
+            let csvString = try String(contentsOf: url, encoding: .utf8)
+            let lines = csvString.components(separatedBy: .newlines)
+
+            var loadedFBOs: [String: [CrowdsourcedFBO]] = [:]
+            var fboCount = 0
+
+            // Skip header (line 0)
+            // Header: airport_code,name,phone,unicom,website,jet_a_price,avgas_price,crew_cars,crew_lounge,catering,maintenance,hangars,deice,oxygen,gpu,lav,handling_fee,overnight_fee,ramp_fee,ramp_fee_waived
+            for line in lines.dropFirst() {
+                guard !line.isEmpty else { continue }
+
+                let columns = parseCSVLine(line)
+                guard columns.count >= 20 else { continue }
+
+                let airportCode = columns[0].trimmingCharacters(in: .whitespaces).uppercased()
+                let name = columns[1].trimmingCharacters(in: .whitespaces)
+
+                guard !airportCode.isEmpty, !name.isEmpty else { continue }
+
+                let fbo = CrowdsourcedFBO(
+                    id: UUID(),
+                    airportCode: airportCode,
+                    name: name,
+                    phoneNumber: columns[2].isEmpty ? nil : columns[2],
+                    unicomFrequency: columns[3].isEmpty ? nil : columns[3],
+                    website: columns[4].isEmpty ? nil : columns[4],
+                    jetAPrice: Double(columns[5]),
+                    avGasPrice: Double(columns[6]),
+                    fuelPriceDate: nil,
+                    fuelPriceReporter: nil,
+                    hasCrewCars: columns[7] == "1",
+                    hasCrewLounge: columns[8] == "1",
+                    hasCatering: columns[9] == "1",
+                    hasMaintenance: columns[10] == "1",
+                    hasHangars: columns[11] == "1",
+                    hasDeice: columns[12] == "1",
+                    hasOxygen: columns[13] == "1",
+                    hasGPU: columns[14] == "1",
+                    hasLav: columns[15] == "1",
+                    handlingFee: Double(columns[16]),
+                    overnightFee: Double(columns[17]),
+                    rampFee: Double(columns[18]),
+                    rampFeeWaived: columns[19] == "1",
+                    averageRating: nil,
+                    ratingCount: nil,
+                    lastUpdated: Date(),
+                    updatedBy: "CSV Import",
+                    cloudKitRecordID: nil,
+                    isVerified: true  // CSV entries are verified
+                )
+
+                if loadedFBOs[airportCode] == nil {
+                    loadedFBOs[airportCode] = []
+                }
+                loadedFBOs[airportCode]?.append(fbo)
+                fboCount += 1
+            }
+
+            DispatchQueue.main.async {
+                // Merge with existing FBOs (don't overwrite user entries)
+                for (airport, fbos) in loadedFBOs {
+                    if self.crowdsourcedFBOs[airport] == nil {
+                        self.crowdsourcedFBOs[airport] = fbos
+                    } else {
+                        // Add CSV FBOs that aren't already present (by name)
+                        let existingNames = Set(self.crowdsourcedFBOs[airport]?.map { $0.name } ?? [])
+                        for fbo in fbos where !existingNames.contains(fbo.name) {
+                            self.crowdsourcedFBOs[airport]?.append(fbo)
+                        }
+                    }
+                }
+                self.cacheCrowdsourcedFBOs()
+                self.userDefaults.set(true, forKey: self.fboCSVLoadedKey)
+                print("✅ Loaded \(fboCount) FBOs from CSV for \(loadedFBOs.count) airports")
+            }
+
+        } catch {
+            print("❌ Failed to load FBO CSV: \(error)")
+        }
+    }
+
+    /// Parse a CSV line handling quoted fields with commas
+    private func parseCSVLine(_ line: String) -> [String] {
+        var result: [String] = []
+        var current = ""
+        var inQuotes = false
+
+        for char in line {
+            if char == "\"" {
+                inQuotes.toggle()
+            } else if char == "," && !inQuotes {
+                result.append(current)
+                current = ""
+            } else {
+                current.append(char)
+            }
+        }
+        result.append(current)
+        return result
+    }
+
     /// Load cached airports from UserDefaults
     private func loadCachedAirports() {
         guard let data = userDefaults.data(forKey: cacheKey) else {
