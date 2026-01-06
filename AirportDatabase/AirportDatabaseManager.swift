@@ -408,6 +408,18 @@ struct AirportInfo: Codable, Identifiable {
     }
 }
 
+extension AirportInfo: Equatable {
+    static func == (lhs: AirportInfo, rhs: AirportInfo) -> Bool {
+        lhs.icaoCode == rhs.icaoCode
+    }
+}
+
+extension AirportInfo: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(icaoCode)
+    }
+}
+
 // MARK: - Pilot Review Model (maps to CloudKit PilotReview schema)
 struct PilotReview: Codable, Identifiable {
     let id: UUID
@@ -489,6 +501,8 @@ class AirportDatabaseManager: ObservableObject {
     private let userDefaults = UserDefaults.shared
     private let csvLoadedKey = "CSVAirportsLoaded"
     private let fboCSVLoadedKey = "CSVFBOsLoaded"
+    private let fboCSVVersionKey = "CSVFBOsVersion"
+    private let currentFBOCSVVersion = 4  // Increment this when CSV data changes (v4: fixed duplicate FBO loading)
 
     private init() {
         loadLocalData()
@@ -609,10 +623,20 @@ class AirportDatabaseManager: ObservableObject {
 
     /// Load FBOs from local CSV file (propilot_fbos.csv)
     private func loadFBOsFromCSV() {
-        // Only load once - CSV FBOs are baseline, user edits/CloudKit will add to them
-        guard !userDefaults.bool(forKey: fboCSVLoadedKey) else {
-            print("📦 FBO CSV already loaded, skipping")
+        // Check if we need to reload (new version or never loaded)
+        let loadedVersion = userDefaults.integer(forKey: fboCSVVersionKey)
+        guard loadedVersion < currentFBOCSVVersion else {
+            print("📦 FBO CSV v\(loadedVersion) already loaded, skipping")
             return
+        }
+
+        if loadedVersion > 0 {
+            print("📦 FBO CSV updated: v\(loadedVersion) -> v\(currentFBOCSVVersion), reloading...")
+            // Clear potentially corrupted FBO cache when upgrading versions
+            // This ensures we start fresh with deduplicated data
+            crowdsourcedFBOs.removeAll()
+            userDefaults.removeObject(forKey: crowdsourcedFBOsCacheKey)
+            print("🧹 Cleared old FBO cache to fix duplicates")
         }
 
         print("📦 Loading FBOs from CSV...")
@@ -644,30 +668,44 @@ class AirportDatabaseManager: ObservableObject {
 
                 guard !airportCode.isEmpty, !name.isEmpty else { continue }
 
+                // Helper to parse boolean values from CSV (handles "1", "Yes", "true", etc.)
+                func parseBool(_ value: String) -> Bool {
+                    let v = value.lowercased().trimmingCharacters(in: .whitespaces)
+                    return v == "1" || v == "yes" || v == "true"
+                }
+
+                let phone = columns[2].isEmpty ? nil : columns[2]
+                let unicom = columns[3].isEmpty ? nil : columns[3]
+
+                // Debug: log FBOs with unicom frequencies
+                if unicom != nil {
+                    print("📻 CSV FBO: \(airportCode) - \(name) - UNICOM: \(unicom!)")
+                }
+
                 let fbo = CrowdsourcedFBO(
                     id: UUID(),
                     airportCode: airportCode,
                     name: name,
-                    phoneNumber: columns[2].isEmpty ? nil : columns[2],
-                    unicomFrequency: columns[3].isEmpty ? nil : columns[3],
+                    phoneNumber: phone,
+                    unicomFrequency: unicom,
                     website: columns[4].isEmpty ? nil : columns[4],
                     jetAPrice: Double(columns[5]),
                     avGasPrice: Double(columns[6]),
                     fuelPriceDate: nil,
                     fuelPriceReporter: nil,
-                    hasCrewCars: columns[7] == "1",
-                    hasCrewLounge: columns[8] == "1",
-                    hasCatering: columns[9] == "1",
-                    hasMaintenance: columns[10] == "1",
-                    hasHangars: columns[11] == "1",
-                    hasDeice: columns[12] == "1",
-                    hasOxygen: columns[13] == "1",
-                    hasGPU: columns[14] == "1",
-                    hasLav: columns[15] == "1",
+                    hasCrewCars: parseBool(columns[7]),
+                    hasCrewLounge: parseBool(columns[8]),
+                    hasCatering: parseBool(columns[9]),
+                    hasMaintenance: parseBool(columns[10]),
+                    hasHangars: parseBool(columns[11]),
+                    hasDeice: parseBool(columns[12]),
+                    hasOxygen: parseBool(columns[13]),
+                    hasGPU: parseBool(columns[14]),
+                    hasLav: parseBool(columns[15]),
                     handlingFee: Double(columns[16]),
                     overnightFee: Double(columns[17]),
                     rampFee: Double(columns[18]),
-                    rampFeeWaived: columns[19] == "1",
+                    rampFeeWaived: parseBool(columns[19]),
                     averageRating: nil,
                     ratingCount: nil,
                     lastUpdated: Date(),
@@ -684,21 +722,30 @@ class AirportDatabaseManager: ObservableObject {
             }
 
             DispatchQueue.main.async {
+                // Helper to normalize FBO names for matching (same logic as mergeFBOData)
+                func normalizeName(_ name: String) -> String {
+                    return name.lowercased()
+                        .replacingOccurrences(of: "aviation", with: "")
+                        .replacingOccurrences(of: "fbo", with: "")
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .replacingOccurrences(of: "  ", with: " ")
+                }
+
                 // Merge with existing FBOs (don't overwrite user entries)
                 for (airport, fbos) in loadedFBOs {
                     if self.crowdsourcedFBOs[airport] == nil {
                         self.crowdsourcedFBOs[airport] = fbos
                     } else {
-                        // Add CSV FBOs that aren't already present (by name)
-                        let existingNames = Set(self.crowdsourcedFBOs[airport]?.map { $0.name } ?? [])
-                        for fbo in fbos where !existingNames.contains(fbo.name) {
+                        // Add CSV FBOs that aren't already present (by normalized name)
+                        let existingNormalizedNames = Set(self.crowdsourcedFBOs[airport]?.map { normalizeName($0.name) } ?? [])
+                        for fbo in fbos where !existingNormalizedNames.contains(normalizeName(fbo.name)) {
                             self.crowdsourcedFBOs[airport]?.append(fbo)
                         }
                     }
                 }
                 self.cacheCrowdsourcedFBOs()
-                self.userDefaults.set(true, forKey: self.fboCSVLoadedKey)
-                print("✅ Loaded \(fboCount) FBOs from CSV for \(loadedFBOs.count) airports")
+                self.userDefaults.set(self.currentFBOCSVVersion, forKey: self.fboCSVVersionKey)
+                print("✅ Loaded \(fboCount) FBOs from CSV v\(self.currentFBOCSVVersion) for \(loadedFBOs.count) airports")
             }
 
         } catch {
@@ -1502,7 +1549,7 @@ class AirportDatabaseManager: ObservableObject {
 
     // MARK: - Crowdsourced FBO CloudKit Methods
 
-    /// Fetch crowdsourced FBOs for an airport from CloudKit
+    /// Fetch crowdsourced FBOs for an airport from CloudKit and merge with local data
     func fetchCrowdsourcedFBOs(for icaoCode: String) async throws -> [CrowdsourcedFBO] {
         let icao = icaoCode.uppercased()
         let database = container.publicCloudDatabase
@@ -1513,74 +1560,208 @@ class AirportDatabaseManager: ObservableObject {
 
         let (results, _) = try await database.records(matching: query)
 
-        var fbos: [CrowdsourcedFBO] = []
+        var cloudFBOs: [CrowdsourcedFBO] = []
         for (_, result) in results {
             if let record = try? result.get() {
                 if let fbo = crowdsourcedFBO(from: record) {
-                    fbos.append(fbo)
+                    cloudFBOs.append(fbo)
                 }
             }
         }
 
-        // Update local cache
-        let fbosToCache = fbos
+        // Smart merge: Combine CloudKit data with local CSV/cached data
+        // Capture data before MainActor to avoid Swift 6 concurrency issues
+        let cloudFBOsToMerge = cloudFBOs
+        let cloudFBOCount = cloudFBOs.count
+        
         await MainActor.run {
-            self.crowdsourcedFBOs[icao] = fbosToCache
+            let localFBOs = self.crowdsourcedFBOs[icao] ?? []
+            let mergedFBOs = self.mergeFBOData(local: localFBOs, cloud: cloudFBOsToMerge)
+            self.crowdsourcedFBOs[icao] = mergedFBOs
             self.cacheCrowdsourcedFBOs()
+            
+            print("🔄 FBO merge for \(icao): \(localFBOs.count) local + \(cloudFBOCount) cloud = \(mergedFBOs.count) merged")
         }
 
-        return fbos
+        return crowdsourcedFBOs[icao] ?? []
+    }
+    
+    /// Smart merge strategy for FBO data
+    /// Priorities:
+    /// 1. CloudKit FBOs with newer data (from other users)
+    /// 2. CSV baseline FBOs (verified)
+    /// 3. Newer fuel prices always win (even if from different source)
+    private func mergeFBOData(local: [CrowdsourcedFBO], cloud: [CrowdsourcedFBO]) -> [CrowdsourcedFBO] {
+        var merged: [String: CrowdsourcedFBO] = [:]  // key = normalized FBO name
+        
+        // Helper to normalize FBO names for matching
+        func normalize(_ name: String) -> String {
+            return name.lowercased()
+                .replacingOccurrences(of: "aviation", with: "")
+                .replacingOccurrences(of: "fbo", with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: "  ", with: " ")
+        }
+        
+        // Step 1: Add all local FBOs (CSV baseline + cached)
+        for fbo in local {
+            merged[normalize(fbo.name)] = fbo
+        }
+        
+        // Step 2: Merge CloudKit FBOs
+        for cloudFBO in cloud {
+            let key = normalize(cloudFBO.name)
+            
+            if let existingFBO = merged[key] {
+                // Duplicate detected - merge intelligently
+                var mergedFBO = existingFBO
+                
+                // CloudKit record ID always wins (for syncing)
+                if cloudFBO.cloudKitRecordID != nil {
+                    mergedFBO.cloudKitRecordID = cloudFBO.cloudKitRecordID
+                }
+                
+                // Use CloudKit data if it's from a real user (not CSV import)
+                if cloudFBO.updatedBy != "CSV Import" && cloudFBO.updatedBy != nil {
+                    // User-contributed data - prefer contact info from CloudKit
+                    mergedFBO.phoneNumber = cloudFBO.phoneNumber ?? existingFBO.phoneNumber
+                    mergedFBO.unicomFrequency = cloudFBO.unicomFrequency ?? existingFBO.unicomFrequency
+                    mergedFBO.website = cloudFBO.website ?? existingFBO.website
+                    
+                    // Merge amenities (use CloudKit if explicitly set)
+                    mergedFBO.hasCrewCars = cloudFBO.hasCrewCars || existingFBO.hasCrewCars
+                    mergedFBO.hasCrewLounge = cloudFBO.hasCrewLounge || existingFBO.hasCrewLounge
+                    mergedFBO.hasCatering = cloudFBO.hasCatering || existingFBO.hasCatering
+                    mergedFBO.hasMaintenance = cloudFBO.hasMaintenance || existingFBO.hasMaintenance
+                    mergedFBO.hasHangars = cloudFBO.hasHangars || existingFBO.hasHangars
+                    mergedFBO.hasDeice = cloudFBO.hasDeice || existingFBO.hasDeice
+                    mergedFBO.hasOxygen = cloudFBO.hasOxygen || existingFBO.hasOxygen
+                    mergedFBO.hasGPU = cloudFBO.hasGPU || existingFBO.hasGPU
+                    mergedFBO.hasLav = cloudFBO.hasLav || existingFBO.hasLav
+                    
+                    // Prefer CloudKit fees if available
+                    mergedFBO.handlingFee = cloudFBO.handlingFee ?? existingFBO.handlingFee
+                    mergedFBO.overnightFee = cloudFBO.overnightFee ?? existingFBO.overnightFee
+                    mergedFBO.rampFee = cloudFBO.rampFee ?? existingFBO.rampFee
+                    if cloudFBO.rampFee != nil {
+                        mergedFBO.rampFeeWaived = cloudFBO.rampFeeWaived
+                    }
+                    
+                    // Use CloudKit ratings
+                    mergedFBO.averageRating = cloudFBO.averageRating ?? existingFBO.averageRating
+                    mergedFBO.ratingCount = cloudFBO.ratingCount ?? existingFBO.ratingCount
+                }
+                
+                // FUEL PRICES: Always use the newest, regardless of source
+                let cloudPriceDate = cloudFBO.fuelPriceDate ?? Date.distantPast
+                let localPriceDate = existingFBO.fuelPriceDate ?? Date.distantPast
+                
+                if cloudPriceDate > localPriceDate {
+                    mergedFBO.jetAPrice = cloudFBO.jetAPrice ?? existingFBO.jetAPrice
+                    mergedFBO.avGasPrice = cloudFBO.avGasPrice ?? existingFBO.avGasPrice
+                    mergedFBO.fuelPriceDate = cloudFBO.fuelPriceDate
+                    mergedFBO.fuelPriceReporter = cloudFBO.fuelPriceReporter
+                } else if existingFBO.jetAPrice != nil || existingFBO.avGasPrice != nil {
+                    // Keep existing fuel prices if they're newer
+                    mergedFBO.jetAPrice = existingFBO.jetAPrice ?? cloudFBO.jetAPrice
+                    mergedFBO.avGasPrice = existingFBO.avGasPrice ?? cloudFBO.avGasPrice
+                }
+                
+                // Update timestamp
+                mergedFBO.lastUpdated = max(cloudFBO.lastUpdated, existingFBO.lastUpdated)
+                
+                // Keep verified status if either source is verified
+                mergedFBO.isVerified = cloudFBO.isVerified || existingFBO.isVerified
+                
+                merged[key] = mergedFBO
+                
+            } else {
+                // New FBO from CloudKit - add it
+                merged[key] = cloudFBO
+            }
+        }
+        
+        // Return sorted by name
+        return merged.values.sorted { $0.name < $1.name }
+    }
+
+    /// Check if an FBO with the same name already exists at this airport
+    /// Returns the existing FBO if found (for duplicate detection)
+    func findDuplicateFBO(name: String, airportCode: String, excludingId: UUID? = nil) -> CrowdsourcedFBO? {
+        let normalizedName = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let fbos = crowdsourcedFBOs[airportCode] ?? []
+
+        return fbos.first { fbo in
+            let existingName = fbo.name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+            let isSameName = existingName == normalizedName ||
+                             existingName.contains(normalizedName) ||
+                             normalizedName.contains(existingName)
+            let isDifferentRecord = excludingId == nil || fbo.id != excludingId
+            return isSameName && isDifferentRecord
+        }
+    }
+
+    /// Check if this FBO is a duplicate of a verified FBO
+    func isDuplicateOfVerified(_ fbo: CrowdsourcedFBO) -> Bool {
+        if let duplicate = findDuplicateFBO(name: fbo.name, airportCode: fbo.airportCode, excludingId: fbo.id) {
+            return duplicate.isVerified
+        }
+        return false
     }
 
     /// Save or update a crowdsourced FBO to CloudKit
     func saveCrowdsourcedFBO(_ fbo: CrowdsourcedFBO) async throws {
-        let database = container.publicCloudDatabase
-
-        let record: CKRecord
-        if let recordID = fbo.cloudKitRecordID {
-            // Update existing record
-            record = try await database.record(for: CKRecord.ID(recordName: recordID))
-        } else {
-            // Create new record
-            record = CKRecord(recordType: "CrowdsourcedFBO")
-        }
-
-        // Set all fields
-        record["airportCode"] = fbo.airportCode
-        record["name"] = fbo.name
-        record["phoneNumber"] = fbo.phoneNumber
-        record["unicomFrequency"] = fbo.unicomFrequency
-        record["website"] = fbo.website
-        record["jetAPrice"] = fbo.jetAPrice
-        record["avGasPrice"] = fbo.avGasPrice
-        record["fuelPriceDate"] = fbo.fuelPriceDate
-        record["fuelPriceReporter"] = fbo.fuelPriceReporter
-        record["hasCrewCars"] = fbo.hasCrewCars ? 1 : 0
-        record["hasCrewLounge"] = fbo.hasCrewLounge ? 1 : 0
-        record["hasCatering"] = fbo.hasCatering ? 1 : 0
-        record["hasMaintenance"] = fbo.hasMaintenance ? 1 : 0
-        record["hasHangars"] = fbo.hasHangars ? 1 : 0
-        record["hasDeice"] = fbo.hasDeice ? 1 : 0
-        record["hasOxygen"] = fbo.hasOxygen ? 1 : 0
-        record["hasGPU"] = fbo.hasGPU ? 1 : 0
-        record["hasLav"] = fbo.hasLav ? 1 : 0
-        record["handlingFee"] = fbo.handlingFee
-        record["overnightFee"] = fbo.overnightFee
-        record["rampFee"] = fbo.rampFee
-        record["rampFeeWaived"] = fbo.rampFeeWaived ? 1 : 0
-        record["averageRating"] = fbo.averageRating
-        record["ratingCount"] = fbo.ratingCount
-        record["lastUpdated"] = Date()
-        record["isVerified"] = fbo.isVerified ? 1 : 0
-
-        let savedRecord = try await database.save(record)
-
-        // Update local cache with the saved record ID
-        var updatedFBO = fbo
-        updatedFBO.cloudKitRecordID = savedRecord.recordID.recordName
-        let fboToSave = updatedFBO
         let airportCode = fbo.airportCode
         let fboId = fbo.id
+
+        // Check for duplicates when creating NEW FBOs (not when editing existing)
+        if fbo.cloudKitRecordID == nil {
+            if let existingFBO = findDuplicateFBO(name: fbo.name, airportCode: airportCode, excludingId: fboId) {
+                // If duplicate of verified FBO, merge the new data into the verified one instead
+                if existingFBO.isVerified {
+                    print("🔄 Merging new data into verified FBO '\(existingFBO.name)'")
+                    var mergedFBO = existingFBO
+                    // Merge in any new data the user provided
+                    if fbo.unicomFrequency != nil && existingFBO.unicomFrequency == nil {
+                        mergedFBO.unicomFrequency = fbo.unicomFrequency
+                    }
+                    if fbo.phoneNumber != nil && existingFBO.phoneNumber == nil {
+                        mergedFBO.phoneNumber = fbo.phoneNumber
+                    }
+                    if fbo.website != nil && existingFBO.website == nil {
+                        mergedFBO.website = fbo.website
+                    }
+                    if fbo.jetAPrice != nil { mergedFBO.jetAPrice = fbo.jetAPrice }
+                    if fbo.avGasPrice != nil { mergedFBO.avGasPrice = fbo.avGasPrice }
+                    // Merge amenities (true wins)
+                    if fbo.hasCrewCars { mergedFBO.hasCrewCars = true }
+                    if fbo.hasCrewLounge { mergedFBO.hasCrewLounge = true }
+                    if fbo.hasCatering { mergedFBO.hasCatering = true }
+                    if fbo.hasMaintenance { mergedFBO.hasMaintenance = true }
+                    if fbo.hasHangars { mergedFBO.hasHangars = true }
+                    if fbo.hasDeice { mergedFBO.hasDeice = true }
+                    if fbo.hasOxygen { mergedFBO.hasOxygen = true }
+                    if fbo.hasGPU { mergedFBO.hasGPU = true }
+                    if fbo.hasLav { mergedFBO.hasLav = true }
+                    mergedFBO.lastUpdated = Date()
+
+                    // Save the merged verified FBO instead
+                    try await saveCrowdsourcedFBO(mergedFBO)
+                    return
+                } else {
+                    // Duplicate of non-verified FBO - block creation
+                    throw NSError(domain: "FBODuplicate", code: 2,
+                                 userInfo: [NSLocalizedDescriptionKey: "An FBO named '\(existingFBO.name)' already exists at this airport. Please edit the existing entry instead."])
+                }
+            }
+        }
+
+        // ALWAYS save locally first (so user edits are never lost)
+        var updatedFBO = fbo
+        updatedFBO.lastUpdated = Date()
+        
+        // Capture values before MainActor to avoid Swift 6 concurrency issues
+        let fboToSave = updatedFBO
 
         await MainActor.run {
             var fbos = self.crowdsourcedFBOs[airportCode] ?? []
@@ -1591,6 +1772,72 @@ class AirportDatabaseManager: ObservableObject {
             }
             self.crowdsourcedFBOs[airportCode] = fbos
             self.cacheCrowdsourcedFBOs()
+            print("💾 FBO '\(fbo.name)' saved locally for \(airportCode)")
+        }
+
+        // Then try to sync to CloudKit (non-blocking for user experience)
+        let database = container.publicCloudDatabase
+
+        do {
+            let record: CKRecord
+            if let recordID = fbo.cloudKitRecordID {
+                // Update existing record
+                record = try await database.record(for: CKRecord.ID(recordName: recordID))
+            } else {
+                // Create new record
+                record = CKRecord(recordType: "CrowdsourcedFBO")
+            }
+
+            // Set all fields
+            record["airportCode"] = fbo.airportCode
+            record["name"] = fbo.name
+            record["phoneNumber"] = fbo.phoneNumber
+            record["unicomFrequency"] = fbo.unicomFrequency
+            record["website"] = fbo.website
+            record["jetAPrice"] = fbo.jetAPrice
+            record["avGasPrice"] = fbo.avGasPrice
+            record["fuelPriceDate"] = fbo.fuelPriceDate
+            record["fuelPriceReporter"] = fbo.fuelPriceReporter
+            record["hasCrewCars"] = fbo.hasCrewCars ? 1 : 0
+            record["hasCrewLounge"] = fbo.hasCrewLounge ? 1 : 0
+            record["hasCatering"] = fbo.hasCatering ? 1 : 0
+            record["hasMaintenance"] = fbo.hasMaintenance ? 1 : 0
+            record["hasHangars"] = fbo.hasHangars ? 1 : 0
+            record["hasDeice"] = fbo.hasDeice ? 1 : 0
+            record["hasOxygen"] = fbo.hasOxygen ? 1 : 0
+            record["hasGPU"] = fbo.hasGPU ? 1 : 0
+            record["hasLav"] = fbo.hasLav ? 1 : 0
+            record["handlingFee"] = fbo.handlingFee
+            record["overnightFee"] = fbo.overnightFee
+            record["rampFee"] = fbo.rampFee
+            record["rampFeeWaived"] = fbo.rampFeeWaived ? 1 : 0
+            record["averageRating"] = fbo.averageRating
+            record["ratingCount"] = fbo.ratingCount
+            record["lastUpdated"] = Date()
+            record["isVerified"] = fbo.isVerified ? 1 : 0
+
+            let savedRecord = try await database.save(record)
+
+            // Update local cache with the CloudKit record ID
+            var cloudSyncedFBO = updatedFBO
+            cloudSyncedFBO.cloudKitRecordID = savedRecord.recordID.recordName
+            
+            // Capture for MainActor to avoid Swift 6 concurrency issues
+            let finalFBO = cloudSyncedFBO
+
+            await MainActor.run {
+                var fbos = self.crowdsourcedFBOs[airportCode] ?? []
+                if let index = fbos.firstIndex(where: { $0.id == fboId }) {
+                    fbos[index] = finalFBO
+                }
+                self.crowdsourcedFBOs[airportCode] = fbos
+                self.cacheCrowdsourcedFBOs()
+                print("☁️ FBO '\(fbo.name)' synced to CloudKit")
+            }
+        } catch {
+            // CloudKit sync failed, but local save succeeded - that's OK
+            print("⚠️ CloudKit sync failed for FBO '\(fbo.name)': \(error.localizedDescription)")
+            print("   (Local changes are saved and will sync when possible)")
         }
     }
 
@@ -1611,7 +1858,21 @@ class AirportDatabaseManager: ObservableObject {
     }
 
     /// Delete a crowdsourced FBO from CloudKit
+    /// NOTE: Verified FBOs (from CSV) cannot be deleted by users - they are protected
+    /// EXCEPTION: Non-verified duplicates of verified FBOs CAN be deleted
     func deleteCrowdsourcedFBO(_ fbo: CrowdsourcedFBO) async throws {
+        // PROTECT verified FBOs - these come from the CSV and cannot be deleted
+        if fbo.isVerified {
+            print("🛡️ Cannot delete verified FBO '\(fbo.name)' - protected data")
+            throw NSError(domain: "FBOProtection", code: 1,
+                         userInfo: [NSLocalizedDescriptionKey: "This FBO is from the verified database and cannot be deleted."])
+        }
+
+        // Allow deletion - this is either a user-created FBO or a duplicate
+        if isDuplicateOfVerified(fbo) {
+            print("🗑️ Deleting duplicate FBO '\(fbo.name)' (verified version exists)")
+        }
+
         guard let recordIDName = fbo.cloudKitRecordID else {
             // Just remove from local cache if not synced to CloudKit
             await MainActor.run {
@@ -1633,6 +1894,20 @@ class AirportDatabaseManager: ObservableObject {
             self.crowdsourcedFBOs[fbo.airportCode] = fbos
             self.cacheCrowdsourcedFBOs()
         }
+    }
+
+    /// Check if an FBO can be deleted
+    /// - Verified FBOs cannot be deleted
+    /// - Non-verified FBOs can be deleted
+    /// - Duplicates of verified FBOs can be deleted (cleanup)
+    func canDeleteFBO(_ fbo: CrowdsourcedFBO) -> Bool {
+        return !fbo.isVerified
+    }
+
+    /// Check if this FBO is a duplicate that should be offered for deletion
+    func shouldOfferDuplicateDeletion(_ fbo: CrowdsourcedFBO) -> Bool {
+        // Only offer deletion for non-verified FBOs that duplicate a verified one
+        return !fbo.isVerified && isDuplicateOfVerified(fbo)
     }
 
     /// Convert CloudKit record to CrowdsourcedFBO
@@ -1682,16 +1957,59 @@ class AirportDatabaseManager: ObservableObject {
         }
     }
 
-    /// Load cached crowdsourced FBOs
+    /// Load cached crowdsourced FBOs and merge with existing (CSV) data
     private func loadCachedCrowdsourcedFBOs() {
-        if let data = userDefaults.data(forKey: crowdsourcedFBOsCacheKey),
-           let cached = try? JSONDecoder().decode([String: [CrowdsourcedFBO]].self, from: data) {
-            crowdsourcedFBOs = cached
+        guard let data = userDefaults.data(forKey: crowdsourcedFBOsCacheKey),
+              let cached = try? JSONDecoder().decode([String: [CrowdsourcedFBO]].self, from: data) else {
+            return
+        }
+
+        // Merge cached FBOs with existing CSV FBOs (deduplicate by normalized name)
+        for (airportCode, cachedFBOs) in cached {
+            if crowdsourcedFBOs[airportCode] == nil {
+                // No existing data, use cached (but deduplicate within the cache)
+                crowdsourcedFBOs[airportCode] = deduplicateFBOs(cachedFBOs)
+            } else {
+                // Merge cached with existing CSV data
+                let merged = mergeFBOData(local: crowdsourcedFBOs[airportCode] ?? [], cloud: cachedFBOs)
+                crowdsourcedFBOs[airportCode] = merged
+            }
         }
     }
 
-    /// Get all FBOs for an airport (crowdsourced)
+    /// Deduplicate FBOs by normalized name, preferring verified entries
+    private func deduplicateFBOs(_ fbos: [CrowdsourcedFBO]) -> [CrowdsourcedFBO] {
+        var seen: [String: CrowdsourcedFBO] = [:]
+
+        func normalizeName(_ name: String) -> String {
+            return name.lowercased()
+                .replacingOccurrences(of: "aviation", with: "")
+                .replacingOccurrences(of: "fbo", with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: "  ", with: " ")
+        }
+
+        for fbo in fbos {
+            let key = normalizeName(fbo.name)
+            if let existing = seen[key] {
+                // Keep verified over non-verified, otherwise keep newer
+                if fbo.isVerified && !existing.isVerified {
+                    seen[key] = fbo
+                } else if !existing.isVerified && fbo.lastUpdated > existing.lastUpdated {
+                    seen[key] = fbo
+                }
+            } else {
+                seen[key] = fbo
+            }
+        }
+
+        return seen.values.sorted { $0.name < $1.name }
+    }
+
+    /// Get all FBOs for an airport (crowdsourced) - always deduplicated
     func getFBOs(for icaoCode: String) -> [CrowdsourcedFBO] {
-        return crowdsourcedFBOs[icaoCode.uppercased()] ?? []
+        let fbos = crowdsourcedFBOs[icaoCode.uppercased()] ?? []
+        // Apply deduplication as a safety net before returning
+        return deduplicateFBOs(fbos)
     }
 }

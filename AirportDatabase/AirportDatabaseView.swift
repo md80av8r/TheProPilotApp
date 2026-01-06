@@ -25,12 +25,14 @@ struct AirportDatabaseView: View {
     enum DatabaseTab: String, CaseIterable {
         case search = "Search"
         case nearby = "Nearby"
+        case recent = "Recent"
         case favorites = "Favorites"
-        
+
         var icon: String {
             switch self {
             case .search: return "magnifyingglass"
             case .nearby: return "location.circle"
+            case .recent: return "clock.arrow.circlepath"
             case .favorites: return "star.fill"
             }
         }
@@ -53,6 +55,8 @@ struct AirportDatabaseView: View {
                     searchView
                 case .nearby:
                     nearbyView
+                case .recent:
+                    recentView
                 case .favorites:
                     favoritesView
                 }
@@ -63,6 +67,12 @@ struct AirportDatabaseView: View {
             viewModel.loadFavorites()
         }) { airport in
             AirportDetailViewEnhanced(airport: airport)
+        }
+        .onChange(of: selectedAirport) { oldValue, newValue in
+            // Track recently viewed airports
+            if let airport = newValue {
+                viewModel.addToRecentAirports(airport)
+            }
         }
         .sheet(isPresented: $showSettings) {
             NavigationStack {
@@ -101,6 +111,10 @@ struct AirportDatabaseView: View {
                             .font(.caption)
                             .foregroundColor(.gray)
                     }
+                case .recent:
+                    Text("\(viewModel.recentAirports.count) recently viewed")
+                        .font(.caption)
+                        .foregroundColor(.gray)
                 case .favorites:
                     Text("\(viewModel.favoriteAirports.count) favorites")
                         .font(.caption)
@@ -337,9 +351,57 @@ struct AirportDatabaseView: View {
             .padding()
         }
     }
-    
+
+    // MARK: - Recent View
+
+    private var recentView: some View {
+        VStack {
+            if viewModel.recentAirports.isEmpty {
+                emptyRecentState
+            } else {
+                recentList
+            }
+        }
+    }
+
+    private var emptyRecentState: some View {
+        VStack(spacing: 16) {
+            Spacer()
+
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 60))
+                .foregroundColor(.gray)
+
+            Text("No Recent Airports")
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+
+            Text("Airports you view will appear here for quick access")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            Spacer()
+        }
+    }
+
+    private var recentList: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(viewModel.recentAirports) { airport in
+                    AirportRowView(airport: airport) {
+                        selectedAirport = airport
+                    }
+                }
+            }
+            .padding()
+        }
+    }
+
     // MARK: - Favorites View
-    
+
     private var favoritesView: some View {
         VStack {
             if viewModel.favoriteAirports.isEmpty {
@@ -450,16 +512,20 @@ class AirportDatabaseViewModel: ObservableObject {
     @Published var searchResults: [AirportInfo] = []
     @Published var nearbyAirports: [AirportInfo] = []
     @Published var favoriteAirports: [AirportInfo] = []
+    @Published var recentAirports: [AirportInfo] = []
     @Published var isLoadingLocation = false
     @Published var searchRadius: Double = 50.0 // nautical miles
     @Published var userLocation: CLLocation?
-    
+
     private let locationManager = CLLocationManager()
     private let dbManager = AirportDatabaseManager.shared
-    
+    private let recentAirportsKey = "RecentAirports"
+    private let maxRecentAirports = 20
+
     func loadAirports() {
         airports = dbManager.getAllAirports()
         loadFavorites()
+        loadRecentAirports()
     }
     
     func searchAirports(query: String) {
@@ -543,15 +609,45 @@ class AirportDatabaseViewModel: ObservableObject {
     
     func toggleFavorite(_ airport: AirportInfo) {
         var favorites = UserDefaults.standard.stringArray(forKey: "FavoriteAirports") ?? []
-        
+
         if favorites.contains(airport.icaoCode) {
             favorites.removeAll { $0 == airport.icaoCode }
         } else {
             favorites.append(airport.icaoCode)
         }
-        
+
         UserDefaults.standard.set(favorites, forKey: "FavoriteAirports")
         loadFavorites()
+    }
+
+    // MARK: - Recent Airports
+
+    func loadRecentAirports() {
+        let recentICAOs = UserDefaults.standard.stringArray(forKey: recentAirportsKey) ?? []
+        recentAirports = recentICAOs.compactMap { dbManager.getAirport(for: $0) }
+    }
+
+    func addToRecentAirports(_ airport: AirportInfo) {
+        var recentICAOs = UserDefaults.standard.stringArray(forKey: recentAirportsKey) ?? []
+
+        // Remove if already exists (to move to front)
+        recentICAOs.removeAll { $0 == airport.icaoCode }
+
+        // Add to front
+        recentICAOs.insert(airport.icaoCode, at: 0)
+
+        // Limit to max recent airports
+        if recentICAOs.count > maxRecentAirports {
+            recentICAOs = Array(recentICAOs.prefix(maxRecentAirports))
+        }
+
+        UserDefaults.standard.set(recentICAOs, forKey: recentAirportsKey)
+        loadRecentAirports()
+    }
+
+    func clearRecentAirports() {
+        UserDefaults.standard.removeObject(forKey: recentAirportsKey)
+        recentAirports = []
     }
 }
 

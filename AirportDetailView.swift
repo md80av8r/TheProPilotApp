@@ -382,7 +382,7 @@ struct AirportDetailViewEnhanced: View {
                     label: "Location",
                     value: String(format: "%.2f°", airport.coordinate.latitude)
                 )
-                
+
                 if viewModel.averageRating > 0 {
                     StatBadge(
                         icon: "star.fill",
@@ -391,7 +391,7 @@ struct AirportDetailViewEnhanced: View {
                         color: .yellow
                     )
                 }
-                
+
                 if viewModel.reviewCount > 0 {
                     StatBadge(
                         icon: "person.2.fill",
@@ -400,6 +400,9 @@ struct AirportDetailViewEnhanced: View {
                     )
                 }
             }
+
+            // FAA Flow Status Banner
+            AirportFlowStatusBanner(airportCode: airport.icaoCode)
         }
         .padding()
         .background(LogbookTheme.navyLight)
@@ -1647,7 +1650,11 @@ struct FBOTabContent: View {
     }
 
     private func loadFBOs() {
+        // Load cached FBOs first (includes CSV-imported FBOs)
         crowdsourcedFBOs = airportManager.getFBOs(for: airport.icaoCode)
+        print("🏢 FBOTabContent: Loaded \(crowdsourcedFBOs.count) cached FBOs for \(airport.icaoCode)")
+        
+        // Then fetch and merge updates from CloudKit (manager handles smart merge)
         Task {
             await loadFBOsAsync()
         }
@@ -1657,12 +1664,15 @@ struct FBOTabContent: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            let fbos = try await airportManager.fetchCrowdsourcedFBOs(for: airport.icaoCode)
+            // Manager now handles smart merging of local + CloudKit data
+            let mergedFBOs = try await airportManager.fetchCrowdsourcedFBOs(for: airport.icaoCode)
             await MainActor.run {
-                crowdsourcedFBOs = fbos
+                crowdsourcedFBOs = mergedFBOs
+                print("🏢 FBOTabContent: After smart merge, displaying \(crowdsourcedFBOs.count) FBOs")
             }
         } catch {
-            print("Error loading FBOs: \(error)")
+            print("❌ Error loading FBOs from CloudKit: \(error)")
+            // Keep the cached FBOs if CloudKit fetch fails
         }
     }
 
@@ -1699,6 +1709,28 @@ struct CrowdsourcedFBOCard: View {
     var body: some View {
         SectionCard(title: fbo.name) {
             VStack(alignment: .leading, spacing: 12) {
+                // Data source badge
+                HStack {
+                    if fbo.isVerified {
+                        Label("Verified", systemImage: "checkmark.seal.fill")
+                            .font(.caption2)
+                            .foregroundColor(LogbookTheme.accentGreen)
+                    }
+                    
+                    if fbo.updatedBy == "CSV Import" {
+                        Label("Baseline Data", systemImage: "doc.text.fill")
+                            .font(.caption2)
+                            .foregroundColor(.blue)
+                    } else if fbo.cloudKitRecordID != nil {
+                        Label("Community Updated", systemImage: "person.2.fill")
+                            .font(.caption2)
+                            .foregroundColor(.orange)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.bottom, 4)
+                
                 // Contact info
                 if let phone = fbo.phoneNumber {
                     HStack {

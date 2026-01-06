@@ -913,11 +913,15 @@ class FlightTrackRecorder: NSObject, ObservableObject {
                 }
             }
             
+            // Capture count before MainActor to avoid Swift 6 concurrency issues
+            let finalSuccessCount = successCount
+            let totalCount = legIds.count
+            
             await MainActor.run {
-                statusMessage = "Synced \(successCount)/\(legIds.count) tracks"
+                statusMessage = "Synced \(finalSuccessCount)/\(totalCount) tracks"
             }
             
-            print("✅ Synced \(successCount)/\(legIds.count) tracks from iCloud")
+            print("✅ Synced \(finalSuccessCount)/\(totalCount) tracks from iCloud")
             
         } catch {
             print("❌ Failed to sync tracks: \(error)")

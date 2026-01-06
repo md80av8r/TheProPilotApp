@@ -2586,10 +2586,13 @@ struct ContentView: View {
         
         store.addTrip(finalTrip)
         PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
-        
+
+        // FlightAware integration - fetch route/ETA data
+        fetchFlightAwareData(for: finalTrip)
+
         showTripSheet = false
         resetTripFields()
-        
+
         if tripStatus == .active {
             checkAndAutoStartDutyForActiveTrip()
         }
@@ -2612,14 +2615,18 @@ struct ContentView: View {
         trip.pilotRole = pilotRole
         trip.simulatorMinutes = tripType == .simulator ? simTotalMinutes : nil
         store.updateTrip(trip, at: idx)
+
+        // FlightAware integration - fetch route/ETA data
+        fetchFlightAwareData(for: trip)
+
         showTripSheet = false
         resetTripFields()
-        
+
         if trip.status == .active {
             checkAndAutoStartDutyForActiveTrip()
         }
     }
-    
+
     private func completeTrip(_ trip: Trip) {
         if let index = store.trips.firstIndex(where: { $0.id == trip.id }) {
             var updatedTrip = trip
@@ -2644,7 +2651,62 @@ struct ContentView: View {
             print("✅ Trip #\(trip.tripNumber) completed with duty time saved")
         }
     }
-    
+
+    // MARK: - FlightAware Integration
+
+    /// Fetch FlightAware data for a trip's legs
+    private func fetchFlightAwareData(for trip: Trip) {
+        // Check if FlightAware is configured and enabled
+        guard FlightAwareRepository.shared.isReady,
+              airlineSettings.settings.enableFlightAwareTracking else {
+            return
+        }
+
+        let prefix = airlineSettings.settings.flightNumberPrefix
+        guard !prefix.isEmpty else {
+            print("[FlightAware] No airline prefix configured")
+            return
+        }
+
+        // Check if trip has any legs with flight numbers
+        let legsWithFlightNumbers = trip.legs.filter { !$0.flightNumber.isEmpty }
+        guard !legsWithFlightNumbers.isEmpty else {
+            print("[FlightAware] No flight numbers in trip")
+            return
+        }
+
+        // Fetch data asynchronously
+        Task {
+            let results = await FlightAwareRepository.shared.lookupFlightsForTrip(trip, airlinePrefix: prefix)
+
+            guard !results.isEmpty else {
+                print("[FlightAware] No flights found for trip")
+                return
+            }
+
+            print("[FlightAware] Found \(results.count) flight(s) for trip #\(trip.tripNumber)")
+
+            // Send share notification for the first leg if enabled
+            if airlineSettings.settings.autoShareFlightNotifications,
+               let firstLeg = legsWithFlightNumbers.first,
+               let flightData = results[firstLeg.id.uuidString] {
+                await FlightAwareNotificationService.shared.sendFlightSharePrompt(
+                    for: flightData,
+                    leg: firstLeg
+                )
+            }
+
+            // Post notification that FlightAware data is available
+            await MainActor.run {
+                NotificationCenter.default.post(
+                    name: .flightAwareDataUpdated,
+                    object: nil,
+                    userInfo: ["tripId": trip.id.uuidString, "flightData": results]
+                )
+            }
+        }
+    }
+
     // MARK: - Auto-Time Setup Methods (✅ NEW: Enhanced debug logging)
     private func setupAutoTimeListener() {
         NotificationCenter.default.addObserver(

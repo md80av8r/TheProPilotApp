@@ -27,6 +27,7 @@ struct FBOBannerView: View {
     @State private var crowdsourcedFBOs: [CrowdsourcedFBO] = []
     @State private var selectedFBOIndex: Int = 0
     @State private var isLoadingFBOs: Bool = false
+    @State private var lastFetchedAirportCode: String = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -120,8 +121,15 @@ struct FBOBannerView: View {
             crowdsourcedFBOs = []
             selectedFBOIndex = 0
             isLoadingFBOs = false
+            lastFetchedAirportCode = ""
             return
         }
+
+        // Prevent redundant fetches for the same airport
+        guard airport.icaoCode != lastFetchedAirportCode else {
+            return
+        }
+        lastFetchedAirportCode = airport.icaoCode
 
         // First load from cache
         let cachedFBOs = airportDB.getFBOs(for: airport.icaoCode)
@@ -1011,10 +1019,219 @@ struct CrowdsourcedFBOEditorSheet: View {
 struct PreferredFBOEditorSheet: View {
     let airport: AirportInfo
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var airportDB = AirportDatabaseManager.shared
+    @State private var showingAddNewFBO = false
+    @State private var selectedFBOToEdit: CrowdsourcedFBO?
+    @State private var fbos: [CrowdsourcedFBO] = []
+    @State private var isLoading = true
 
     var body: some View {
-        // Redirect to the new crowdsourced editor
-        CrowdsourcedFBOEditorSheet(airport: airport, existingFBO: nil)
+        NavigationStack {
+            Group {
+                if isLoading {
+                    ProgressView("Loading FBOs...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if fbos.isEmpty {
+                    // No FBOs - go directly to add new
+                    CrowdsourcedFBOEditorSheet(airport: airport, existingFBO: nil)
+                } else {
+                    // Show FBO list with option to add new
+                    fboListView
+                }
+            }
+            .background(LogbookTheme.navy)
+            .navigationTitle("FBOs at \(airport.icaoCode)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+                if !fbos.isEmpty {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button(action: { showingAddNewFBO = true }) {
+                            Image(systemName: "plus")
+                        }
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingAddNewFBO) {
+            CrowdsourcedFBOEditorSheet(airport: airport, existingFBO: nil)
+        }
+        .sheet(item: $selectedFBOToEdit) { fbo in
+            CrowdsourcedFBOEditorSheet(airport: airport, existingFBO: fbo)
+        }
+        .onAppear {
+            loadFBOs()
+        }
+    }
+
+    private var fboListView: some View {
+        List {
+            Section {
+                ForEach(fbos) { fbo in
+                    FBOListRow(fbo: fbo) {
+                        selectedFBOToEdit = fbo
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        // Only show delete for duplicates or user-created FBOs
+                        if airportDB.canDeleteFBO(fbo) {
+                            Button(role: .destructive) {
+                                deleteFBO(fbo)
+                            } label: {
+                                if airportDB.shouldOfferDuplicateDeletion(fbo) {
+                                    Label("Delete Duplicate", systemImage: "trash")
+                                } else {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
+                    }
+                    // Show duplicate warning badge
+                    .overlay(alignment: .topTrailing) {
+                        if airportDB.shouldOfferDuplicateDeletion(fbo) {
+                            Text("DUPLICATE")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.orange)
+                                .cornerRadius(4)
+                                .offset(x: -8, y: -4)
+                        }
+                    }
+                }
+            } header: {
+                Text("Select an FBO or tap + to add new")
+            } footer: {
+                if fbos.contains(where: { airportDB.shouldOfferDuplicateDeletion($0) }) {
+                    Text("Swipe left on duplicate entries to remove them.")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+    }
+
+    private func deleteFBO(_ fbo: CrowdsourcedFBO) {
+        Task {
+            do {
+                try await airportDB.deleteCrowdsourcedFBO(fbo)
+                await MainActor.run {
+                    fbos.removeAll { $0.id == fbo.id }
+                }
+            } catch {
+                print("❌ Failed to delete FBO: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func loadFBOs() {
+        // Load cached FBOs first
+        fbos = airportDB.getFBOs(for: airport.icaoCode)
+        isLoading = false
+
+        // Then fetch from CloudKit
+        Task {
+            do {
+                let cloudFBOs = try await airportDB.fetchCrowdsourcedFBOs(for: airport.icaoCode)
+                await MainActor.run {
+                    fbos = cloudFBOs
+                }
+            } catch {
+                print("⚠️ FBO fetch error: \(error.localizedDescription)")
+            }
+        }
+    }
+}
+
+// MARK: - FBO List Row
+struct FBOListRow: View {
+    let fbo: CrowdsourcedFBO
+    let onEdit: () -> Void
+
+    var body: some View {
+        Button(action: onEdit) {
+            HStack(spacing: 12) {
+                // Verified badge or standard icon
+                ZStack {
+                    Image(systemName: "building.2.fill")
+                        .foregroundColor(LogbookTheme.accentGreen)
+                        .font(.title3)
+
+                    if fbo.isVerified {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundColor(.blue)
+                            .font(.caption2)
+                            .offset(x: 10, y: -10)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(fbo.name)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+
+                        if fbo.isVerified {
+                            Text("Verified")
+                                .font(.caption2)
+                                .fontWeight(.medium)
+                                .foregroundColor(.blue)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.blue.opacity(0.15))
+                                .cornerRadius(4)
+                        }
+                    }
+
+                    HStack(spacing: 12) {
+                        if let phone = fbo.phoneNumber, !phone.isEmpty {
+                            Label(phone, systemImage: "phone.fill")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        if let unicom = fbo.unicomFrequency, !unicom.isEmpty {
+                            Label(unicom, systemImage: "antenna.radiowaves.left.and.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    // Amenities summary
+                    let amenities = fbo.amenitiesSummary
+                    if !amenities.isEmpty {
+                        Text(amenities)
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.gray)
+                    .font(.caption)
+            }
+            .padding(.vertical, 4)
+        }
+    }
+}
+
+// Extension to get amenities summary
+extension CrowdsourcedFBO {
+    var amenitiesSummary: String {
+        var items: [String] = []
+        if hasCrewCars { items.append("Crew Cars") }
+        if hasCrewLounge { items.append("Lounge") }
+        if hasCatering { items.append("Catering") }
+        if hasMaintenance { items.append("Mx") }
+        if hasHangars { items.append("Hangars") }
+        if hasDeice { items.append("Deice") }
+        return items.joined(separator: " • ")
     }
 }
 
@@ -1023,18 +1240,9 @@ struct FBOIcon: View {
     let activeTrip: Trip?
     let isExpanded: Bool
     let onTap: () -> Void
-    @ObservedObject private var airportDB = AirportDatabaseManager.shared
 
-    private var hasFBOData: Bool {
-        guard let trip = activeTrip,
-              let lastLeg = trip.legs.last,
-              !lastLeg.arrival.isEmpty else {
-            return false
-        }
-        // Check crowdsourced FBOs first, then fall back to preferred FBOs
-        let crowdsourcedFBOs = airportDB.getFBOs(for: lastLeg.arrival)
-        return !crowdsourcedFBOs.isEmpty || airportDB.getPreferredFBO(for: lastLeg.arrival) != nil
-    }
+    @State private var hasFBOData = false
+    private let airportDB = AirportDatabaseManager.shared
 
     var body: some View {
         Button(action: onTap) {
@@ -1042,6 +1250,24 @@ struct FBOIcon: View {
                 .font(.system(size: 18))
                 .foregroundColor(isExpanded ? LogbookTheme.accentGreen : (hasFBOData ? LogbookTheme.accentGreen : .gray.opacity(0.6)))
         }
+        .onAppear {
+            checkFBOData()
+        }
+        .onChange(of: activeTrip?.legs.last?.arrival) { _, _ in
+            checkFBOData()
+        }
+    }
+
+    private func checkFBOData() {
+        guard let trip = activeTrip,
+              let lastLeg = trip.legs.last,
+              !lastLeg.arrival.isEmpty else {
+            hasFBOData = false
+            return
+        }
+        // Check crowdsourced FBOs first, then fall back to preferred FBOs
+        let crowdsourcedFBOs = airportDB.getFBOs(for: lastLeg.arrival)
+        hasFBOData = !crowdsourcedFBOs.isEmpty || airportDB.getPreferredFBO(for: lastLeg.arrival) != nil
     }
 }
 

@@ -549,7 +549,7 @@ class CloudKitManager: ObservableObject {
             trackRecord["trackData"] = asset
             
             // Upload to iCloud
-            let savedRecord = try await privateDB.save(trackRecord)
+            _ = try await privateDB.save(trackRecord)
             print("✅ Flight track uploaded: \(legId.uuidString) (\(trackData.count) bytes)")
             
             // Cleanup temp file

@@ -6,6 +6,111 @@
 import SwiftUI
 import Foundation
 
+// MARK: - Route Display with Flow Delay Indicator
+struct RouteDisplayWithFlowStatus: View {
+    let departure: String
+    let arrival: String
+    let textColor: Color
+    let iconColor: Color?
+    let showIcon: Bool
+
+    @State private var arrivalHasDelay = false
+    @State private var arrivalFlowStatus: AirportFlowStatus?
+
+    init(departure: String, arrival: String, textColor: Color, iconColor: Color? = nil, showIcon: Bool = false) {
+        self.departure = departure
+        self.arrival = arrival
+        self.textColor = textColor
+        self.iconColor = iconColor
+        self.showIcon = showIcon
+    }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if showIcon, let iconColor = iconColor {
+                Image(systemName: "airplane")
+                    .font(.caption)
+                    .foregroundColor(iconColor)
+            }
+
+            Text(departure)
+                .font(.subheadline.bold())
+                .foregroundColor(textColor)
+
+            Text("→")
+                .font(.subheadline.bold())
+                .foregroundColor(textColor.opacity(0.7))
+
+            // Arrival with flow delay indicator
+            HStack(spacing: 3) {
+                Text(arrival)
+                    .font(.subheadline.bold())
+                    .foregroundColor(arrivalHasDelay ? delayColor : textColor)
+
+                if arrivalHasDelay {
+                    flowDelayBadge
+                }
+            }
+        }
+        .task {
+            await checkFlowStatus()
+        }
+    }
+
+    private var delayColor: Color {
+        guard let status = arrivalFlowStatus else { return textColor }
+        if status.closure != nil { return .purple }
+        if status.groundStop != nil { return .red }
+        if status.groundDelayProgram != nil { return .orange }
+        return textColor
+    }
+
+    @ViewBuilder
+    private var flowDelayBadge: some View {
+        if let status = arrivalFlowStatus {
+            if status.closure != nil {
+                // Airport closed
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.purple)
+            } else if status.groundStop != nil {
+                // Ground stop
+                Image(systemName: "stop.circle.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.red)
+            } else if let gdp = status.groundDelayProgram {
+                // GDP - show delay time
+                HStack(spacing: 2) {
+                    Image(systemName: "clock.badge.exclamationmark.fill")
+                        .font(.system(size: 9))
+                    if let mins = gdp.averageMinutes {
+                        Text("\(mins)m")
+                            .font(.system(size: 9, weight: .bold))
+                    }
+                }
+                .foregroundColor(.orange)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(Color.orange.opacity(0.2))
+                .cornerRadius(4)
+            }
+        }
+    }
+
+    private func checkFlowStatus() async {
+        do {
+            let status = try await NASStatusService.shared.getAirportStatus(for: arrival)
+            await MainActor.run {
+                arrivalFlowStatus = status
+                arrivalHasDelay = status.hasAnyDelay
+                print("✈️ Flow check for \(arrival): hasDelay=\(status.hasAnyDelay), GDP=\(status.groundDelayProgram?.averageDelay ?? "none")")
+            }
+        } catch {
+            print("⚠️ Flow check failed for \(arrival): \(error)")
+        }
+    }
+}
+
 // MARK: - Time Picker Configuration
 struct TimePickerConfig {
     let type: String
@@ -30,6 +135,10 @@ struct ActiveTripBanner: View {
     @State private var showingEndTripConfirmation = false
     @State private var showingDocumentPicker = false
     @State private var activeTimePickerConfig: TimePickerConfig? = nil
+
+    // FlightAware data
+    @State private var flightAwareData: [String: FAFlightCache] = [:]
+    @State private var isLoadingFlightAware = false
 
     // Returns current time string in HHmm respecting Zulu/Local setting
     private func currentTimeString() -> String {
@@ -150,15 +259,143 @@ struct ActiveTripBanner: View {
         } message: {
             Text("Are you sure you want to end Trip #\(trip.tripNumber)?\n\nOnce ended, you cannot reactivate this trip. Make sure all flight legs and times are correct.")
         }
+        .onAppear {
+            loadFlightAwareData()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .flightAwareDataUpdated)) { notification in
+            if let tripId = notification.userInfo?["tripId"] as? String,
+               tripId == trip.id.uuidString,
+               let data = notification.userInfo?["flightData"] as? [String: FAFlightCache] {
+                flightAwareData = data
+            }
+        }
     }
-    
+
+    // MARK: - FlightAware Data Loading
+
+    private func loadFlightAwareData() {
+        guard FlightAwareRepository.shared.isReady,
+              airlineSettings.settings.enableFlightAwareTracking else {
+            return
+        }
+
+        let prefix = airlineSettings.settings.flightNumberPrefix
+        guard !prefix.isEmpty else { return }
+
+        isLoadingFlightAware = true
+
+        Task {
+            let results = await FlightAwareRepository.shared.lookupFlightsForTrip(trip, airlinePrefix: prefix)
+            await MainActor.run {
+                flightAwareData = results
+                isLoadingFlightAware = false
+            }
+        }
+    }
+
+    // MARK: - FlightAware Info View
+
+    private func flightAwareInfoView(_ data: FAFlightCache) -> some View {
+        VStack(spacing: 6) {
+            // Route string
+            if let route = data.route, !route.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
+                        .font(.caption)
+                        .foregroundColor(LogbookTheme.accentBlue)
+
+                    Text(route)
+                        .font(.caption.monospaced())
+                        .foregroundColor(.white.opacity(0.9))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+
+                    Spacer()
+                }
+            }
+
+            HStack(spacing: 12) {
+                // Gate info
+                if let gates = data.gateDisplay {
+                    HStack(spacing: 4) {
+                        Image(systemName: "door.left.hand.open")
+                            .font(.caption2)
+                            .foregroundColor(LogbookTheme.accentGreen)
+                        Text(gates)
+                            .font(.caption.bold())
+                            .foregroundColor(.white)
+                    }
+                }
+
+                // ETA
+                if let eta = data.etaDisplay {
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                            .font(.caption2)
+                            .foregroundColor(LogbookTheme.accentOrange)
+                        Text("ETA: \(eta)")
+                            .font(.caption.bold())
+                            .foregroundColor(.white)
+
+                        // Time remaining
+                        if let remaining = data.timeToArrival {
+                            let hours = Int(remaining / 3600)
+                            let mins = Int((remaining.truncatingRemainder(dividingBy: 3600)) / 60)
+                            Text("(\(hours)h \(mins)m)")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                    }
+                }
+
+                Spacer()
+
+                // Status badge
+                if let status = data.status {
+                    Text(status)
+                        .font(.caption2.bold())
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(statusColor(for: status).opacity(0.3))
+                        .foregroundColor(statusColor(for: status))
+                        .cornerRadius(4)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(LogbookTheme.navyLight.opacity(0.5))
+    }
+
+    private func statusColor(for status: String) -> Color {
+        switch status.lowercased() {
+        case "scheduled": return .blue
+        case "en route", "in flight", "active": return LogbookTheme.accentGreen
+        case "landed": return .cyan
+        case "arrived": return LogbookTheme.accentGreen
+        case "delayed": return .orange
+        case "cancelled": return .red
+        case "diverted": return .purple
+        default: return .gray
+        }
+    }
+
     // MARK: - Main Banner Content
     private var mainBannerContent: some View {
         ScrollView {
             VStack(spacing: 0) {
                 // Header
                 headerView
-                
+
+                // FlightAware Route/ETA Info (if available)
+                if let currentLegIdx = currentLegIndex ?? (tripNeedsActivation ? 0 : nil),
+                   currentLegIdx < trip.legs.count {
+                    let currentLeg = trip.legs[currentLegIdx]
+                    if let faData = flightAwareData[currentLeg.id.uuidString] {
+                        flightAwareInfoView(faData)
+                    }
+                }
+
                 // Column Headers
                 columnHeadersView
                 
@@ -415,16 +652,15 @@ struct ActiveTripBanner: View {
     private func currentLegView(leg: FlightLeg, index: Int) -> some View {
         VStack(spacing: 4) {
             HStack {
-                Label {
-                    Text("\(leg.departure) → \(leg.arrival)")
-                        .font(.subheadline.bold())
-                        .foregroundColor(LogbookTheme.accentBlue)
-                } icon: {
-                    Image(systemName: "airplane")
-                        .font(.caption)
-                        .foregroundColor(LogbookTheme.accentGreen)
-                }
-                
+                // Route display with flow delay indicator
+                RouteDisplayWithFlowStatus(
+                    departure: leg.departure,
+                    arrival: leg.arrival,
+                    textColor: LogbookTheme.accentBlue,
+                    iconColor: LogbookTheme.accentGreen,
+                    showIcon: true
+                )
+
                 // FlightAware share button (only if OUT time exists)
                 if !leg.outTime.isEmpty && !leg.flightNumber.isEmpty {
                     Button(action: {
@@ -587,18 +823,17 @@ struct ActiveTripBanner: View {
     private func planningLegView(leg: FlightLeg, index: Int) -> some View {
         VStack(spacing: 4) {
             HStack {
-                Label {
-                    Text("\(leg.departure) → \(leg.arrival)")
-                        .font(.subheadline.bold())
-                        .foregroundColor(LogbookTheme.accentOrange.opacity(0.8))
-                } icon: {
-                    Image(systemName: "airplane")
-                        .font(.caption)
-                        .foregroundColor(LogbookTheme.accentOrange)
-                }
-                
+                // Route display with flow delay indicator
+                RouteDisplayWithFlowStatus(
+                    departure: leg.departure,
+                    arrival: leg.arrival,
+                    textColor: LogbookTheme.accentOrange.opacity(0.8),
+                    iconColor: LogbookTheme.accentOrange,
+                    showIcon: true
+                )
+
                 Spacer()
-                
+
                 // Activate Trip button
                 Button(action: {
                     onActivateTrip?()
@@ -767,19 +1002,17 @@ struct ActiveTripBanner: View {
         VStack(spacing: 4) {
             // Route header with standby indicator
             HStack {
-                // Deadhead indicator if applicable
-                if leg.isDeadhead {
-                    Image(systemName: "airplane")
-                        .font(.caption)
-                        .foregroundColor(LogbookTheme.accentOrange)
-                }
-                
-                Text("\(leg.departure) → \(leg.arrival)")
-                    .font(.subheadline.bold())
-                    .foregroundColor(LogbookTheme.accentOrange.opacity(0.8))
-                
+                // Route display with flow delay indicator
+                RouteDisplayWithFlowStatus(
+                    departure: leg.departure,
+                    arrival: leg.arrival,
+                    textColor: LogbookTheme.accentOrange.opacity(0.8),
+                    iconColor: leg.isDeadhead ? LogbookTheme.accentOrange : nil,
+                    showIcon: leg.isDeadhead
+                )
+
                 Spacer()
-                
+
                 // Regular standby badge
                 Text("Standby")
                     .font(.caption2)

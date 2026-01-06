@@ -50,6 +50,13 @@ struct AirlineSettings: Codable {
     var generalEmail: String = ""      // ✅ ADDED - For general documents
     var autoSendReceipts: Bool = false // ✅ ADDED - Auto-send fuel receipts
     var hasCompletedInitialSetup: Bool = false
+
+    // MARK: - FlightAware Integration
+    var enableFlightAwareTracking: Bool = true      // Auto-fetch route/ETA for flights
+    var autoShareFlightNotifications: Bool = true   // Prompt to share flight when tracking starts
+    var fetchWeatherImagery: Bool = true            // Show weather images for route
+    var useNNumberTracking: Bool = false            // Track by N-number instead of flight number
+    var defaultNNumber: String = ""                 // Default N-number for tracking (e.g., "N12345")
     
     // FIXED: Simplified computed properties to avoid compiler timeout
     var defaultLogbookEmail: String {

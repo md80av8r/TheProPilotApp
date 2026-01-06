@@ -5,7 +5,7 @@ import MessageUI
 struct OrganizedLogbookView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject var store: SwiftDataLogBookStore
-    @State private var expandedSections: Set<String> = ["current", "today", "thisWeek"]
+    @State private var expandedSections: Set<String> = ["thisWeek"]  // This Week always starts expanded
     @State private var tripToDelete: Trip?
     @State private var showDeleteConfirmation = false
     @State private var tripToReactivate: Trip?
@@ -50,39 +50,16 @@ struct OrganizedLogbookView: View {
     // MARK: - Main List Content
     private var logbookListContent: some View {
             List {
-                // Current Duty Period
-                if let currentDutyTrips = getCurrentDutyTrips(), !currentDutyTrips.isEmpty {
-                    CollapsibleSection(
-                        id: "current",
-                        title: "CURRENT DUTY PERIOD",
-                        trips: currentDutyTrips,
-                        isExpanded: expandedSections.contains("current"),
-                        accentColor: .green,
+                // Active Trip - standalone at top (not collapsible)
+                if let activeTrip = getActiveTrip() {
+                    ActiveTripSection(
+                        trip: activeTrip,
                         store: store,
-                        onTripSelected: onTripSelected,
-                        onDeleteRequest: handleDeleteRequest,
-                        onReactivateRequest: handleReactivateRequest
-                    ) {
-                        toggleSection("current")
-                    }
+                        onTripSelected: onTripSelected
+                    )
                 }
-                
-                // Today
-                CollapsibleSection(
-                    id: "today",
-                    title: "TODAY",
-                    trips: getTripsForToday(),
-                    isExpanded: expandedSections.contains("today"),
-                    accentColor: LogbookTheme.accentBlue,
-                    store: store,
-                    onTripSelected: onTripSelected,
-                    onDeleteRequest: handleDeleteRequest,
-                    onReactivateRequest: handleReactivateRequest
-                ) {
-                    toggleSection("today")
-                }
-                
-                // This Week
+
+                // This Week (auto-expanded)
                 CollapsibleSection(
                     id: "thisWeek",
                     title: "THIS WEEK",
@@ -141,7 +118,22 @@ struct OrganizedLogbookView: View {
                 ) {
                     toggleSection("last90")
                 }
-                
+
+                // Last 6 Months
+                CollapsibleSection(
+                    id: "last6months",
+                    title: "LAST 6 MONTHS",
+                    trips: getTripsForLast6Months(),
+                    isExpanded: expandedSections.contains("last6months"),
+                    accentColor: LogbookTheme.accentGreen,
+                    store: store,
+                    onTripSelected: onTripSelected,
+                    onDeleteRequest: handleDeleteRequest,
+                    onReactivateRequest: handleReactivateRequest
+                ) {
+                    toggleSection("last6months")
+                }
+
                 // By Month (Previous months)
                 Section(header: SectionHeaderView(
                     title: "BY MONTH",
@@ -167,7 +159,24 @@ struct OrganizedLogbookView: View {
                     }
                 }
                 .listRowBackground(LogbookTheme.navy)
-                
+
+                // By Year (for previous years with trips)
+                ForEach(getYearsWithTrips(), id: \.self) { year in
+                    CollapsibleSection(
+                        id: "year\(year)",
+                        title: "\(year)",
+                        trips: getTripsForYear(year),
+                        isExpanded: expandedSections.contains("year\(year)"),
+                        accentColor: LogbookTheme.accentBlue,
+                        store: store,
+                        onTripSelected: onTripSelected,
+                        onDeleteRequest: handleDeleteRequest,
+                        onReactivateRequest: handleReactivateRequest
+                    ) {
+                        toggleSection("year\(year)")
+                    }
+                }
+
                 // All Trips
                 CollapsibleSection(
                     id: "all",
@@ -789,22 +798,64 @@ struct OrganizedLogbookView: View {
         let calendar = Calendar.current
         let currentMonth = calendar.component(.month, from: Date())
         let currentYear = calendar.component(.year, from: Date())
-        
+
+        // Find the earliest trip year
+        let earliestYear = store.trips.map { calendar.component(.year, from: $0.date) }.min() ?? currentYear
+
         var months: [String] = []
-        for i in 1...12 {
-            var components = DateComponents()
-            components.month = -i
-            if let date = calendar.date(byAdding: components, to: Date()) {
-                let month = calendar.component(.month, from: date)
-                let year = calendar.component(.year, from: date)
-                
-                if month != currentMonth || year != currentYear {
-                    let monthName = date.formatted(.dateTime.month(.wide).year())
-                    months.append(monthName)
-                }
-            }
+
+        // Go back from current month to beginning of earliest trip year
+        var date = Date()
+        while true {
+            guard let prevDate = calendar.date(byAdding: .month, value: -1, to: date) else { break }
+            date = prevDate
+
+            let month = calendar.component(.month, from: date)
+            let year = calendar.component(.year, from: date)
+
+            // Stop if we've gone past the earliest trip year
+            if year < earliestYear { break }
+
+            // Skip current month
+            if month == currentMonth && year == currentYear { continue }
+
+            let monthName = date.formatted(.dateTime.month(.wide).year())
+            months.append(monthName)
         }
+
         return months
+    }
+
+    private func getYearsWithTrips() -> [Int] {
+        let calendar = Calendar.current
+        let currentYear = calendar.component(.year, from: Date())
+
+        // Get all unique years from trips, excluding current year
+        let years = Set(store.trips.map { calendar.component(.year, from: $0.date) })
+            .filter { $0 < currentYear }
+            .sorted(by: >)  // Most recent first
+
+        return Array(years)
+    }
+
+    private func getTripsForYear(_ year: Int) -> [Trip] {
+        let calendar = Calendar.current
+        return store.trips.filter { trip in
+            calendar.component(.year, from: trip.date) == year
+        }.sorted(by: { $0.date > $1.date })
+    }
+
+    private func getTripsForLast6Months() -> [Trip] {
+        let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: Date()) ?? Date()
+        return store.trips.filter { $0.date >= sixMonthsAgo }.sorted(by: { $0.date > $1.date })
+    }
+
+    private func getActiveTrip() -> Trip? {
+        // Return the most recent active or planning trip
+        return store.trips
+            .filter { $0.status == .active || $0.status == .planning }
+            .sorted(by: { $0.date > $1.date })
+            .first
     }
     
     private func getTripsForMonth(_ monthYear: String) -> [Trip] {
@@ -826,6 +877,39 @@ struct OrganizedLogbookView: View {
     
     private func getCurrentMonthName() -> String {
         Date().formatted(.dateTime.month(.wide))
+    }
+}
+
+// MARK: - Active Trip Section
+struct ActiveTripSection: View {
+    let trip: Trip
+    let store: SwiftDataLogBookStore
+    var onTripSelected: ((Int) -> Void)?
+
+    var body: some View {
+        Section(header: Text("ACTIVE TRIP")
+            .font(.caption.bold())
+            .foregroundColor(LogbookTheme.accentBlue)
+        ) {
+            Button(action: {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                if let index = store.trips.firstIndex(where: { $0.id == trip.id }) {
+                    onTripSelected?(index)
+                }
+            }) {
+                ForeFlightLogbookRow(trip: trip, store: store)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .listRowBackground(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(LogbookTheme.accentBlue.opacity(0.05))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(LogbookTheme.accentBlue.opacity(0.15), lineWidth: 1)
+                    )
+            )
+        }
     }
 }
 

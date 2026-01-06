@@ -1415,6 +1415,7 @@ enum WeatherDisplayTab: String, CaseIterable, Identifiable {
     case mos = "MOS"
     case daily = "Daily"
     case winds = "Winds"
+    case images = "Images"
 
     var id: String { rawValue }
 }
@@ -1866,6 +1867,8 @@ struct WeatherBannerView: View {
                             dailyForecastView
                         case .winds:
                             windsAloftView
+                        case .images:
+                            weatherImagesView
                         }
 
                         // Route Weather Summary (if multiple airports)
@@ -3430,6 +3433,11 @@ struct WeatherBannerView: View {
         }
     }
 
+    // MARK: - Weather Images View
+    private var weatherImagesView: some View {
+        WeatherImagesTabView(routeAirports: routeAirports)
+    }
+
     // MARK: - Winds Aloft Row
     private func windsAloftRow(_ wind: WindsAloftData) -> some View {
         HStack(spacing: 0) {
@@ -4234,6 +4242,8 @@ struct WeatherDetailSheet: View {
                             dailyForecastView
                         case .winds:
                             windsAloftView
+                        case .images:
+                            weatherImagesView
                         }
                     }
                 }
@@ -5355,6 +5365,11 @@ struct WeatherDetailSheet: View {
         .padding(.bottom, 12)
     }
 
+    // MARK: - Weather Images View
+    private var weatherImagesView: some View {
+        WeatherImagesTabView(routeAirports: routeAirports)
+    }
+
     private func windsAloftRow(_ wind: WindsAloftData) -> some View {
         HStack {
             Text("\(wind.altitude / 1000)K")
@@ -6230,6 +6245,9 @@ struct WeatherDetailSheet: View {
             loadDailyForecast()
         case .winds:
             loadWindsAloft()
+        case .images:
+            // Images are loaded on-demand in the view
+            break
         }
     }
 
@@ -6612,3 +6630,189 @@ struct WeatherBannerView_Previews: PreviewProvider {
     }
 }
 #endif
+
+// MARK: - Weather Images Tab View
+struct WeatherImagesTabView: View {
+    let routeAirports: [String]
+
+    @State private var selectedImageType: Int = 0  // 0=Radar, 1=Satellite, 2=Infrared
+
+    private struct WeatherRegion: Identifiable {
+        let id = UUID()
+        let name: String
+        let radarURL: String
+        let satelliteURL: String
+        let infraredURL: String
+    }
+
+    private var allWeatherRegions: [WeatherRegion] {
+        [
+            WeatherRegion(
+                name: "CONUS",
+                radarURL: "https://radar.weather.gov/ridge/standard/CONUS-LARGE_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/CONUS/GEOCOLOR/1250x750.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/CONUS/13/1250x750.jpg"
+            ),
+            WeatherRegion(
+                name: "Northeast",
+                radarURL: "https://radar.weather.gov/ridge/standard/NORTHEAST_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/ne/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/ne/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Southeast",
+                radarURL: "https://radar.weather.gov/ridge/standard/SOUTHEAST_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Great Lakes",
+                radarURL: "https://radar.weather.gov/ridge/standard/CENTGRLAKES_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/cgl/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/cgl/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Upper Mississippi",
+                radarURL: "https://radar.weather.gov/ridge/standard/UPPERMISSVLY_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/umv/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/umv/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Southern Mississippi",
+                radarURL: "https://radar.weather.gov/ridge/standard/SOUTHMISSVLY_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/smv/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/smv/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Southern Plains",
+                radarURL: "https://radar.weather.gov/ridge/standard/SOUTHPLAINS_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/sp/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/sp/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Northern Rockies",
+                radarURL: "https://radar.weather.gov/ridge/standard/NORTHROCKIES_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/nr/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/nr/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Southern Rockies",
+                radarURL: "https://radar.weather.gov/ridge/standard/SOUTHROCKIES_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/sr/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/sr/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Pacific Northwest",
+                radarURL: "https://radar.weather.gov/ridge/standard/PACNORTHWEST_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/pnw/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/pnw/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Pacific Southwest",
+                radarURL: "https://radar.weather.gov/ridge/standard/PACSOUTHWEST_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/psw/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/psw/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Alaska",
+                radarURL: "https://radar.weather.gov/ridge/standard/ALASKA_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/ak/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/ak/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Hawaii",
+                radarURL: "https://radar.weather.gov/ridge/standard/HAWAII_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/hi/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/hi/13/1200x1200.jpg"
+            ),
+            WeatherRegion(
+                name: "Caribbean",
+                radarURL: "https://radar.weather.gov/ridge/standard/CARIB_0.gif",
+                satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/car/GEOCOLOR/1200x1200.jpg",
+                infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/car/13/1200x1200.jpg"
+            )
+        ]
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            // Image type selector
+            Picker("Image Type", selection: $selectedImageType) {
+                Text("Radar").tag(0)
+                Text("Satellite").tag(1)
+                Text("Infrared").tag(2)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+
+            // Swipeable regions
+            TabView {
+                ForEach(allWeatherRegions) { region in
+                    VStack(spacing: 8) {
+                        Text(region.name)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+
+                        let urlString: String = {
+                            switch selectedImageType {
+                            case 0: return region.radarURL
+                            case 1: return region.satelliteURL
+                            case 2: return region.infraredURL
+                            default: return region.radarURL
+                            }
+                        }()
+
+                        weatherImageContent(urlString: urlString)
+                    }
+                    .padding(.horizontal, 12)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .automatic))
+            .frame(minHeight: 350)
+
+            // Source attribution
+            Text("Data: NOAA GOES / NWS Radar")
+                .font(.caption2)
+                .foregroundColor(.gray.opacity(0.6))
+                .padding(.bottom, 8)
+        }
+    }
+
+    @ViewBuilder
+    private func weatherImageContent(urlString: String) -> some View {
+        if let url = URL(string: urlString) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .empty:
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                    .frame(height: 280)
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .cornerRadius(8)
+                case .failure:
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 4) {
+                            Image(systemName: "photo")
+                                .foregroundColor(.gray)
+                            Text("Failed to load")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                    }
+                    .frame(height: 150)
+                @unknown default:
+                    EmptyView()
+                }
+            }
+        }
+    }
+}

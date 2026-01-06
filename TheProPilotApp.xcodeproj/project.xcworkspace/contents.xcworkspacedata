@@ -5,9 +5,6 @@
       location = "self:">
    </FileRef>
    <FileRef
-      location = "group:ContainerMigrationWarning.swift">
-   </FileRef>
-   <FileRef
-      location = "group:CONTAINER_MIGRATION_WARNING.md">
+      location = "group:XCODE_WARNINGS_FIXES.md">
    </FileRef>
 </Workspace>

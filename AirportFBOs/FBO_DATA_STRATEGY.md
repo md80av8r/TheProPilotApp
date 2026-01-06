@@ -224,18 +224,57 @@ private let currentFBOCSVVersion = 3  // ← Increment this
 
 ---
 
-## 🔒 Data Quality & Moderation
+## 🔒 Data Protection & Quality
 
-### CSV Data (Verified)
+### CSV Data (Verified) - PROTECTED
 - ✅ Curated by you
 - ✅ Trusted source
 - ✅ Always marked `isVerified: true`
+- 🛡️ **Cannot be deleted by users**
+- 🔄 Restored on each CSV version update
+
+### Protection Rules
+
+| FBO Type | Can Edit | Can Delete | Badge |
+|----------|----------|------------|-------|
+| Verified (CSV) | ✅ Enhance only | ❌ Protected | 🔵 "Verified" |
+| User-Created | ✅ Full edit | ✅ Allowed | None |
+| Duplicate of Verified | ✅ Full edit | ✅ Cleanup allowed | 🟠 "DUPLICATE" |
+
+### Duplicate Prevention System
+
+**At Creation Time:**
+1. User tries to add FBO with existing name
+2. System detects duplicate using fuzzy matching:
+   - "Signature" matches "Signature Aviation"
+   - "Atlantic FBO" matches "Atlantic Aviation"
+3. If duplicate of **verified FBO**: User's data is **merged** into verified entry
+4. If duplicate of **user FBO**: Error shown, user must edit existing entry
+
+**At Display Time:**
+1. Duplicates are flagged with orange "DUPLICATE" badge
+2. Footer message: "Swipe left on duplicate entries to remove them"
+3. Swipe action shows "Delete Duplicate" button
+4. Verified FBOs have no swipe action (protected)
+
+### Deletion Protection Code
+```swift
+func deleteCrowdsourcedFBO(_ fbo: CrowdsourcedFBO) async throws {
+    // PROTECT verified FBOs
+    if fbo.isVerified {
+        throw NSError(domain: "FBOProtection", code: 1,
+            userInfo: [NSLocalizedDescriptionKey:
+                "This FBO is from the verified database and cannot be deleted."])
+    }
+    // Allow deletion of non-verified FBOs...
+}
+```
 
 ### CloudKit Data (Crowdsourced)
 - ⚠️ User-submitted (trust varies)
 - ⭐ Use ratings/review counts as quality signals
-- 🚩 Consider adding flagging system for bad data
-- 🔍 Review popular airports periodically
+- 🛡️ Cannot delete verified entries
+- 🔄 Merges with verified data intelligently
 
 ### Future Enhancements (Optional)
 1. **Admin Panel:** Review user submissions before publish
@@ -356,6 +395,31 @@ Track these metrics to understand data usage:
 
 ---
 
-**Last Updated:** 2026-01-03  
-**Current CSV Version:** 2  
+**Last Updated:** 2026-01-03
+**Current CSV Version:** 3
 **Total CSV FBOs:** 164 (82 airports)
+
+---
+
+## 🔧 Key Functions Reference
+
+### AirportDatabaseManager.swift
+
+| Function | Purpose |
+|----------|---------|
+| `loadFBOsFromCSV()` | Load verified FBOs from bundled CSV |
+| `saveCrowdsourcedFBO(_:)` | Save FBO locally first, then sync to CloudKit |
+| `deleteCrowdsourcedFBO(_:)` | Delete FBO (protected for verified) |
+| `findDuplicateFBO(name:airportCode:)` | Fuzzy match to detect duplicates |
+| `isDuplicateOfVerified(_:)` | Check if FBO duplicates a verified entry |
+| `canDeleteFBO(_:)` | Returns false for verified FBOs |
+| `shouldOfferDuplicateDeletion(_:)` | Returns true for non-verified duplicates |
+| `mergeFBOData(local:cloud:)` | Smart merge algorithm |
+
+### FBOBannerView.swift
+
+| Component | Purpose |
+|-----------|---------|
+| `PreferredFBOEditorSheet` | FBO chooser (list + add new) |
+| `FBOListRow` | Displays FBO with verified/duplicate badges |
+| `CrowdsourcedFBOEditorSheet` | Edit/add FBO form |
