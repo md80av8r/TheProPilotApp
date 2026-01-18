@@ -1,0 +1,7 @@
+//
+//  Schema.de
+//  TheProPilotApp
+//
+//  Created by Jeffrey Kadans on 1/17/26.
+//
+
