@@ -206,9 +206,9 @@ struct ForeFlightLogbookRow: View {
                 .buttonStyle(PlainButtonStyle())
             }
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 8)
-        .background(LogbookTheme.cardBackground)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(LogbookTheme.navy.opacity(0.95))  // Match ActiveTripBanner background
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
@@ -225,14 +225,6 @@ struct ForeFlightLogbookRow: View {
                 )
         )
         .shadow(color: LogbookTheme.accentBlue.opacity(0.15), radius: 6, x: 0, y: 3)
-        .overlay(
-            // Left accent bar for deadhead flights
-            RoundedRectangle(cornerRadius: 4)
-                .fill(trip.tripType == .deadhead ? LogbookTheme.accentOrange : Color.clear)
-                .frame(width: 5)
-                .padding(.leading, 3),
-            alignment: .leading
-        )
         .sheet(isPresented: $showingLimitsDetail) {
             FAR117DetailView(status: far117Status, tripDate: trip.date)
         }
@@ -444,9 +436,15 @@ func calculateFAR117Limits(for date: Date, store: SwiftDataLogBookStore) -> FAR1
 private func parseTimeWithDate(timeString: String, date: Date) -> Date? {
     let trimmedTime = timeString.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmedTime.isEmpty else { return nil }
-    
+
+    // Skip known header/label strings that aren't actual times
+    let labelStrings = ["ATD", "ATA", "STD", "STA", "OUT", "IN", "OFF", "ON", "DEP", "ARR", "TIME"]
+    if labelStrings.contains(trimmedTime.uppercased()) {
+        return nil
+    }
+
     let calendar = Calendar.current
-    
+
     // Handle multiple time formats
     let cleanedTime = trimmedTime
         .replacingOccurrences(of: ":", with: "")
@@ -1348,20 +1346,16 @@ struct ConfigurableLimitsStatusView: View {
     }
 
     var body: some View {
-        // Don't show if tracking disabled or Part 91
-        if !settingsStore.trackingEnabled || settingsStore.configuration.operationType == .part91 {
-            EmptyView()
-        } else {
-            mainContent
-                .onReceive(timer) { _ in
-                    currentTime = Date()
-                }
-        }
+        // Always show the card - let users expand/collapse regardless of tracking state
+        mainContent
+            .onReceive(timer) { _ in
+                currentTime = Date()
+            }
     }
     
     private var mainContent: some View {
         VStack(spacing: 0) {
-            // Header
+            // Header - tap to expand/collapse the view
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isExpanded.toggle()
@@ -1370,12 +1364,14 @@ struct ConfigurableLimitsStatusView: View {
                 headerContent
             }
             .buttonStyle(PlainButtonStyle())
-            
+
             // Expanded view
             if isExpanded {
                 expandedContent
             }
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
         .background(Color.black.opacity(0.3))
         .cornerRadius(12)
         .overlay(
@@ -1404,11 +1400,11 @@ struct ConfigurableLimitsStatusView: View {
         HStack {
             Image(systemName: "gauge.high")
                 .foregroundColor(statusColor)
-            
+
             Text("Flight Time Limits")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             // Operation type badge
             Text(settingsStore.configuration.operationType.rawValue)
                 .font(.caption2)
@@ -1416,9 +1412,9 @@ struct ConfigurableLimitsStatusView: View {
                 .padding(.vertical, 2)
                 .background(LogbookTheme.accentBlue.opacity(0.3))
                 .cornerRadius(4)
-            
+
             Spacer()
-            
+
             // Settings button
             Button {
                 showingSettings = true
@@ -1428,15 +1424,22 @@ struct ConfigurableLimitsStatusView: View {
                     .foregroundColor(.gray)
             }
             .padding(.trailing, 8)
-            
+
             if !isExpanded {
                 compactStatusView
             }
-            
-            Image(systemName: "chevron.down")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.gray)
-                .rotationEffect(.degrees(isExpanded ? 0 : -90))
+
+            // Chevron button - toggles expand/collapse
+            Button {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.gray)
+                    .rotationEffect(.degrees(isExpanded ? 0 : -90))
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)

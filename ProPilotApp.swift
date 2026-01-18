@@ -325,22 +325,19 @@ struct ProPilotApp: App {
     // MARK: - Watch Connectivity Initialization
     private func initializeWatchConnectivity() {
         print("⌚ Initializing watch connectivity...")
-        
+
         let watchConnectivity = PhoneWatchConnectivity.shared
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            let opsManager = OPSCallingManager()
-            let locationManager = PilotLocationManager()
-            
-            watchConnectivity.setReferences(
-                logBookStore: self.logbookStore,
-                opsManager: opsManager,
-                activityManager: self.activityManager,
-                locationManager: locationManager
-            )
-            
-            print("⌚ Watch connectivity references set")
-        }
+
+        // ✅ Use the SAME instances that are created in ProPilotApp, not new ones!
+        watchConnectivity.setReferences(
+            logBookStore: self.logbookStore,
+            opsManager: self.opsCallingManager,
+            activityManager: self.activityManager,
+            locationManager: self.pilotLocationManager,
+            scheduleStore: self.scheduleStore
+        )
+
+        print("⌚ Watch connectivity references set")
     }
     
     // MARK: - Data Recovery Check

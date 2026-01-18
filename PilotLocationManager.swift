@@ -8,7 +8,10 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
     @Published var currentAirport: String?
     @Published var isLocationAuthorized = false
     @Published var locationStatus = "Initializing..."
-    
+
+    // User-configurable proximity radius setting
+    @AppStorage("airportProximityRadius") private var proximityRadius: Double = 1000
+
     private let locationManager = CLLocationManager()
     private let airportDB = AirportDatabaseManager.shared
     private var monitoredGeofences: Set<String> = []
@@ -45,12 +48,20 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
         super.init()
         setupLocationManager()
         requestLocationPermission()
-        
+
         // ═══════════════════════════════════════════════════════════════════════
         // 🛡️ NEW: Setup spoofing monitor listeners
         // ═══════════════════════════════════════════════════════════════════════
         setupSpoofingMonitorListeners()
         // ═══════════════════════════════════════════════════════════════════════
+
+        // Listen for proximity radius changes from settings
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleProximityRadiusChange),
+            name: UserDefaults.didChangeNotification,
+            object: nil
+        )
     }
     
     // MARK: - Setup
@@ -477,14 +488,20 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
     
     // MARK: - Helper Functions
     private func checkCurrentAirport(_ location: CLLocation) {
-        let nearbyAirports = airportDB.getNearbyAirports(to: location, within: 2, limit: 1)
-        
-        if let closest = nearbyAirports.first, closest.distance < 1000 {
+        // Convert proximity radius from meters to kilometers for the search
+        let searchRadiusKm = proximityRadius / 1000.0
+        let nearbyAirports = airportDB.getNearbyAirports(to: location, within: searchRadiusKm, limit: 1)
+
+        if let closest = nearbyAirports.first, closest.distance < proximityRadius {
             if currentAirport != closest.icao {
                 currentAirport = closest.icao
-                print("🛩️ Current airport updated to: \(closest.icao)")
+                print("🛩️ Current airport updated to: \(closest.icao) at \(String(format: "%.1f", closest.distance/1852))nm (radius: \(String(format: "%.1f", proximityRadius/1852))nm)")
                 updateDebugInfo("Current airport: \(closest.icao)")
             }
+        } else if currentAirport != nil {
+            // Clear current airport if we've moved outside the radius
+            currentAirport = nil
+            print("🛩️ Moved outside proximity radius - cleared current airport")
         }
     }
     
@@ -513,7 +530,16 @@ class PilotLocationManager: NSObject, ObservableObject, CLLocationManagerDelegat
         case .unknown: return "UNKNOWN"
         }
     }
-    
+
+    // MARK: - Proximity Radius Change Handler
+    @objc private func handleProximityRadiusChange() {
+        // Re-check current airport with new radius when settings change
+        if let location = currentLocation {
+            print("🛩️ Proximity radius changed to \(String(format: "%.1f", proximityRadius/1852))nm - rechecking airport")
+            checkCurrentAirport(location)
+        }
+    }
+
     // MARK: - Public Interface
     func refreshGeofences() {
         print("🛩️ Manual geofence refresh requested")

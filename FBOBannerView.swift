@@ -97,6 +97,20 @@ struct FBOBannerView: View {
         }
         .background(LogbookTheme.navyLight)
         .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            LogbookTheme.accentGreen.opacity(0.6),
+                            LogbookTheme.accentBlue.opacity(0.6)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2
+                )
+        )
         .sheet(isPresented: $showingFBOEditor) {
             if let airport = selectedAirport {
                 PreferredFBOEditorSheet(airport: airport)

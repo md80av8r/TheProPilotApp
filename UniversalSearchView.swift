@@ -299,7 +299,18 @@ class AppSearchIndex: ObservableObject {
                 icon: "building.2.fill",
                 iconColor: LogbookTheme.accentGreen,
                 category: .setting,
-                destination: .tab("airlineConfig")
+                destination: .settingsSection("settings", "airlineSetup")
+            ),
+
+            // Home Base Configuration
+            SearchableItem(
+                title: "Home Base Configuration",
+                subtitle: "Set your primary airport hub",
+                keywords: ["home", "base", "hub", "primary", "airport", "domicile"],
+                icon: "house.circle.fill",
+                iconColor: LogbookTheme.accentGreen,
+                category: .setting,
+                destination: .settingsSection("settings", "homeBase")
             ),
 
             // Aircraft Database
@@ -321,7 +332,7 @@ class AppSearchIndex: ObservableObject {
                 icon: "clock.arrow.2.circlepath",
                 iconColor: LogbookTheme.accentOrange,
                 category: .setting,
-                destination: .tab("autoTimeLogging")
+                destination: .settingsSection("settings", "autoTime")
             ),
 
             // GPS Track Recording
@@ -343,7 +354,29 @@ class AppSearchIndex: ObservableObject {
                 icon: "location.circle",
                 iconColor: LogbookTheme.accentGreen,
                 category: .setting,
-                destination: .tab("settings")
+                destination: .settingsSection("settings", "proximity")
+            ),
+
+            // Trip Counting
+            SearchableItem(
+                title: "Trip Counting Settings",
+                subtitle: "Configure how trips are counted",
+                keywords: ["trip", "count", "counting", "method", "statistics", "deadhead", "trip pay", "usa jet"],
+                icon: "number.circle",
+                iconColor: LogbookTheme.accentOrange,
+                category: .setting,
+                destination: .settingsSection("settings", "tripCounting")
+            ),
+
+            // Mileage Tracking
+            SearchableItem(
+                title: "Mileage Tracking",
+                subtitle: "Track distance and mileage pay",
+                keywords: ["mileage", "distance", "pay", "nautical miles", "road", "miles", "nm", "dollar per mile"],
+                icon: "road.lanes",
+                iconColor: LogbookTheme.accentOrange,
+                category: .setting,
+                destination: .settingsSection("settings", "mileage")
             ),
 
             // Scanner & Email
@@ -354,7 +387,7 @@ class AppSearchIndex: ObservableObject {
                 icon: "envelope.fill",
                 iconColor: LogbookTheme.accentOrange,
                 category: .setting,
-                destination: .tab("scannerEmailSettings")
+                destination: .settingsSection("settings", "scannerEmail")
             ),
 
             // Backup & Restore
@@ -576,6 +609,12 @@ struct UniversalSearchView: View {
     @FocusState private var isSearchFocused: Bool
 
     let onNavigate: (String) -> Void
+    let onOpenSettingsSheet: ((String) -> Void)?  // Optional callback for opening settings sheets
+
+    init(onNavigate: @escaping (String) -> Void, onOpenSettingsSheet: ((String) -> Void)? = nil) {
+        self.onNavigate = onNavigate
+        self.onOpenSettingsSheet = onOpenSettingsSheet
+    }
 
     var body: some View {
         NavigationView {
@@ -772,10 +811,15 @@ struct UniversalSearchView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 onNavigate(tabId)
             }
-        case .settingsSection(let tabId, _):
+        case .settingsSection(let tabId, let sheetId):
             dismiss()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                // First navigate to the tab
                 onNavigate(tabId)
+                // Then trigger the sheet to open
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    onOpenSettingsSheet?(sheetId)
+                }
             }
         case .url(let urlString):
             if let url = URL(string: urlString) {

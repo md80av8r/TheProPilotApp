@@ -914,10 +914,17 @@ extension WatchConnectivityManager: WCSessionDelegate {
                 self.isPhoneReachable = session.isReachable
                 self.connectionState = session.isReachable ? .connected : .disconnected
                 self.syncStatus = session.isReachable ? .connected : .disconnected
-                
+
+                // ✅ CRITICAL: Check ApplicationContext for any pending updates (like clearTrip)
+                let context = session.applicationContext
+                if !context.isEmpty {
+                    print("📥 Processing pending ApplicationContext on activation")
+                    self.session(session, didReceiveApplicationContext: context)
+                }
+
                 // Request initial flight data
                 self.requestFlightUpdate()
-                
+
                 // Send any pending messages
                 self.sendPendingMessages()
                 
@@ -945,8 +952,17 @@ extension WatchConnectivityManager: WCSessionDelegate {
             self.isPhoneReachable = session.isReachable
             self.connectionState = session.isReachable ? .connected : .disconnected
             self.syncStatus = session.isReachable ? .connected : .disconnected
-            
+
             print("📡 Watch reachability changed: \(session.isReachable ? "✅ Connected" : "❌ Disconnected")")
+
+            // ✅ When watch becomes reachable, check for pending ApplicationContext updates
+            if session.isReachable {
+                let context = session.applicationContext
+                if !context.isEmpty {
+                    print("📥 Processing pending ApplicationContext on reachability change")
+                    self.session(session, didReceiveApplicationContext: context)
+                }
+            }
             
             if session.isReachable {
                 // Connection restored - send pending messages

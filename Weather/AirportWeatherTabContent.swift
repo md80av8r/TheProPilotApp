@@ -609,48 +609,196 @@ struct AirportWeatherTabContent: View {
 
     // MARK: - Weather Images View
     @State private var selectedImageTab: Int = 0
+    @State private var fullScreenImageURL: String? = nil
+    @State private var fullScreenImageTitle: String = ""
 
     private var weatherImagesView: some View {
         VStack(spacing: 8) {
-            // Image type selector
-            Picker("Image Type", selection: $selectedImageTab) {
-                Text("Radar").tag(0)
-                Text("Satellite").tag(1)
-                Text("Infrared").tag(2)
+            // Image type selector - now with 5 options
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(0..<5, id: \.self) { index in
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedImageTab = index
+                            }
+                        } label: {
+                            Text(imageTabName(index))
+                                .font(.system(size: 12, weight: selectedImageTab == index ? .bold : .medium))
+                                .foregroundColor(selectedImageTab == index ? .white : .gray)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(selectedImageTab == index ? LogbookTheme.accentGreen.opacity(0.3) : Color.clear)
+                                .cornerRadius(8)
+                        }
+                    }
+                }
+                .padding(.horizontal, 8)
             }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 12)
             .padding(.top, 8)
 
-            // Swipeable regions
-            TabView {
-                ForEach(allWeatherRegions, id: \.name) { region in
-                    VStack(spacing: 8) {
-                        Text(region.name)
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+            // Content based on selected tab
+            if selectedImageTab == 4 {
+                // Winds Aloft Charts - different layout
+                windsAloftChartsView
+            } else {
+                // Swipeable regions for radar/satellite/infrared
+                TabView {
+                    ForEach(regionsForCurrentTab, id: \.name) { region in
+                        VStack(spacing: 8) {
+                            Text(region.name)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
 
-                        let urlString: String = {
-                            switch selectedImageTab {
-                            case 0: return region.radarURL
-                            case 1: return region.satelliteURL
-                            case 2: return region.infraredURL
-                            default: return region.radarURL
-                            }
-                        }()
+                            let urlString: String = {
+                                switch selectedImageTab {
+                                case 0: return region.radarStormURL ?? region.radarURL  // Color radar
+                                case 1: return region.radarURL       // Base reflectivity
+                                case 2: return region.satelliteURL   // Satellite
+                                case 3: return region.infraredURL    // Infrared
+                                default: return region.radarURL
+                                }
+                            }()
 
-                        weatherImageContent(urlString: urlString)
+                            let imageTitle = "\(region.name) - \(imageTabName(selectedImageTab))"
+                            weatherImageContent(urlString: urlString, title: imageTitle)
+                        }
+                        .padding(.horizontal, 12)
                     }
-                    .padding(.horizontal, 12)
                 }
+                .tabViewStyle(.page(indexDisplayMode: .automatic))
+                .frame(minHeight: 350)
             }
-            .tabViewStyle(.page(indexDisplayMode: .automatic))
-            .frame(minHeight: 350)
         }
         .padding(.bottom, 12)
+        .fullScreenCover(isPresented: Binding(
+            get: { fullScreenImageURL != nil },
+            set: { if !$0 { fullScreenImageURL = nil } }
+        )) {
+            FullScreenImageViewer(
+                urlString: fullScreenImageURL ?? "",
+                title: fullScreenImageTitle,
+                onDismiss: { fullScreenImageURL = nil }
+            )
+        }
     }
 
-    private func weatherImageContent(urlString: String) -> some View {
+    private func imageTabName(_ index: Int) -> String {
+        switch index {
+        case 0: return "Radar"
+        case 1: return "Base Refl"
+        case 2: return "Satellite"
+        case 3: return "Infrared"
+        case 4: return "Winds Aloft"
+        default: return ""
+        }
+    }
+
+    private var regionsForCurrentTab: [WeatherRegion] {
+        allWeatherRegions
+    }
+
+    // MARK: - Winds Aloft Charts View
+    @State private var selectedWindsAltitude: Int = 0
+
+    private var windsAloftChartsView: some View {
+        VStack(spacing: 8) {
+            // Altitude selector
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(windsAloftAltitudes.enumerated()), id: \.offset) { index, alt in
+                        Button {
+                            selectedWindsAltitude = index
+                        } label: {
+                            Text(alt.label)
+                                .font(.system(size: 11, weight: selectedWindsAltitude == index ? .bold : .medium))
+                                .foregroundColor(selectedWindsAltitude == index ? .white : .gray)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(selectedWindsAltitude == index ? Color.cyan.opacity(0.3) : Color.black.opacity(0.3))
+                                .cornerRadius(6)
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
+            }
+
+            // Winds aloft chart image
+            if selectedWindsAltitude < windsAloftAltitudes.count {
+                let altInfo = windsAloftAltitudes[selectedWindsAltitude]
+
+                VStack(spacing: 4) {
+                    Text("Winds at \(altInfo.label)")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Text("Valid for 12-hour forecast period")
+                        .font(.system(size: 10))
+                        .foregroundColor(.gray)
+                }
+
+                weatherImageContent(urlString: altInfo.url, title: "Winds Aloft - \(altInfo.label)")
+                    .frame(minHeight: 300)
+            }
+
+            // Legend
+            windsAloftLegend
+        }
+        .frame(minHeight: 400)
+    }
+
+    private var windsAloftLegend: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Wind Barbs Legend")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.gray)
+
+            HStack(spacing: 16) {
+                legendItem(text: "Short line = 5kt")
+                legendItem(text: "Long line = 10kt")
+                legendItem(text: "Flag = 50kt")
+            }
+            .font(.system(size: 10))
+            .foregroundColor(.gray.opacity(0.8))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.black.opacity(0.2))
+        .cornerRadius(8)
+        .padding(.horizontal, 12)
+    }
+
+    private func legendItem(text: String) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(Color.cyan.opacity(0.5))
+                .frame(width: 4, height: 4)
+            Text(text)
+        }
+    }
+
+    private struct WindsAloftAltitude {
+        let label: String
+        let url: String
+    }
+
+    private var windsAloftAltitudes: [WindsAloftAltitude] {
+        // Aviation Weather Center Winds Aloft charts
+        // These show forecast winds at various flight levels
+        [
+            WindsAloftAltitude(label: "3,000'", url: "https://aviationweather.gov/data/products/progs/F006_wnd_lt_000.gif"),
+            WindsAloftAltitude(label: "6,000'", url: "https://aviationweather.gov/data/products/progs/F006_wnd_lt_060.gif"),
+            WindsAloftAltitude(label: "9,000'", url: "https://aviationweather.gov/data/products/progs/F006_wnd_lt_090.gif"),
+            WindsAloftAltitude(label: "12,000'", url: "https://aviationweather.gov/data/products/progs/F006_wnd_lt_120.gif"),
+            WindsAloftAltitude(label: "18,000'", url: "https://aviationweather.gov/data/products/progs/F006_wnd_lt_180.gif"),
+            WindsAloftAltitude(label: "24,000'", url: "https://aviationweather.gov/data/products/progs/F006_wnd_lt_240.gif"),
+            WindsAloftAltitude(label: "30,000'", url: "https://aviationweather.gov/data/products/progs/F006_wnd_lt_300.gif"),
+            WindsAloftAltitude(label: "34,000'", url: "https://aviationweather.gov/data/products/progs/F006_wnd_lt_340.gif"),
+            WindsAloftAltitude(label: "39,000'", url: "https://aviationweather.gov/data/products/progs/F006_wnd_lt_390.gif"),
+        ]
+    }
+
+    private func weatherImageContent(urlString: String, title: String = "") -> some View {
         Group {
             if let url = URL(string: urlString) {
                 AsyncImage(url: url) { phase in
@@ -667,6 +815,19 @@ struct AirportWeatherTabContent: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .cornerRadius(8)
+                            .onTapGesture {
+                                fullScreenImageURL = urlString
+                                fullScreenImageTitle = title
+                            }
+                            .overlay(alignment: .bottomTrailing) {
+                                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .padding(6)
+                                    .background(Color.black.opacity(0.5))
+                                    .cornerRadius(6)
+                                    .padding(8)
+                            }
                     case .failure:
                         HStack {
                             Spacer()
@@ -692,93 +853,110 @@ struct AirportWeatherTabContent: View {
 
     private struct WeatherRegion {
         let name: String
-        let radarURL: String
+        let radarStormURL: String?  // Colorized NEXRAD radar with precipitation intensity
+        let radarURL: String        // Base reflectivity (grayscale)
         let satelliteURL: String
         let infraredURL: String
     }
 
     private var allWeatherRegions: [WeatherRegion] {
+        // Note: radarStormURL uses Aviation Weather Center's NEXRAD composite which shows
+        // colorized precipitation intensity (green=light, yellow=moderate, red=heavy, purple=extreme)
         [
             WeatherRegion(
                 name: "CONUS",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_conus.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/CONUS-LARGE_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/CONUS/GEOCOLOR/1250x750.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/CONUS/13/1250x750.jpg"
             ),
             WeatherRegion(
                 name: "Northeast",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_ne.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/NORTHEAST_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/ne/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/ne/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Southeast",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_se.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/SOUTHEAST_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/se/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Great Lakes",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_cgl.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/CENTGRLAKES_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/cgl/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/cgl/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Upper Mississippi",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_umv.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/UPPERMISSVLY_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/umv/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/umv/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Southern Mississippi",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_smv.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/SOUTHMISSVLY_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/smv/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/smv/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Southern Plains",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_sp.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/SOUTHPLAINS_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/sp/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/sp/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Northern Rockies",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_nr.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/NORTHROCKIES_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/nr/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/nr/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Southern Rockies",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_sr.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/SOUTHROCKIES_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/sr/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/sr/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Pacific Northwest",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_pnw.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/PACNORTHWEST_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/pnw/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/pnw/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Pacific Southwest",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_psw.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/PACSOUTHWEST_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/psw/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/psw/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Alaska",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_ak.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/ALASKA_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/ak/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/ak/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Hawaii",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_hi.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/HAWAII_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/hi/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES18/ABI/SECTOR/hi/13/1200x1200.jpg"
             ),
             WeatherRegion(
                 name: "Caribbean",
+                radarStormURL: "https://aviationweather.gov/data/products/radar/rad_rala_car.gif",
                 radarURL: "https://radar.weather.gov/ridge/standard/CARIB_0.gif",
                 satelliteURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/car/GEOCOLOR/1200x1200.jpg",
                 infraredURL: "https://cdn.star.nesdis.noaa.gov/GOES19/ABI/SECTOR/car/13/1200x1200.jpg"
@@ -1895,6 +2073,148 @@ struct AirportWeatherTabContent: View {
         let parts = wxString.components(separatedBy: " ")
         let decoded = parts.map { phenomena[$0.uppercased()] ?? $0 }
         return decoded.joined(separator: ", ")
+    }
+}
+
+// MARK: - Full Screen Image Viewer with Pinch to Zoom
+struct FullScreenImageViewer: View {
+    let urlString: String
+    let title: String
+    let onDismiss: () -> Void
+
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
+
+    var body: some View {
+        ZStack {
+            // Dark background
+            Color.black.ignoresSafeArea()
+
+            // Image with gestures
+            GeometryReader { geometry in
+                if let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(1.5)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .scaleEffect(scale)
+                                .offset(offset)
+                                .gesture(
+                                    MagnificationGesture()
+                                        .onChanged { value in
+                                            let delta = value / lastScale
+                                            lastScale = value
+                                            scale = min(max(scale * delta, 1.0), 5.0)
+                                        }
+                                        .onEnded { _ in
+                                            lastScale = 1.0
+                                            if scale < 1.0 {
+                                                withAnimation(.spring()) {
+                                                    scale = 1.0
+                                                    offset = .zero
+                                                }
+                                            }
+                                        }
+                                )
+                                .gesture(
+                                    DragGesture()
+                                        .onChanged { value in
+                                            if scale > 1.0 {
+                                                offset = CGSize(
+                                                    width: lastOffset.width + value.translation.width,
+                                                    height: lastOffset.height + value.translation.height
+                                                )
+                                            }
+                                        }
+                                        .onEnded { _ in
+                                            lastOffset = offset
+                                        }
+                                )
+                                .gesture(
+                                    TapGesture(count: 2)
+                                        .onEnded {
+                                            withAnimation(.spring()) {
+                                                if scale > 1.0 {
+                                                    scale = 1.0
+                                                    offset = .zero
+                                                    lastOffset = .zero
+                                                } else {
+                                                    scale = 2.5
+                                                }
+                                            }
+                                        }
+                                )
+                                .frame(width: geometry.size.width, height: geometry.size.height)
+                        case .failure:
+                            VStack(spacing: 12) {
+                                Image(systemName: "photo")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.gray)
+                                Text("Failed to load image")
+                                    .foregroundColor(.gray)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                }
+            }
+
+            // Header overlay
+            VStack {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(title)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+
+                        Text("Pinch to zoom • Double-tap to toggle • Swipe down to close")
+                            .font(.system(size: 11))
+                            .foregroundColor(.gray)
+                    }
+
+                    Spacer()
+
+                    Button {
+                        onDismiss()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                }
+                .padding()
+                .background(
+                    LinearGradient(
+                        colors: [Color.black.opacity(0.7), Color.black.opacity(0)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+
+                Spacer()
+            }
+        }
+        .gesture(
+            DragGesture()
+                .onEnded { value in
+                    // Swipe down to dismiss (only when not zoomed)
+                    if scale <= 1.0 && value.translation.height > 100 {
+                        onDismiss()
+                    }
+                }
+        )
+        .statusBar(hidden: true)
     }
 }
 

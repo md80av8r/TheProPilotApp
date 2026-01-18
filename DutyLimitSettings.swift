@@ -252,7 +252,9 @@ class DutyLimitSettingsStore: ObservableObject {
     
     @Published var trackingEnabled: Bool {
         didSet {
+            print("🔧 DutyLimitSettingsStore.trackingEnabled changed to: \(trackingEnabled)")
             UserDefaults.appGroup?.set(trackingEnabled, forKey: "dutyLimitTrackingEnabled")
+            objectWillChange.send()
         }
     }
     

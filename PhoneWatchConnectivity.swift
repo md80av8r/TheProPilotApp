@@ -58,6 +58,7 @@ class PhoneWatchConnectivity: NSObject, ObservableObject {
     weak var activityManager: PilotActivityManager?
     weak var opsManager: OPSCallingManager?
     weak var locationManager: PilotLocationManager?
+    weak var scheduleStore: ScheduleStore?
     
     private var session: WCSession?
     private var activeTripId: UUID?
@@ -403,7 +404,20 @@ class PhoneWatchConnectivity: NSObject, ObservableObject {
     
     /// Convert Date → "1430" String
     private func formatTimeToString(_ date: Date) -> String {
-        return timeFormatter.string(from: date)
+        // Apply rounding if enabled
+        let shouldRound = AutoTimeSettings.shared.roundTimesToFiveMinutes
+        let roundedDate = TimeRoundingUtility.roundToNearestFiveMinutes(date, enabled: shouldRound)
+
+        // Log if rounding occurred
+        if shouldRound {
+            let originalString = timeFormatter.string(from: date)
+            let roundedString = timeFormatter.string(from: roundedDate)
+            if originalString != roundedString {
+                print("⏱️ Watch time rounded: \(originalString) → \(roundedString)")
+            }
+        }
+
+        return timeFormatter.string(from: roundedDate)
     }
     
     private func formatTimeAgo(_ interval: TimeInterval) -> String {
@@ -414,13 +428,16 @@ class PhoneWatchConnectivity: NSObject, ObservableObject {
     }
     
     // MARK: - Public Store References
-    func setReferences(logBookStore: SwiftDataLogBookStore, opsManager: OPSCallingManager, activityManager: PilotActivityManager, locationManager: PilotLocationManager) {
+    func setReferences(logBookStore: SwiftDataLogBookStore, opsManager: OPSCallingManager, activityManager: PilotActivityManager, locationManager: PilotLocationManager, scheduleStore: ScheduleStore? = nil) {
         self.logbookStore = logBookStore
         self.opsManager = opsManager
         self.activityManager = activityManager
         self.locationManager = locationManager
+        self.scheduleStore = scheduleStore
         print("✅ Phone Watch Connectivity initialized and connected to stores")
-        
+        print("✅ DEBUG: locationManager reference set to: \(locationManager)")
+        print("✅ DEBUG: self.locationManager is now: \(self.locationManager != nil ? "NOT NIL" : "NIL")")
+
         // CRITICAL: Monitor for active trips and sync to watch
         startMonitoringTrips()
     }
@@ -453,7 +470,9 @@ class PhoneWatchConnectivity: NSObject, ObservableObject {
                     self.syncTripToWatch(trip)
                 } else if trip.status == .completed {
                     if self.activeTripId == trip.id {
+                        print("📱 Trip completed - clearing from watch")
                         self.activeTripId = nil
+                        self.sendClearTripToWatch()
                     }
                 }
             }
@@ -488,10 +507,10 @@ class PhoneWatchConnectivity: NSObject, ObservableObject {
             inTime: parseTimeString(currentLeg.inTime)
         )
         
-        // Send via both methods for reliability
-        sendFlightUpdateDirect(watchData, legIndex: currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: trip.id, legId: currentLeg.id)
-        sendFlightUpdateViaContext(watchData, legIndex: currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: trip.id, legId: currentLeg.id)
-        
+        // Send via both methods for reliability - pass totalLegs explicitly
+        sendFlightUpdateDirect(watchData, legIndex: currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: trip.id, legId: currentLeg.id, totalLegs: trip.legs.count)
+        sendFlightUpdateViaContext(watchData, legIndex: currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: trip.id, legId: currentLeg.id, totalLegs: trip.legs.count)
+
         print("✅ Trip synced to watch: \(trip.tripNumber), leg \(currentLegIndex + 1)/\(trip.legs.count)")
     }
     
@@ -686,15 +705,21 @@ extension PhoneWatchConnectivity: WCSessionDelegate {
                 }
                 
             case "startDuty":
-                self.handleStartDuty(message)
-                replyHandler(["status": "duty started"])
+                self.handleStartDuty(message, replyHandler: replyHandler)
                 self.updateSyncMetrics(success: true)
                 
             case "endDuty":
-                self.handleEndDuty(message)
-                replyHandler(["status": "duty ended"])
+                self.handleEndDuty(message, replyHandler: replyHandler)
                 self.updateSyncMetrics(success: true)
-                
+
+            case "confirmPlanningTrip":
+                self.handleConfirmPlanningTrip(message, replyHandler: replyHandler)
+                self.updateSyncMetrics(success: true)
+
+            case "declinePlanningTrip":
+                self.handleDeclinePlanningTrip(message, replyHandler: replyHandler)
+                self.updateSyncMetrics(success: true)
+
             case "requestDutyStatus":
                 let reply = self.createDutyStatusMessage()
                 replyHandler(reply)
@@ -780,7 +805,8 @@ extension PhoneWatchConnectivity {
         Task { @MainActor in
             guard let trip = findActiveTrip(),
                   !trip.legs.isEmpty else {
-                print("📱 No active trip to sync")
+                print("📱 No active trip to sync - clearing watch")
+                sendClearTripToWatch()  // ✅ Clear the watch if no active trip
                 updateSyncState(.synced, detail: "No active trip")
                 return
             }
@@ -812,43 +838,45 @@ extension PhoneWatchConnectivity {
                 inTime: parseTimeString(currentLeg.inTime)
             )
 
-            // Send both immediate message AND application context
-            sendFlightUpdateDirect(watchData, legIndex: currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: trip.id, legId: currentLeg.id)
-            sendFlightUpdateViaContext(watchData, legIndex: currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: trip.id, legId: currentLeg.id)
+            // Send both immediate message AND application context - pass totalLegs explicitly
+            sendFlightUpdateDirect(watchData, legIndex: currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: trip.id, legId: currentLeg.id, totalLegs: trip.legs.count)
+            sendFlightUpdateViaContext(watchData, legIndex: currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: trip.id, legId: currentLeg.id, totalLegs: trip.legs.count)
         }
     }
     
     // MARK: - Send Flight Update (Direct Message)
     @MainActor
-    func sendFlightUpdateDirect(_ flight: WatchFlightData, legIndex: Int = 0, hasMoreLegs: Bool = false, tripId: UUID? = nil, legId: UUID? = nil) {
+    func sendFlightUpdateDirect(_ flight: WatchFlightData, legIndex: Int = 0, hasMoreLegs: Bool = false, tripId: UUID? = nil, legId: UUID? = nil, totalLegs: Int? = nil) {
         guard let session = session, session.isReachable else {
             print("⚠️ Watch not reachable for direct message")
             updateSyncState(.bluetoothOnly, detail: "Watch not reachable")
             return
         }
-        
+
         var message: [String: Any] = [
             "type": "flightUpdate",
             "legIndex": legIndex,
-            "totalLegs": 0,  // ✅ Will be set below if tripId provided
+            "totalLegs": totalLegs ?? 0,  // ✅ Use provided totalLegs or default to 0
             "hasMoreLegs": hasMoreLegs,
             "timestamp": Date().timeIntervalSince1970,
             "dataVersion": dataVersionTracker.currentVersion,
             "useZuluTime": AutoTimeSettings.shared.useZuluTime
         ]
-        
+
         if let departure = flight.departure { message["departure"] = departure }
         if let arrival = flight.arrival { message["arrival"] = arrival }
         if let outTime = flight.outTime { message["outTime"] = outTime.timeIntervalSince1970 }
         if let offTime = flight.offTime { message["offTime"] = offTime.timeIntervalSince1970 }
         if let onTime = flight.onTime { message["onTime"] = onTime.timeIntervalSince1970 }
         if let inTime = flight.inTime { message["inTime"] = inTime.timeIntervalSince1970 }
-        if let tripId = tripId { 
+        if let tripId = tripId {
             message["tripId"] = tripId.uuidString
-            // ✅ Calculate totalLegs from the trip
-            if let trip = findActiveTrip(), trip.id == tripId {
+            // ✅ If totalLegs not provided, try to get it from active trip (but don't fail if not found yet)
+            if totalLegs == nil, let trip = findActiveTrip(), trip.id == tripId {
                 message["totalLegs"] = trip.legs.count
                 print("📱 Added totalLegs=\(trip.legs.count) to direct message")
+            } else if let totalLegs = totalLegs {
+                print("📱 Using provided totalLegs=\(totalLegs) to direct message")
             }
         }
         if let legId = legId { message["legId"] = legId.uuidString }
@@ -870,34 +898,36 @@ extension PhoneWatchConnectivity {
     
     // MARK: - Send Flight Update (Application Context - Guaranteed Delivery)
     @MainActor
-    private func sendFlightUpdateViaContext(_ flight: WatchFlightData, legIndex: Int = 0, hasMoreLegs: Bool = false, tripId: UUID? = nil, legId: UUID? = nil) {
+    private func sendFlightUpdateViaContext(_ flight: WatchFlightData, legIndex: Int = 0, hasMoreLegs: Bool = false, tripId: UUID? = nil, legId: UUID? = nil, totalLegs: Int? = nil) {
         guard let session = session else {
             print("⚠️ No session for application context")
             return
         }
-        
+
         var context: [String: Any] = [
             "type": "flightUpdate",
             "legIndex": legIndex,
-            "totalLegs": 0,  // ✅ Will be set below if tripId provided
+            "totalLegs": totalLegs ?? 0,  // ✅ Use provided totalLegs or default to 0
             "hasMoreLegs": hasMoreLegs,
             "timestamp": Date().timeIntervalSince1970,
             "dataVersion": dataVersionTracker.currentVersion,
             "useZuluTime": AutoTimeSettings.shared.useZuluTime
         ]
-        
+
         if let departure = flight.departure { context["departure"] = departure }
         if let arrival = flight.arrival { context["arrival"] = arrival }
         if let outTime = flight.outTime { context["outTime"] = outTime.timeIntervalSince1970 }
         if let offTime = flight.offTime { context["offTime"] = offTime.timeIntervalSince1970 }
         if let onTime = flight.onTime { context["onTime"] = onTime.timeIntervalSince1970 }
         if let inTime = flight.inTime { context["inTime"] = inTime.timeIntervalSince1970 }
-        if let tripId = tripId { 
+        if let tripId = tripId {
             context["tripId"] = tripId.uuidString
-            // ✅ Calculate totalLegs from the trip
-            if let trip = findActiveTrip(), trip.id == tripId {
+            // ✅ If totalLegs not provided, try to get it from active trip (but don't fail if not found yet)
+            if totalLegs == nil, let trip = findActiveTrip(), trip.id == tripId {
                 context["totalLegs"] = trip.legs.count
                 print("📱 Added totalLegs=\(trip.legs.count) to application context")
+            } else if let totalLegs = totalLegs {
+                print("📱 Using provided totalLegs=\(totalLegs) to application context")
             }
         }
         if let legId = legId { context["legId"] = legId.uuidString }
@@ -1106,17 +1136,71 @@ extension PhoneWatchConnectivity {
                 return
             }
 
+            // ✅ If trip is still in planning status, activate it when OUT time is set
+            if trip.status == .planning && timeType == "OUT" {
+                print("📱 Activating planning trip from watch OUT time")
+                trip.status = .active
+                if trip.perDiemStarted == nil {
+                    trip.perDiemStarted = Date()
+                }
+            }
+
             switch timeType {
             case "OUT":
                 trip.legs[legIndex].outTime = timeString
                 // When OUT is set, make sure we're on this leg
                 self.currentLegIndex = legIndex
+
+                // 🌤️ TRIGGER WEATHER CACHE at OUT time
+                // Cache all weather products for offline access during flight
+                let leg = trip.legs[legIndex]
+                let departure = leg.departure
+                let arrival = leg.arrival
+                let legId = leg.id
+
+                // ✈️ Mark as in-flight so weather views use cached data
+                FlightStateManager.shared.startFlight(legId: legId, departure: departure, arrival: arrival)
+
+                Task {
+                    await WeatherCacheService.shared.cacheWeatherForLeg(
+                        legId: legId,
+                        departureICAO: departure,
+                        arrivalICAO: arrival,
+                        trigger: .outTime
+                    )
+                }
+                print("🌤️ Weather cache triggered at OUT time for \(departure) → \(arrival)")
+
             case "OFF":
                 trip.legs[legIndex].offTime = timeString
+
+                // 🌤️ FAILSAFE: Cache weather at OFF time if not already cached at OUT
+                // This ensures we have weather even if OUT was skipped
+                let leg = trip.legs[legIndex]
+                let departure = leg.departure
+                let arrival = leg.arrival
+                let legId = leg.id
+                Task {
+                    // Only cache if not already cached at OUT time
+                    let alreadyCached = await WeatherCacheService.shared.hasCachedWeather(for: legId)
+                    if !alreadyCached {
+                        await WeatherCacheService.shared.cacheWeatherForLeg(
+                            legId: legId,
+                            departureICAO: departure,
+                            arrivalICAO: arrival,
+                            trigger: .offTime
+                        )
+                        print("🌤️ Weather cache triggered at OFF time (failsafe) for \(departure) → \(arrival)")
+                    }
+                }
+
             case "ON":
                 trip.legs[legIndex].onTime = timeString
             case "IN":
                 trip.legs[legIndex].inTime = timeString
+
+                // ✈️ Mark flight as landed so weather views fetch fresh data
+                FlightStateManager.shared.endFlight()
 
                 // ✅ Check if leg is complete and advance
                 let leg = trip.legs[legIndex]
@@ -1176,6 +1260,8 @@ extension PhoneWatchConnectivity {
             switch timeType {
             case "OUT":
                 trip.legs[legIndex].outTime = ""
+                // ✈️ If OUT is cleared, we're no longer in flight
+                FlightStateManager.shared.endFlight()
             case "OFF":
                 trip.legs[legIndex].offTime = ""
             case "ON":
@@ -1226,95 +1312,384 @@ extension PhoneWatchConnectivity {
         }
     }
     
-    private func handleStartDuty(_ message: [String: Any]) {
+    private func handleStartDuty(_ message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
         print("📱 Starting duty timer from watch request")
+        print("📍 DEBUG START: locationManager exists: \(self.locationManager != nil)")
 
-        // ✅ DEBUG LOGGING
-        print("📍 DEBUG: locationManager exists: \(locationManager != nil)")
-        print("📍 DEBUG: currentAirport: '\(locationManager?.currentAirport ?? "nil")'")
-        print("📍 DEBUG: nearbyAirports count: \(locationManager?.nearbyAirports.count ?? 0)")
-
-        if let locationManager = locationManager {
-            for (index, airport) in locationManager.nearbyAirports.prefix(3).enumerated() {
-                print("📍 DEBUG: Airport \(index): \(airport.icao) - \(airport.name)")
-            }
+        // ✅ Force a fresh location check before getting airport (if locationManager exists)
+        if let locationManager = self.locationManager {
+            print("📍 Forcing location update...")
+            locationManager.forceLocationUpdate()
+        } else {
+            print("⚠️ locationManager is nil - skipping location update")
         }
 
-        // Get current location/airport
-        let currentAirport = locationManager?.currentAirport ?? "ZZZZ"
+        // ✅ Wait 2 seconds for location to update before reading airport data
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            guard let self = self else { return }
+
+            // ✅ DEBUG LOGGING
+            print("📍 DEBUG AFTER DELAY: locationManager exists: \(self.locationManager != nil)")
+            print("📍 DEBUG: currentAirport: '\(self.locationManager?.currentAirport ?? "nil")'")
+            print("📍 DEBUG: nearbyAirports count: \(self.locationManager?.nearbyAirports.count ?? 0)")
+
+            if let locationManager = self.locationManager {
+                for (index, airport) in locationManager.nearbyAirports.prefix(3).enumerated() {
+                    print("📍 DEBUG: Airport \(index): \(airport.icao) - \(airport.name) at \(String(format: "%.1f", airport.distance/1852))nm")
+                }
+            }
+
+            // Get current location/airport - prefer current airport, fallback to nearest
+            let currentAirport = {
+                if let current = self.locationManager?.currentAirport, !current.isEmpty {
+                    print("📍 ✅ Using currentAirport: \(current)")
+                    return current
+                }
+                if let nearest = self.locationManager?.nearbyAirports.first?.icao {
+                    print("📍 ✅ Using nearbyAirports.first: \(nearest)")
+                    return nearest
+                }
+                print("📍 ⚠️ No airport found - defaulting to ZZZZ")
+                return "ZZZZ"
+            }()
+            let airportName = self.locationManager?.nearbyAirports.first?.name ?? "Unknown"
+
+            // Run on main actor for SwiftData store access
+            Task { @MainActor in
+                guard let store = self.logbookStore else {
+                    print("❌ LogBookStore not available")
+                    replyHandler(["error": "LogBookStore not available"])
+                    return
+                }
+
+                // ✅ FIXED: First check if there's ALREADY an active trip
+                if let existingActiveTrip = self.findActiveTrip() {
+                    print("📱 Found existing active trip: \(existingActiveTrip.tripNumber) - syncing to watch")
+
+                    // Don't create a new trip - just sync the existing one!
+                    self.setActiveTrip(existingActiveTrip)
+
+                    // Get current leg info
+                    let currentLeg = existingActiveTrip.legs.indices.contains(self.currentLegIndex)
+                        ? existingActiveTrip.legs[self.currentLegIndex]
+                        : existingActiveTrip.legs.first
+
+                    // Send existing trip data to watch
+                    let watchData = WatchFlightData(
+                        departure: currentLeg?.departure ?? currentAirport,
+                        arrival: currentLeg?.arrival ?? "",
+                        outTime: self.parseTimeToDate(currentLeg?.outTime, on: existingActiveTrip.date),
+                        offTime: self.parseTimeToDate(currentLeg?.offTime, on: existingActiveTrip.date),
+                        onTime: self.parseTimeToDate(currentLeg?.onTime, on: existingActiveTrip.date),
+                        inTime: self.parseTimeToDate(currentLeg?.inTime, on: existingActiveTrip.date)
+                    )
+
+                    let hasMoreLegs = self.currentLegIndex < existingActiveTrip.legs.count - 1
+                    // ✅ Pass totalLegs explicitly
+                    self.sendFlightUpdateDirect(watchData, legIndex: self.currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: existingActiveTrip.id, legId: currentLeg?.id, totalLegs: existingActiveTrip.legs.count)
+                    self.sendFlightUpdateViaContext(watchData, legIndex: self.currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: existingActiveTrip.id, legId: currentLeg?.id, totalLegs: existingActiveTrip.legs.count)
+
+                    // ✅ Always ensure duty timer is running and UI is notified
+                    let wasAlreadyRunning = self.isDutyTimerRunning
+                    self.isDutyTimerRunning = true
+                    // Use existing trip's perDiem start or current time
+                    self.dutyStartTime = existingActiveTrip.perDiemStarted ?? Date()
+
+                    // ✅ ALWAYS post notification to ensure UI updates (even if already running)
+                    NotificationCenter.default.post(
+                        name: .dutyTimerStarted,
+                        object: nil,
+                        userInfo: ["startTime": self.dutyStartTime ?? Date()]
+                    )
+
+                    self.markDataForSync(type: .dutyTimer)
+                    self.sendDutyStatusToWatch()
+
+                    print("✅ Synced existing trip \(existingActiveTrip.tripNumber) to watch (was already active: \(wasAlreadyRunning))")
+                    replyHandler(["status": "duty started", "activeTrip": true])
+                    return
+                }
+
+                // No active trip - check if there's a planning trip that needs activation
+                if var planningTrip = store.trips.first(where: { $0.status == .planning }) {
+                    print("📱 Found planning trip: \(planningTrip.tripNumber) - activating automatically from watch")
+
+                    // ✅ ACTIVATE THE TRIP
+                    planningTrip.status = .active
+
+                    // ✅ Activate first leg (this will make activeLegIndex compute to 0)
+                    if !planningTrip.legs.isEmpty {
+                        // Update the leg in the logpages (source of truth for legs)
+                        if !planningTrip.logpages.isEmpty && !planningTrip.logpages[0].legs.isEmpty {
+                            planningTrip.logpages[0].legs[0].status = .active
+                            print("✅ First leg activated: \(planningTrip.legs[0].departure) → \(planningTrip.legs[0].arrival)")
+                        }
+                    }
+
+                    // Save the activated trip
+                    store.addTrip(planningTrip)  // This will update the existing trip
+                    self.setActiveTrip(planningTrip)
+
+                    // Get current leg info
+                    let currentLeg = planningTrip.legs.first
+
+                    // Send activated trip data to watch
+                    let watchData = WatchFlightData(
+                        departure: currentLeg?.departure ?? currentAirport,
+                        arrival: currentLeg?.arrival ?? "",
+                        outTime: self.parseTimeToDate(currentLeg?.outTime, on: planningTrip.date),
+                        offTime: self.parseTimeToDate(currentLeg?.offTime, on: planningTrip.date),
+                        onTime: self.parseTimeToDate(currentLeg?.onTime, on: planningTrip.date),
+                        inTime: self.parseTimeToDate(currentLeg?.inTime, on: planningTrip.date)
+                    )
+
+                    let hasMoreLegs = planningTrip.legs.count > 1
+                    self.sendFlightUpdateDirect(watchData, legIndex: 0, hasMoreLegs: hasMoreLegs, tripId: planningTrip.id, legId: currentLeg?.id, totalLegs: planningTrip.legs.count)
+                    self.sendFlightUpdateViaContext(watchData, legIndex: 0, hasMoreLegs: hasMoreLegs, tripId: planningTrip.id, legId: currentLeg?.id, totalLegs: planningTrip.legs.count)
+
+                    // Start duty timer
+                    self.isDutyTimerRunning = true
+                    self.dutyStartTime = planningTrip.perDiemStarted ?? Date()
+
+                    NotificationCenter.default.post(
+                        name: .dutyTimerStarted,
+                        object: nil,
+                        userInfo: ["startTime": self.dutyStartTime ?? Date()]
+                    )
+
+                    self.markDataForSync(type: .dutyTimer)
+                    self.sendDutyStatusToWatch()
+
+                    print("✅ Activated planning trip \(planningTrip.tripNumber) and started duty from watch")
+                    replyHandler(["status": "duty started", "activeTrip": true])
+                    return
+                }
+
+                // ✅ NEW: Check roster/schedule for upcoming flights before creating generic trip
+                if let scheduleStore = self.scheduleStore {
+                    let now = Date()
+                    let timeWindow: TimeInterval = 4 * 3600  // 4 hours before/after
+
+                    // Find flights near current time and location
+                    let nearbyFlights = scheduleStore.items.filter { item in
+                        guard item.status == .activeTrip else { return false }
+
+                        // Check if flight time is within 4 hour window
+                        let timeDiff = abs(item.blockOut.timeIntervalSince(now))
+                        guard timeDiff <= timeWindow else { return false }
+
+                        // Check if departure matches current airport
+                        return item.departure == currentAirport
+                    }
+                    .sorted(by: { $0.blockOut < $1.blockOut })  // Sort by departure time
+
+                    if let matchingFlight = nearbyFlights.first {
+                        print("📅 Found roster flight: \(matchingFlight.tripNumber) at \(currentAirport)")
+                        print("📅 Creating trip from roster: \(matchingFlight.departure) → \(matchingFlight.arrival)")
+
+                        // Create trip from roster flight - returns Trip with .planning status
+                        let createdTrip = RosterToTripHelper.shared.createNewTrip(from: matchingFlight, store: store)
+
+                        // ✅ Activate the trip immediately by updating it in the store
+                        guard let index = store.trips.firstIndex(where: { $0.id == createdTrip.id }) else {
+                            print("❌ Could not find created trip in store")
+                            replyHandler(["error": "Trip creation failed"])
+                            return
+                        }
+
+                        var rosterTrip = store.trips[index]
+                        rosterTrip.status = .active
+                        rosterTrip.perDiemStarted = Date()
+
+                        // ✅ Activate first leg
+                        if !rosterTrip.logpages.isEmpty && !rosterTrip.logpages[0].legs.isEmpty {
+                            rosterTrip.logpages[0].legs[0].status = .active
+                        }
+
+                        store.trips[index] = rosterTrip
+                        store.save()
+
+                        self.setActiveTrip(rosterTrip)
+
+                        // Send to watch
+                        let currentLeg = rosterTrip.legs.first
+                        let watchData = WatchFlightData(
+                            departure: currentLeg?.departure ?? currentAirport,
+                            arrival: currentLeg?.arrival ?? "",
+                            outTime: self.parseTimeToDate(currentLeg?.outTime, on: rosterTrip.date),
+                            offTime: self.parseTimeToDate(currentLeg?.offTime, on: rosterTrip.date),
+                            onTime: self.parseTimeToDate(currentLeg?.onTime, on: rosterTrip.date),
+                            inTime: self.parseTimeToDate(currentLeg?.inTime, on: rosterTrip.date)
+                        )
+
+                        let hasMoreLegs = rosterTrip.legs.count > 1
+                        self.sendFlightUpdateDirect(watchData, legIndex: 0, hasMoreLegs: hasMoreLegs, tripId: rosterTrip.id, legId: currentLeg?.id, totalLegs: rosterTrip.legs.count)
+                        self.sendFlightUpdateViaContext(watchData, legIndex: 0, hasMoreLegs: hasMoreLegs, tripId: rosterTrip.id, legId: currentLeg?.id, totalLegs: rosterTrip.legs.count)
+
+                        // Start duty timer
+                        self.isDutyTimerRunning = true
+                        self.dutyStartTime = rosterTrip.perDiemStarted ?? Date()
+
+                        NotificationCenter.default.post(
+                            name: .dutyTimerStarted,
+                            object: nil,
+                            userInfo: ["startTime": self.dutyStartTime ?? Date()]
+                        )
+
+                        self.markDataForSync(type: .dutyTimer)
+                        self.sendDutyStatusToWatch()
+
+                        print("✅ Created trip from roster: \(rosterTrip.tripNumber) and started duty from watch")
+                        replyHandler(["status": "duty started", "activeTrip": true])
+                        return
+                    } else {
+                        print("📅 No matching roster flights found near \(currentAirport)")
+                    }
+                }
+
+                // No active, planning, or roster trips - create new generic trip with nearest airport
+                let formatter = DateFormatter()
+                formatter.dateFormat = "MMdd"
+                let tripNumber = "W\(formatter.string(from: Date()))" // W prefix for Watch-created
+
+                // Create leg with scheduledOut for proper sorting
+                var watchLeg = FlightLeg(
+                    departure: currentAirport,
+                    arrival: "",
+                    outTime: "",
+                    offTime: "",
+                    onTime: "",
+                    inTime: "",
+                    flightNumber: ""
+                )
+                watchLeg.scheduledOut = Date()  // ✅ Set date for proper sorting with roster legs
+
+                let newTrip = Trip(
+                    id: UUID(),
+                    tripNumber: tripNumber,
+                    aircraft: "TBD",
+                    date: Date(),
+                    tatStart: "",
+                    crew: [],
+                    notes: "Created from Apple Watch",
+                    legs: [watchLeg],
+                    tripType: .operating,
+                    status: .active,
+                    pilotRole: .captain,
+                    receiptCount: 0,
+                    logbookPageSent: false,
+                    perDiemStarted: Date(),
+                    perDiemEnded: nil
+                )
+
+                store.addTrip(newTrip)
+                self.setActiveTrip(newTrip)
+                print("✅ Created trip \(tripNumber) from Watch at \(currentAirport)")
+
+                // Send updated flight data back to watch
+                let watchData = WatchFlightData(
+                    departure: currentAirport,
+                    arrival: "",
+                    outTime: nil,
+                    offTime: nil,
+                    onTime: nil,
+                    inTime: nil
+                )
+                // ✅ Pass totalLegs explicitly since trip might not be in SwiftData yet
+                self.sendFlightUpdateDirect(watchData, legIndex: 0, hasMoreLegs: false, tripId: newTrip.id, legId: watchLeg.id, totalLegs: newTrip.legs.count)
+                self.sendFlightUpdateViaContext(watchData, legIndex: 0, hasMoreLegs: false, tripId: newTrip.id, legId: watchLeg.id, totalLegs: newTrip.legs.count)
+
+                // Start Live Activity if available
+                if let activityManager = self.activityManager {
+                    Task { @MainActor in
+                        activityManager.startActivity(
+                            tripNumber: tripNumber,
+                            aircraft: "TBD",
+                            departure: currentAirport,
+                            arrival: "",
+                            currentAirport: currentAirport,
+                            currentAirportName: airportName,
+                            dutyStartTime: Date()
+                        )
+                    }
+                }
+
+                // Notify ContentView about new trip
+                NotificationCenter.default.post(
+                    name: .tripStatusChanged,
+                    object: newTrip
+                )
+
+                // Update duty timer state (only if not already running)
+                if !self.isDutyTimerRunning {
+                    self.isDutyTimerRunning = true
+                    self.dutyStartTime = Date()
+
+                    // Post notification for UI update
+                    NotificationCenter.default.post(
+                        name: .dutyTimerStarted,
+                        object: nil,
+                        userInfo: ["startTime": Date()]
+                    )
+                }
+
+                self.markDataForSync(type: .dutyTimer)
+                self.sendDutyStatusToWatch()
+
+                // Reply to watch that duty has started
+                replyHandler(["status": "duty started", "newTrip": true])
+                print("✅ Duty started with new trip from watch")
+            }
+        }
+    }
+
+    // MARK: - Planning Trip Confirmation Handlers
+
+    private func handleConfirmPlanningTrip(_ message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
+        print("📱 User confirmed planning trip from watch")
+
+        guard let tripIdString = message["tripId"] as? String,
+              let tripId = UUID(uuidString: tripIdString) else {
+            print("❌ Invalid tripId in confirmPlanningTrip message")
+            replyHandler(["error": "Invalid trip ID"])
+            return
+        }
+
+        // Get current location/airport - prefer current airport, fallback to nearest
+        let currentAirport = {
+            if let current = locationManager?.currentAirport, !current.isEmpty {
+                return current
+            }
+            return locationManager?.nearbyAirports.first?.icao ?? "ZZZZ"
+        }()
         let airportName = locationManager?.nearbyAirports.first?.name ?? "Unknown"
 
-        // Run on main actor for SwiftData store access
         Task { @MainActor in
             guard let store = self.logbookStore else {
                 print("❌ LogBookStore not available")
+                replyHandler(["error": "LogBookStore not available"])
                 return
             }
 
-            // ✅ FIXED: First check if there's ALREADY an active trip
-            if let existingActiveTrip = self.findActiveTrip() {
-            print("📱 Found existing active trip: \(existingActiveTrip.tripNumber) - syncing to watch")
-            
-            // Don't create a new trip - just sync the existing one!
-            setActiveTrip(existingActiveTrip)
-            
-            // Get current leg info
-            let currentLeg = existingActiveTrip.legs.indices.contains(currentLegIndex)
-                ? existingActiveTrip.legs[currentLegIndex]
-                : existingActiveTrip.legs.first
-            
-            // Send existing trip data to watch
-            let watchData = WatchFlightData(
-                departure: currentLeg?.departure ?? currentAirport,
-                arrival: currentLeg?.arrival ?? "",
-                outTime: parseTimeToDate(currentLeg?.outTime, on: existingActiveTrip.date),
-                offTime: parseTimeToDate(currentLeg?.offTime, on: existingActiveTrip.date),
-                onTime: parseTimeToDate(currentLeg?.onTime, on: existingActiveTrip.date),
-                inTime: parseTimeToDate(currentLeg?.inTime, on: existingActiveTrip.date)
-            )
-            
-            let hasMoreLegs = currentLegIndex < existingActiveTrip.legs.count - 1
-            sendFlightUpdateDirect(watchData, legIndex: currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: existingActiveTrip.id, legId: currentLeg?.id)
-            sendFlightUpdateViaContext(watchData, legIndex: currentLegIndex, hasMoreLegs: hasMoreLegs, tripId: existingActiveTrip.id, legId: currentLeg?.id)
-            
-            // Only update duty timer if NOT already running
-            if !isDutyTimerRunning {
-                isDutyTimerRunning = true
-                // Use existing trip's perDiem start or current time
-                dutyStartTime = existingActiveTrip.perDiemStarted ?? Date()
-                
-                // Post notification for UI update
-                NotificationCenter.default.post(
-                    name: .dutyTimerStarted,
-                    object: nil,
-                    userInfo: ["startTime": dutyStartTime ?? Date()]
-                )
+            // Find the planning trip
+            guard let planningTrip = store.trips.first(where: { $0.id == tripId && $0.status == .planning }),
+                  let index = store.trips.firstIndex(where: { $0.id == tripId }) else {
+                print("❌ Planning trip not found")
+                replyHandler(["error": "Planning trip not found"])
+                return
             }
-            
-            markDataForSync(type: .dutyTimer)
-            sendDutyStatusToWatch()
-            
-            print("✅ Synced existing trip \(existingActiveTrip.tripNumber) to watch (duty already active: \(isDutyTimerRunning))")
-            return
-        }
-        
-        // No active trip - check if there's a planning trip we should activate
-        if let planningTrip = store.trips.first(where: { $0.status == .planning }) {
-            print("📱 Found planning trip: \(planningTrip.tripNumber) - activating")
-            
+
+            // Activate the trip
             var activatedTrip = planningTrip
             activatedTrip.status = .active
             activatedTrip.perDiemStarted = Date()
-            
-            if let index = store.trips.firstIndex(where: { $0.id == planningTrip.id }) {
-                store.updateTrip(activatedTrip, at: index)
-            }
-            
+
+            store.updateTrip(activatedTrip, at: index)
             setActiveTrip(activatedTrip)
-            
+
             // Get current leg info
             let currentLeg = activatedTrip.legs.first
-            
+
             // Send trip data to watch
             let watchData = WatchFlightData(
                 departure: currentLeg?.departure ?? currentAirport,
@@ -1324,11 +1699,11 @@ extension PhoneWatchConnectivity {
                 onTime: nil,
                 inTime: nil
             )
-            
+
             let hasMoreLegs = activatedTrip.legs.count > 1
             sendFlightUpdateDirect(watchData, legIndex: 0, hasMoreLegs: hasMoreLegs, tripId: activatedTrip.id, legId: currentLeg?.id)
             sendFlightUpdateViaContext(watchData, legIndex: 0, hasMoreLegs: hasMoreLegs, tripId: activatedTrip.id, legId: currentLeg?.id)
-            
+
             // Start Live Activity if available
             if let activityManager = activityManager {
                 Task { @MainActor in
@@ -1343,22 +1718,57 @@ extension PhoneWatchConnectivity {
                     )
                 }
             }
-            
+
             // Notify ContentView about trip activation
             NotificationCenter.default.post(
                 name: .tripStatusChanged,
                 object: activatedTrip
             )
-            
+
+            // Start duty timer
+            if !isDutyTimerRunning {
+                isDutyTimerRunning = true
+                dutyStartTime = Date()
+
+                NotificationCenter.default.post(
+                    name: .dutyTimerStarted,
+                    object: nil,
+                    userInfo: ["startTime": Date()]
+                )
+            }
+
+            markDataForSync(type: .dutyTimer)
+            sendDutyStatusToWatch()
+
+            replyHandler(["status": "duty started", "tripActivated": true])
             print("✅ Activated planning trip \(activatedTrip.tripNumber) from Watch")
-            
-        } else {
-            // No active or planning trips - create new trip
+        }
+    }
+
+    private func handleDeclinePlanningTrip(_ message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
+        print("📱 User declined planning trip - creating new trip from watch")
+
+        // Get current location/airport - prefer current airport, fallback to nearest
+        let currentAirport = {
+            if let current = locationManager?.currentAirport, !current.isEmpty {
+                return current
+            }
+            return locationManager?.nearbyAirports.first?.icao ?? "ZZZZ"
+        }()
+        let airportName = locationManager?.nearbyAirports.first?.name ?? "Unknown"
+
+        Task { @MainActor in
+            guard let store = self.logbookStore else {
+                print("❌ LogBookStore not available")
+                replyHandler(["error": "LogBookStore not available"])
+                return
+            }
+
+            // Create new trip with nearest airport
             let formatter = DateFormatter()
             formatter.dateFormat = "MMdd"
-            let tripNumber = "W\(formatter.string(from: Date()))" // W prefix for Watch-created
-            
-            // Create leg with scheduledOut for proper sorting
+            let tripNumber = "W\(formatter.string(from: Date()))"
+
             var watchLeg = FlightLeg(
                 departure: currentAirport,
                 arrival: "",
@@ -1368,8 +1778,8 @@ extension PhoneWatchConnectivity {
                 inTime: "",
                 flightNumber: ""
             )
-            watchLeg.scheduledOut = Date()  // ✅ Set date for proper sorting with roster legs
-            
+            watchLeg.scheduledOut = Date()
+
             let newTrip = Trip(
                 id: UUID(),
                 tripNumber: tripNumber,
@@ -1387,11 +1797,10 @@ extension PhoneWatchConnectivity {
                 perDiemStarted: Date(),
                 perDiemEnded: nil
             )
-            
+
             store.addTrip(newTrip)
             setActiveTrip(newTrip)
-            print("✅ Created trip \(tripNumber) from Watch at \(currentAirport)")
-            
+
             // Send updated flight data back to watch
             let watchData = WatchFlightData(
                 departure: currentAirport,
@@ -1403,7 +1812,7 @@ extension PhoneWatchConnectivity {
             )
             sendFlightUpdateDirect(watchData, legIndex: 0, hasMoreLegs: false, tripId: newTrip.id, legId: watchLeg.id)
             sendFlightUpdateViaContext(watchData, legIndex: 0, hasMoreLegs: false, tripId: newTrip.id, legId: watchLeg.id)
-            
+
             // Start Live Activity if available
             if let activityManager = activityManager {
                 Task { @MainActor in
@@ -1418,33 +1827,34 @@ extension PhoneWatchConnectivity {
                     )
                 }
             }
-            
+
             // Notify ContentView about new trip
             NotificationCenter.default.post(
                 name: .tripStatusChanged,
                 object: newTrip
             )
-        }
-        
-        // Update duty timer state (only if not already running)
-        if !isDutyTimerRunning {
-            isDutyTimerRunning = true
-            dutyStartTime = Date()
-            
-            // Post notification for UI update
-            NotificationCenter.default.post(
-                name: .dutyTimerStarted,
-                object: nil,
-                userInfo: ["startTime": Date()]
-            )
-        }
-        
-            self.markDataForSync(type: .dutyTimer)
-            self.sendDutyStatusToWatch()
+
+            // Start duty timer
+            if !isDutyTimerRunning {
+                isDutyTimerRunning = true
+                dutyStartTime = Date()
+
+                NotificationCenter.default.post(
+                    name: .dutyTimerStarted,
+                    object: nil,
+                    userInfo: ["startTime": Date()]
+                )
+            }
+
+            markDataForSync(type: .dutyTimer)
+            sendDutyStatusToWatch()
+
+            replyHandler(["status": "duty started", "newTrip": true])
+            print("✅ Created new trip \(tripNumber) from Watch at \(currentAirport)")
         }
     }
 
-    private func handleEndDuty(_ message: [String: Any]) {
+    private func handleEndDuty(_ message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
         print("📱 Ending duty timer from watch request")
 
         // Run on main actor for SwiftData store access
@@ -1485,6 +1895,8 @@ extension PhoneWatchConnectivity {
             self.markDataForSync(type: .dutyTimer)
             self.sendDutyStatusToWatch()
 
+            // Reply to watch AFTER everything is done
+            replyHandler(["status": "duty ended"])
             print("✅ Duty ended and trip completed from watch")
         }
     }
@@ -1630,24 +2042,44 @@ extension PhoneWatchConnectivity {
             )
             newLeg.scheduledOut = Date()
 
-            // ✅ Check if ALL previous legs have ALL times complete
-            let allPreviousComplete = activeTrip.legs.allSatisfy { leg in
-                !leg.outTime.isEmpty &&
-                !leg.offTime.isEmpty &&
-                !leg.onTime.isEmpty &&
-                !leg.inTime.isEmpty
+            // ✅ FIXED: Append directly to last logpage (no restructuring)
+            if !activeTrip.logpages.isEmpty {
+                let lastPageIndex = activeTrip.logpages.count - 1
+                activeTrip.logpages[lastPageIndex].legs.append(newLeg)
+            } else {
+                // Fallback: create first logpage if none exist
+                activeTrip.logpages = [Logpage(pageNumber: 1, tatStart: activeTrip.tatStart, legs: [newLeg])]
             }
 
+            let newLegIndex = activeTrip.legs.count - 1
+
+            // ✅ Check if ALL previous legs have ALL times complete (respecting leg types)
+            let allPreviousComplete = activeTrip.legs.dropLast().allSatisfy { leg in
+                if leg.isGroundOperationsOnly {
+                    return !leg.outTime.isEmpty && !leg.inTime.isEmpty
+                } else if leg.isDeadhead {
+                    return !leg.deadheadOutTime.isEmpty && !leg.deadheadInTime.isEmpty
+                } else {
+                    return !leg.outTime.isEmpty && !leg.offTime.isEmpty &&
+                           !leg.onTime.isEmpty && !leg.inTime.isEmpty
+                }
+            }
+
+            // Set status through logpages structure
             if allPreviousComplete {
-                newLeg.status = .active  // Ready to fly - no backlog
-                print("✅ New leg from WATCH set to ACTIVE (all previous legs fully complete)")
+                var flatIndex = 0
+                for pageIndex in activeTrip.logpages.indices {
+                    for legIndex in activeTrip.logpages[pageIndex].legs.indices {
+                        if flatIndex == newLegIndex {
+                            activeTrip.logpages[pageIndex].legs[legIndex].status = .active
+                            print("✅ New leg from WATCH set to ACTIVE (all previous legs fully complete)")
+                        }
+                        flatIndex += 1
+                    }
+                }
             } else {
-                newLeg.status = .standby  // Waiting - incomplete legs ahead
                 print("⏸️ New leg from WATCH set to STANDBY (previous legs have missing times)")
             }
-
-            activeTrip.legs.append(newLeg)
-            let newLegIndex = activeTrip.legs.count - 1
 
             // ✅ FIX: Check if previous leg is complete and advance
             if newLegIndex > 0 {

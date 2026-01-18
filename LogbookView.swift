@@ -11,14 +11,18 @@ struct OrganizedLogbookView: View {
     @State private var tripToReactivate: Trip?
     @State private var showReactivateConfirmation = false
     @StateObject private var autoTimeSettings = AutoTimeSettings.shared
+    @StateObject private var dutyLimitSettings = DutyLimitSettingsStore.shared
     @State private var showingTimeZoneSheet = false
     
     @State private var shareItems: [Any] = []
     @State private var isShareSheetPresented: Bool = false
-    
+     
     // 🆕 PAYWALL: Track subscription status
     @StateObject private var trialChecker = SubscriptionStatusChecker.shared
     @State private var showingPaywall = false
+    
+    // Flight Time Limits tracking state
+    @State private var dutyLimitsEnabled: Bool = DutyLimitSettingsStore.shared.trackingEnabled
     
     // Add closure parameter for trip selection
     var onTripSelected: ((Int) -> Void)?
@@ -50,6 +54,61 @@ struct OrganizedLogbookView: View {
     // MARK: - Main List Content
     private var logbookListContent: some View {
             List {
+                // Flight Time Limits Toggle - above active trip
+                Button(action: {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    withAnimation(.spring()) {
+                        dutyLimitsEnabled.toggle()
+                        dutyLimitSettings.trackingEnabled = dutyLimitsEnabled
+                    }
+                }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "clock.badge.exclamationmark")
+                            .font(.title2)
+                            .foregroundColor(dutyLimitsEnabled ? .green : .orange)
+                            .frame(width: 40)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Flight Time Limits")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            
+                            Text(dutyLimitsEnabled ? "Enabled • Tracking duty limits" : "Disabled • Tap to enable")
+                                .font(.caption)
+                                .foregroundColor(dutyLimitsEnabled ? .green : .secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        // Visual indicator only (not interactive)
+                        Image(systemName: dutyLimitsEnabled ? "checkmark.circle.fill" : "circle")
+                            .font(.title2)
+                            .foregroundColor(dutyLimitsEnabled ? .green : .gray)
+                    }
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(dutyLimitsEnabled ? Color.green.opacity(0.1) : Color.gray.opacity(0.05))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(dutyLimitsEnabled ? Color.green.opacity(0.3) : Color.gray.opacity(0.2), lineWidth: 1)
+                            )
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .onAppear {
+                    // Sync with store on appear
+                    dutyLimitsEnabled = dutyLimitSettings.trackingEnabled
+                }
+                .onChange(of: dutyLimitSettings.trackingEnabled) { newValue in
+                    // Sync when changed from elsewhere (like Settings)
+                    dutyLimitsEnabled = newValue
+                }
+                
                 // Active Trip - standalone at top (not collapsible)
                 if let activeTrip = getActiveTrip() {
                     ActiveTripSection(
@@ -195,41 +254,15 @@ struct OrganizedLogbookView: View {
         .listStyle(.plain)
         .scrollTargetBehavior(.viewAligned)
         .scrollIndicators(.hidden)
-        .listRowInsets(EdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+        .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))  // 4pt breathing room from screen edges
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: 80)  // Prevent content from scrolling under tab bar
+        }
         .background(LogbookTheme.navy)
         .scrollContentBackground(.hidden)
         .navigationBarHidden(false)
         //.navigationTitle("Logbook")
         .navigationBarTitleDisplayMode(.large)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    showingTimeZoneSheet = true
-                }) {
-                    HStack(spacing: 1) {
-                        Image(systemName: autoTimeSettings.useZuluTime ? "globe" : "clock")
-                            .font(.caption)
-                        Text(autoTimeSettings.useZuluTime ? "UTC" : "Local")
-                            .font(.caption)
-                    }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(autoTimeSettings.useZuluTime ? Color.cyan.opacity(0.2) : Color.orange.opacity(0.2))
-                    .foregroundColor(autoTimeSettings.useZuluTime ? .cyan : .orange)
-                    .cornerRadius(8)
-                }
-            }
-            ToolbarItem(placement: .navigationBarLeading) {
-                if let latestTrip = store.trips.sorted(by: { $0.date > $1.date }).first {
-                    Button {
-                        shareTrip(latestTrip)
-                    } label: {
-                        Image(systemName: "square.and.arrow.up")
-                    }
-                    .accessibilityLabel("Share latest trip")
-                }
-            }
-        }
         .sheet(isPresented: $showingTimeZoneSheet) {
             TimeZoneSettingsSheet()
         }
@@ -887,10 +920,11 @@ struct ActiveTripSection: View {
     var onTripSelected: ((Int) -> Void)?
 
     var body: some View {
-        Section(header: Text("ACTIVE TRIP")
-            .font(.caption.bold())
-            .foregroundColor(LogbookTheme.accentBlue)
-        ) {
+        //Section(header: Text("ACTIVE TRIP")
+        //    .font(.caption.bold())
+        //    //.foregroundColor(LogbookTheme.accentBlue)
+           // .padding(.bottom, 8)  // //Prevent overlap with trip //card below
+       // ) {
             Button(action: {
                 let generator = UIImpactFeedbackGenerator(style: .light)
                 generator.impactOccurred()
@@ -911,7 +945,7 @@ struct ActiveTripSection: View {
             )
         }
     }
-}
+
 
 // MARK: - Collapsible Section
 struct CollapsibleSection: View {
@@ -1084,6 +1118,7 @@ struct SectionHeaderView: View {
                     .foregroundColor(LogbookTheme.textSecondary)
                     .animation(.easeInOut(duration: 0.2), value: isExpanded)  // ✅ Smooth chevron rotation
             }
+            .padding(.horizontal, 16)
             .padding(.vertical, 4)
         }
         .buttonStyle(PlainButtonStyle())

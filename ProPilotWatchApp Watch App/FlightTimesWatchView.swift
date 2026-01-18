@@ -48,13 +48,13 @@ struct FlightTimesWatchView: View {
     
     var body: some View {
         mainTabView
-            .confirmationDialog("End Trip?", isPresented: $showEndTripConfirmation) {
-                Button("End Trip", role: .destructive) {
-                    endTrip()
-                }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("Complete this trip and view summary?")
+            .sheet(isPresented: $showEndTripConfirmation) {
+                EndTripConfirmationView(
+                    isPresented: $showEndTripConfirmation,
+                    onConfirm: {
+                        endTrip()
+                    }
+                )
             }
             .sheet(isPresented: $showTripSummary) {
                 TripSummaryView(useZuluTime: useZuluTime)
@@ -738,10 +738,40 @@ struct CompactSmartTimeButton: View {
     @State private var justTapped = false
     @AppStorage("useZuluTime", store: UserDefaults(suiteName: "group.com.propilot.app"))
     private var useZuluTime: Bool = true
-    
+
+    // Time rounding setting from shared app group
+    @AppStorage("roundTimesToFiveMinutes", store: UserDefaults(suiteName: "group.com.propilot.app"))
+    private var roundTimesToFiveMinutes: Bool = false
+
     // Safe UTC timezone
     private var utcTimeZone: TimeZone {
         TimeZone(identifier: "UTC") ?? TimeZone.current
+    }
+
+    /// Rounds a date to the nearest 5-minute increment if enabled
+    private func roundToNearestFiveMinutes(_ date: Date) -> Date {
+        guard roundTimesToFiveMinutes else { return date }
+
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+
+        guard let minute = components.minute else { return date }
+
+        // Round to nearest 5 minutes
+        let roundedMinute = Int(round(Double(minute) / 5.0) * 5.0)
+
+        var newComponents = components
+
+        if roundedMinute >= 60 {
+            // Handle hour overflow (e.g., 58 rounds to 60 = next hour)
+            let hour = (components.hour ?? 0) + 1
+            newComponents.hour = hour
+            newComponents.minute = 0
+        } else {
+            newComponents.minute = roundedMinute
+        }
+
+        return calendar.date(from: newComponents) ?? date
     }
     
     var timeString: String {
@@ -756,7 +786,8 @@ struct CompactSmartTimeButton: View {
     var body: some View {
         Button {
             let now = Date()
-            onTimeSet(now)
+            let roundedTime = roundToNearestFiveMinutes(now)  // Apply rounding if enabled
+            onTimeSet(roundedTime)
             WKInterfaceDevice.current().play(.click)
             withAnimation { justTapped = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { withAnimation { justTapped = false } }
@@ -858,7 +889,8 @@ struct CompactSmartTimeButton: View {
                     
                     // Set Button - Large and Green
                     Button {
-                        onTimeSet(tempTime)
+                        let roundedTime = roundToNearestFiveMinutes(tempTime)  // Apply rounding if enabled
+                        onTimeSet(roundedTime)
                         showingPicker = false
                         WKInterfaceDevice.current().play(.success)
                     } label: {
@@ -930,6 +962,74 @@ struct SyncStatusView: View {
         case .connecting: return "Connecting..."
         case .disconnected: return "No Connection"
         }
+    }
+}
+
+// MARK: - End Trip Confirmation View
+struct EndTripConfirmationView: View {
+    @Binding var isPresented: Bool
+    let onConfirm: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+
+            // Icon
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 50))
+                .foregroundColor(.green)
+
+            // Title
+            Text("End Trip?")
+                .font(.title3)
+                .fontWeight(.bold)
+
+            // Message
+            Text("Complete this trip and view summary?")
+                .font(.footnote)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            Spacer()
+
+            // Buttons
+            VStack(spacing: 12) {
+                // End Trip Button
+                Button {
+                    isPresented = false
+                    onConfirm()
+                } label: {
+                    Text("End Trip")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.red)
+                        .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+
+                // Cancel Button
+                Button {
+                    isPresented = false
+                } label: {
+                    Text("Cancel")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color.gray.opacity(0.3))
+                        .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+        }
+        .padding()
     }
 }
 

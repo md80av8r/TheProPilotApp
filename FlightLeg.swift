@@ -74,7 +74,8 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
     var inTime: String = ""
     var flightNumber: String = ""
     var isDeadhead: Bool = false
-    
+    var isGroundOperationsOnly: Bool = false  // Taxi, maintenance run, aborted takeoff (OUT/IN only, no OFF/ON)
+
     // MARK: - Flight Date
     /// The actual calendar date this leg occurred on (for red-eyes, timezone crossings, etc.)
     /// Falls back to trip.date if not explicitly set
@@ -131,6 +132,7 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
          inTime: String = "",
          flightNumber: String = "",
          isDeadhead: Bool = false,
+         isGroundOperationsOnly: Bool = false,
          flightDate: Date? = nil,
          status: LegStatus = .active,
          scheduledOut: Date? = nil,
@@ -167,6 +169,7 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
         self.inTime = inTime
         self.flightNumber = flightNumber
         self.isDeadhead = isDeadhead
+        self.isGroundOperationsOnly = isGroundOperationsOnly
         self.flightDate = flightDate
         self.status = status
         self.scheduledOut = scheduledOut
@@ -198,7 +201,7 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
     // MARK: - Custom Decoder for Legacy Data Compatibility
     enum CodingKeys: String, CodingKey {
         case id, departure, arrival, outTime, offTime, onTime, inTime
-        case flightNumber, isDeadhead, flightDate, status
+        case flightNumber, isDeadhead, isGroundOperationsOnly, flightDate, status
         case scheduledOut, scheduledIn, scheduledFlightNumber
         case scheduledBlockMinutesFromRoster, rosterSourceId
         case nocUID, nocTimestamp, isLastLegOfTrip, tripGroupId
@@ -222,6 +225,7 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
         inTime = (try? container.decode(String.self, forKey: .inTime)) ?? ""
         flightNumber = (try? container.decode(String.self, forKey: .flightNumber)) ?? ""
         isDeadhead = (try? container.decode(Bool.self, forKey: .isDeadhead)) ?? false
+        isGroundOperationsOnly = (try? container.decode(Bool.self, forKey: .isGroundOperationsOnly)) ?? false
         flightDate = try? container.decode(Date.self, forKey: .flightDate)
         
         // Handle status with fallback for old data
@@ -278,7 +282,8 @@ struct FlightLeg: Identifiable, Codable, Equatable, Hashable {
         return !departure.isEmpty && !arrival.isEmpty &&
                (!outTime.isEmpty || !inTime.isEmpty ||
                 !deadheadOutTime.isEmpty || !deadheadInTime.isEmpty ||
-                deadheadFlightHours > 0)
+                deadheadFlightHours > 0 ||
+                (isGroundOperationsOnly && !outTime.isEmpty && !inTime.isEmpty))
     }
 
     // MARK: - Fingerprint for Duplicate Detection

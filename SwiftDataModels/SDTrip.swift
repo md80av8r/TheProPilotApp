@@ -106,16 +106,18 @@ final class SDTrip {
     func toTrip() -> Trip {
         // Sort logpages by page number
         let sortedLogpages = (logpages ?? []).sorted { $0.pageNumber < $1.pageNumber }
-        
-        print("🔄 toTrip() for trip #\(tripNumber): \(sortedLogpages.count) logpages in DB")
-        
+
+        // Debug logging disabled - was causing performance issues with 371 trips
+        // print("🔄 toTrip() for trip #\(tripNumber): \(sortedLogpages.count) logpages in DB")
+
         // Convert logpages to Logpage structs
         let convertedLogpages = sortedLogpages.map { $0.toLogpage() }
-        
+
         // CRITICAL FIX: Flatten all legs from all logpages into trip.legs array
         let allLegs = convertedLogpages.flatMap { $0.legs }
-        
-        print("🔄 toTrip() flattened \(allLegs.count) legs from logpages")
+
+        // Debug logging disabled - was causing performance issues
+        // print("🔄 toTrip() flattened \(allLegs.count) legs from logpages")
 
         var trip = Trip(
             id: tripId,

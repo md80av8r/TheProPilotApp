@@ -5,7 +5,7 @@
 import SwiftUI
 
 struct DutyLimitSettingsView: View {
-    @StateObject private var settingsStore = DutyLimitSettingsStore.shared
+    @ObservedObject private var settingsStore = DutyLimitSettingsStore.shared
     @Environment(\.dismiss) private var dismiss
     
     @State private var showingPresetConfirmation = false
@@ -17,7 +17,13 @@ struct DutyLimitSettingsView: View {
             List {
                 // MARK: - Master Enable Section
                 Section {
-                    Toggle("Enable Duty Limit Tracking", isOn: $settingsStore.trackingEnabled)
+                    Toggle("Enable Duty Limit Tracking", isOn: Binding(
+                        get: { settingsStore.trackingEnabled },
+                        set: { newValue in
+                            print("⚙️ Settings toggle changed to: \(newValue)")
+                            settingsStore.trackingEnabled = newValue
+                        }
+                    ))
                         .foregroundColor(.white)
                         .tint(LogbookTheme.accentGreen)
                 } footer: {

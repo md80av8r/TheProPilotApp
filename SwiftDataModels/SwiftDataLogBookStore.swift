@@ -171,8 +171,75 @@ class SwiftDataLogBookStore: ObservableObject {
         }
     }
 
-    // MARK: - Add Trip
+    // MARK: - Add Trip (with deduplication)
     func addTrip(_ trip: Trip) {
+        // CRITICAL FIX: Check DATABASE for existing trip with same UUID first (not just in-memory)
+        let tripId = trip.id
+        let predicate = #Predicate<SDTrip> { $0.tripId == tripId }
+        let descriptor = FetchDescriptor<SDTrip>(predicate: predicate)
+
+        do {
+            let existingInDB = try modelContext.fetch(descriptor)
+            if !existingInDB.isEmpty {
+                print("⚠️ addTrip: Trip with UUID \(tripId) already exists in database - using saveTrip instead")
+                saveTrip(trip)
+                return
+            }
+
+            // Also check by trip number + date to catch duplicates with different UUIDs
+            if !trip.tripNumber.isEmpty {
+                let tripNumber = trip.tripNumber
+                let tripDate = trip.date
+                let calendar = Calendar.current
+                let startOfDay = calendar.startOfDay(for: tripDate)
+                let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+                let numberPredicate = #Predicate<SDTrip> {
+                    $0.tripNumber == tripNumber &&
+                    $0.date >= startOfDay &&
+                    $0.date < endOfDay
+                }
+                let numberDescriptor = FetchDescriptor<SDTrip>(predicate: numberPredicate)
+                let existingByNumber = try modelContext.fetch(numberDescriptor)
+
+                if !existingByNumber.isEmpty {
+                    print("⚠️ addTrip: Trip #\(tripNumber) on \(tripDate) already exists in database - updating existing trip")
+                    // Get the existing trip and update it with new data
+                    var existingTrip = existingByNumber.first!.toTrip()
+
+                    // Update the status to match the new trip (usually .active when starting duty)
+                    existingTrip.status = trip.status
+
+                    // Update legs if the new trip has legs
+                    if !trip.legs.isEmpty {
+                        existingTrip.legs = trip.legs
+                    }
+
+                    // Update per diem if set
+                    if trip.perDiemStarted != nil {
+                        existingTrip.perDiemStarted = trip.perDiemStarted
+                    }
+
+                    // Save the updated trip
+                    saveTrip(existingTrip)
+
+                    // Update in-memory cache
+                    if let index = trips.firstIndex(where: { $0.id == existingTrip.id }) {
+                        trips[index] = existingTrip
+                    } else {
+                        trips.append(existingTrip)
+                        trips.sort { $0.date > $1.date }
+                    }
+
+                    print("✅ Updated existing trip #\(tripNumber) to status: \(existingTrip.status)")
+                    return
+                }
+            }
+        } catch {
+            print("⚠️ addTrip: Error checking for duplicates: \(error)")
+            // Continue with insertion - better to have duplicate than lose data
+        }
+
         // When adding a new active/planning trip, complete all others first
         if trip.status == .active || trip.status == .planning {
             for index in trips.indices {
@@ -192,6 +259,7 @@ class SwiftDataLogBookStore: ObservableObject {
             trips.append(trip)
             trips.sort { $0.date > $1.date }
             lastSaveTime = Date()
+            print("✅ addTrip: Successfully added trip #\(trip.tripNumber)")
         } catch {
             print("Failed to add trip: \(error)")
         }
@@ -475,7 +543,7 @@ class SwiftDataLogBookStore: ObservableObject {
         print("🔧 Starting comprehensive relationship repair...")
 
         do {
-            // Step 1: Find and remove duplicate trips (same tripId)
+            // Step 1: Find and remove duplicate trips (same tripId UUID)
             let allTripsDescriptor = FetchDescriptor<SDTrip>()
             var allTrips = try modelContext.fetch(allTripsDescriptor)
 
@@ -489,7 +557,9 @@ class SwiftDataLogBookStore: ObservableObject {
                 print("⚠️ Found \(duplicateTrips.count) duplicate trips with UUID \(uuid)")
                 // Keep the one with most data, delete others
                 let sorted = duplicateTrips.sorted {
-                    ($0.logpages?.count ?? 0) > ($1.logpages?.count ?? 0)
+                    let count1 = ($0.logpages?.reduce(0) { $0 + ($1.legs?.count ?? 0) } ?? 0)
+                    let count2 = ($1.logpages?.reduce(0) { $0 + ($1.legs?.count ?? 0) } ?? 0)
+                    return count1 > count2
                 }
                 for i in 1..<sorted.count {
                     modelContext.delete(sorted[i])
@@ -497,10 +567,57 @@ class SwiftDataLogBookStore: ObservableObject {
                 }
             }
             if duplicatesRemoved > 0 {
-                print("🔧 Removed \(duplicatesRemoved) duplicate trips")
-                // Re-fetch trips after removing duplicates
+                print("🔧 Removed \(duplicatesRemoved) duplicate trips (by UUID)")
                 allTrips = try modelContext.fetch(allTripsDescriptor)
             }
+
+            // Step 1b: Find and remove duplicate trips by trip number + date (different UUIDs but same trip)
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+
+            var tripsByNumberDate: [String: [SDTrip]] = [:]
+            for sdTrip in allTrips where !sdTrip.tripNumber.isEmpty {
+                let key = "\(sdTrip.tripNumber)_\(dateFormatter.string(from: sdTrip.date))"
+                tripsByNumberDate[key, default: []].append(sdTrip)
+            }
+
+            var numberDuplicatesRemoved = 0
+            for (key, duplicateTrips) in tripsByNumberDate where duplicateTrips.count > 1 {
+                print("⚠️ Found \(duplicateTrips.count) trips with same number/date: \(key)")
+                // Keep the one with most legs
+                let sorted = duplicateTrips.sorted {
+                    let count1 = ($0.logpages?.reduce(0) { $0 + ($1.legs?.count ?? 0) } ?? 0)
+                    let count2 = ($1.logpages?.reduce(0) { $0 + ($1.legs?.count ?? 0) } ?? 0)
+                    return count1 > count2
+                }
+                for i in 1..<sorted.count {
+                    modelContext.delete(sorted[i])
+                    numberDuplicatesRemoved += 1
+                }
+            }
+            if numberDuplicatesRemoved > 0 {
+                print("🔧 Removed \(numberDuplicatesRemoved) duplicate trips (by number+date)")
+                allTrips = try modelContext.fetch(allTripsDescriptor)
+            }
+
+            // Step 1c: Remove empty/invalid trips (no legs, no logpages, empty data)
+            var emptyTripsRemoved = 0
+            for sdTrip in allTrips {
+                let legCount = sdTrip.logpages?.reduce(0) { $0 + ($1.legs?.count ?? 0) } ?? 0
+                let hasValidData = legCount > 0 || !sdTrip.tripNumber.isEmpty
+
+                // Remove trips that have no legs AND no trip number AND no useful data
+                if legCount == 0 && sdTrip.tripNumber.isEmpty && sdTrip.notes.isEmpty {
+                    modelContext.delete(sdTrip)
+                    emptyTripsRemoved += 1
+                }
+            }
+            if emptyTripsRemoved > 0 {
+                print("🔧 Removed \(emptyTripsRemoved) empty/invalid trips")
+                allTrips = try modelContext.fetch(allTripsDescriptor)
+            }
+
+            duplicatesRemoved += numberDuplicatesRemoved + emptyTripsRemoved
 
             // Step 2: Find orphaned logpages and try to re-link them
             let orphanedLogpagesDescriptor = FetchDescriptor<SDLogpage>(
@@ -510,9 +627,8 @@ class SwiftDataLogBookStore: ObservableObject {
             print("🔧 Found \(orphanedLogpages.count) orphaned logpages")
 
             // Build a lookup map of trips by date for faster matching
+            // (reuse dateFormatter from Step 1b)
             var tripsByDate: [String: [SDTrip]] = [:]
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd"
             for sdTrip in allTrips {
                 let dateKey = dateFormatter.string(from: sdTrip.date)
                 tripsByDate[dateKey, default: []].append(sdTrip)
@@ -666,16 +782,18 @@ class SwiftDataLogBookStore: ObservableObject {
         // Count legs in database
         let legDescriptor = FetchDescriptor<SDFlightLeg>()
         let logpageDescriptor = FetchDescriptor<SDLogpage>()
+        let tripDescriptor = FetchDescriptor<SDTrip>()
 
         do {
             let allLegs = try modelContext.fetch(legDescriptor)
             let allLogpages = try modelContext.fetch(logpageDescriptor)
+            let allTrips = try modelContext.fetch(tripDescriptor)
             totalLegsInDB = allLegs.count
 
             let orphanedLegs = allLegs.filter { $0.parentLogpage == nil }
             let orphanedLogpages = allLogpages.filter { $0.owningTrip == nil }
 
-            // Check for duplicates
+            // Check for duplicate leg UUIDs
             var legUUIDs = Set<UUID>()
             var duplicateLegs = 0
             for leg in allLegs {
@@ -686,8 +804,42 @@ class SwiftDataLogBookStore: ObservableObject {
                 }
             }
 
+            // Check for duplicate trip UUIDs
+            var tripUUIDs = Set<UUID>()
+            var duplicateTripUUIDs = 0
+            for trip in allTrips {
+                if tripUUIDs.contains(trip.tripId) {
+                    duplicateTripUUIDs += 1
+                } else {
+                    tripUUIDs.insert(trip.tripId)
+                }
+            }
+
+            // Check for duplicate trips by number+date
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            var tripsByNumberDate: [String: Int] = [:]
+            var duplicateTripsByNumber = 0
+            for trip in allTrips where !trip.tripNumber.isEmpty {
+                let key = "\(trip.tripNumber)_\(dateFormatter.string(from: trip.date))"
+                tripsByNumberDate[key, default: 0] += 1
+                if tripsByNumberDate[key]! > 1 {
+                    duplicateTripsByNumber += 1
+                }
+            }
+
+            // Count empty trips (no legs, no trip number)
+            var emptyTrips = 0
+            for trip in allTrips {
+                let legCount = trip.logpages?.reduce(0) { $0 + ($1.legs?.count ?? 0) } ?? 0
+                if legCount == 0 && trip.tripNumber.isEmpty && trip.notes.isEmpty {
+                    emptyTrips += 1
+                }
+            }
+
             print("📊 Data Integrity Check:")
             print("   - Trips in memory: \(trips.count)")
+            print("   - Trips in database: \(allTrips.count)")
             print("   - Logpages in memory: \(totalLogpagesInTrips)")
             print("   - Logpages in database: \(allLogpages.count)")
             print("   - Orphaned logpages: \(orphanedLogpages.count)")
@@ -695,33 +847,64 @@ class SwiftDataLogBookStore: ObservableObject {
             print("   - Legs in database: \(totalLegsInDB)")
             print("   - Orphaned legs: \(orphanedLegs.count)")
             print("   - Duplicate leg UUIDs: \(duplicateLegs)")
+            print("   - Duplicate trip UUIDs: \(duplicateTripUUIDs)")
+            print("   - Duplicate trips (by number+date): \(duplicateTripsByNumber)")
+            print("   - Empty/invalid trips: \(emptyTrips)")
 
             var hasIssues = false
+            var issuesList: [String] = []
 
             if orphanedLegs.count > 0 {
-                print("⚠️ WARNING: \(orphanedLegs.count) orphaned legs found in database!")
+                issuesList.append("⚠️ \(orphanedLegs.count) orphaned legs")
                 hasIssues = true
             }
 
             if orphanedLogpages.count > 0 {
-                print("⚠️ WARNING: \(orphanedLogpages.count) orphaned logpages found in database!")
+                issuesList.append("⚠️ \(orphanedLogpages.count) orphaned logpages")
                 hasIssues = true
             }
 
             if duplicateLegs > 0 {
-                print("⚠️ WARNING: \(duplicateLegs) duplicate leg UUIDs found!")
+                issuesList.append("⚠️ \(duplicateLegs) duplicate leg UUIDs")
+                hasIssues = true
+            }
+
+            if duplicateTripUUIDs > 0 {
+                issuesList.append("❌ CRITICAL: \(duplicateTripUUIDs) duplicate trip UUIDs")
+                hasIssues = true
+            }
+
+            if duplicateTripsByNumber > 0 {
+                issuesList.append("❌ CRITICAL: \(duplicateTripsByNumber) duplicate trips (by number+date)")
+                hasIssues = true
+            }
+
+            if emptyTrips > 0 {
+                issuesList.append("⚠️ \(emptyTrips) empty/invalid trips")
                 hasIssues = true
             }
 
             let expectedLegs = totalLegsInDB - orphanedLegs.count - duplicateLegs
             if totalLegsInTrips != expectedLegs {
-                print("⚠️ WARNING: Leg count mismatch! Memory: \(totalLegsInTrips), Expected from DB: \(expectedLegs)")
+                issuesList.append("⚠️ Leg count mismatch (Memory: \(totalLegsInTrips), DB: \(expectedLegs))")
                 hasIssues = true
             }
 
             if hasIssues {
-                print("💡 Run repairOrphanedRelationships() to attempt automatic repair")
-                print("💡 Or import from a backup to restore data")
+                print("⚠️ Data integrity check found issues:")
+                for issue in issuesList {
+                    print("   \(issue)")
+                }
+
+                // Auto-repair if critical issues found (duplicates or empty trips)
+                let hasCriticalIssues = duplicateTripUUIDs > 0 || duplicateTripsByNumber > 0 || emptyTrips > 5
+                if hasCriticalIssues {
+                    print("🔧 Auto-repairing critical data integrity issues...")
+                    await repairOrphanedRelationships()
+                } else {
+                    print("💡 Run repairOrphanedRelationships() to attempt automatic repair")
+                    print("💡 Or import from a backup to restore data")
+                }
             } else {
                 print("✅ Data integrity check passed!")
             }

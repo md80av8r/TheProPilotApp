@@ -782,10 +782,13 @@ struct Trip: Identifiable, Codable, Equatable {
         }
         
         let leg = legs[index]
-        
+
         // Check if this leg should be marked complete
         let isComplete: Bool
-        if leg.isDeadhead {
+        if leg.isGroundOperationsOnly {
+            // Ground ops: Complete if has OUT and IN times only
+            isComplete = !leg.outTime.isEmpty && !leg.inTime.isEmpty
+        } else if leg.isDeadhead {
             // Deadhead: Complete if has OUT and IN times OR has hours
             isComplete = (!leg.deadheadOutTime.isEmpty && !leg.deadheadInTime.isEmpty) || leg.deadheadFlightHours > 0
         } else {
@@ -795,8 +798,8 @@ struct Trip: Identifiable, Codable, Equatable {
                         !leg.onTime.isEmpty &&
                         !leg.inTime.isEmpty
         }
-        
-        print("🔍 checkAndAdvanceLeg(\(index)): status=\(leg.status), OUT='\(leg.outTime)', OFF='\(leg.offTime)', ON='\(leg.onTime)', IN='\(leg.inTime)', isComplete=\(isComplete)")
+
+        print("🔍 checkAndAdvanceLeg(\(index)): status=\(leg.status), isGroundOps=\(leg.isGroundOperationsOnly), OUT='\(leg.outTime)', OFF='\(leg.offTime)', ON='\(leg.onTime)', IN='\(leg.inTime)', isComplete=\(isComplete)")
         
         // If complete and currently active, advance
         if isComplete && leg.status == .active {

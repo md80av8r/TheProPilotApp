@@ -121,7 +121,7 @@ struct AllLegsView: View {
             }
         }
         .background(LogbookTheme.navy)
-        .navigationTitle("Flight Legs")
+        .navigationTitle("Detailed Legs View")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -152,7 +152,8 @@ struct AllLegsView: View {
         VStack(spacing: 0) {
             // Statistics Header
             StatisticsHeaderView(stats: totalStats, filter: selectedFilter)
-                .padding()
+                .padding(.horizontal, 4)   // Reduced from 6 to 4
+                .padding(.vertical, 2)     // Reduced from 4 to 2
                 .background(LogbookTheme.navyLight)
             
             // Legs List
@@ -188,7 +189,8 @@ struct AllLegsView: View {
             VStack(spacing: 0) {
                 // Statistics Header
                 StatisticsHeaderView(stats: totalStats, filter: selectedFilter)
-                    .padding()
+                    .padding(.horizontal, 4)   // Reduced from 6 to 4
+                    .padding(.vertical, 2)     // Reduced from 4 to 2
                     .background(LogbookTheme.navyLight)
                 
                 // Legs List
@@ -228,17 +230,18 @@ struct StatisticsHeaderView: View {
     let filter: AllLegsView.LegFilter
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 2) {  // Reduced from 4 to 2
             HStack {
                 Image(systemName: "chart.bar.fill")
                     .foregroundColor(LogbookTheme.accentBlue)
+                    .font(.subheadline)  // Made smaller
                 Text(filter.rawValue)
-                    .font(.headline)
+                    .font(.subheadline)  // Made smaller
                     .foregroundColor(.white)
                 Spacer()
             }
             
-            HStack(spacing: 20) {
+            HStack(spacing: 4) {  // Reduced from 6 to 4
                 StatBox(
                     icon: "airplane.departure",
                     label: "Legs",
@@ -277,24 +280,25 @@ struct StatBox: View {
     let color: Color
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 2) {  // Reduced from 3 to 2
             Image(systemName: icon)
                 .foregroundColor(color)
-                .font(.title3)
+                .font(.body)  // Made smaller from title3
             
             Text(value)
-                .font(.title3)
+                .font(.body)  // Made smaller from title3
                 .fontWeight(.bold)
                 .foregroundColor(.white)
             
             Text(label)
-                .font(.caption)
+                .font(.caption2)  // Made smaller from caption
                 .foregroundColor(.gray)
         }
         .frame(maxWidth: .infinity)
-        .padding()
+        .padding(.horizontal, 3)   // Reduced from 4 to 3
+        .padding(.vertical, 4)     // Reduced from 5 to 4
         .background(LogbookTheme.fieldBackground)
-        .cornerRadius(12)
+        .cornerRadius(8)  // Reduced from 12
     }
 }
 

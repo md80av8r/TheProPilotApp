@@ -13,23 +13,24 @@ struct ProximitySettingsView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var locationManager = PilotLocationManager()
     
-    // Proximity radius options in meters
-    @AppStorage("airportProximityRadius") private var proximityRadius: Double = 1000
+    // Proximity radius options in meters (stored as meters, displayed as nautical miles)
+    @AppStorage("airportProximityRadius") private var proximityRadius: Double = 1852  // 1 nm default
     @AppStorage("autoStartDutyOnArrival") private var autoStartDuty = false
     @AppStorage("autoFillAirports") private var autoFillAirports = true
     @AppStorage("showArrivalNotifications") private var showNotifications = true
     @AppStorage("watchTriggersGeofence") private var watchTriggersGeofence = true
-    
+
     // Local state for testing
     @State private var isTesting = false
     @State private var testResult: String = ""
-    
+
+    // Radius options in nautical miles (1 nm = 1852 meters)
     private let radiusOptions: [(label: String, value: Double)] = [
-        ("0.5 km", 500),
-        ("1 km", 1000),
-        ("2 km", 2000),
-        ("5 km", 5000),
-        ("10 km", 10000)
+        ("0.5 nm", 926),      // 0.5 nautical miles
+        ("1 nm", 1852),       // 1 nautical mile
+        ("2 nm", 3704),       // 2 nautical miles
+        ("5 nm", 9260),       // 5 nautical miles
+        ("10 nm", 18520)      // 10 nautical miles
     ]
     
     var body: some View {
@@ -154,7 +155,7 @@ struct ProximitySettingsView: View {
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                     Spacer()
-                                    Text("\(String(format: "%.1f", airport.distance / 1000)) km")
+                                    Text("\(String(format: "%.1f", airport.distance / 1852)) nm")
                                         .font(.caption)
                                         .foregroundColor(.gray)
                                 }
@@ -252,9 +253,9 @@ struct ProximitySettingsView: View {
             isTesting = false
             
             if let airport = locationManager.nearbyAirports.first {
-                let distanceKm = airport.distance / 1000
-                testResult = "Nearest: \(airport.icao) at \(String(format: "%.1f", distanceKm)) km"
-                print("✈️ Test result: \(airport.icao) at \(String(format: "%.1f", distanceKm)) km")
+                let distanceNm = airport.distance / 1852
+                testResult = "Nearest: \(airport.icao) at \(String(format: "%.1f", distanceNm)) nm"
+                print("✈️ Test result: \(airport.icao) at \(String(format: "%.1f", distanceNm)) nm")
             } else if locationManager.currentLocation != nil {
                 testResult = "No airports nearby"
                 print("❌ No airports found nearby")

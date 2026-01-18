@@ -2346,6 +2346,13 @@ struct MonthDayCell: View {
                 LogbookTheme.accentBlue.opacity(0.2) :
                 (flights.isEmpty ? LogbookTheme.cardBackground.opacity(0.3) : dayColor.opacity(0.1))
         )
+        .overlay(
+            // Special border for current day - makes it stand out
+            Calendar.current.isDate(day, inSameDayAs: Date()) ?
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(LogbookTheme.accentBlue, lineWidth: 2) :
+                nil
+        )
         .border(LogbookTheme.divider, width: 0.5)
         .onTapGesture {
             // When user taps a day, switch to list view for that day

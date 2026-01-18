@@ -881,6 +881,26 @@ class AirportDatabaseManager: ObservableObject {
                 print("✅ Updated \(finalAirports.count) airports from CloudKit")
             }
             
+        } catch let error as CKError {
+            await MainActor.run {
+                self.isLoading = false
+                self.loadingMessage = ""
+            }
+
+            // Handle specific CloudKit errors gracefully
+            switch error.code {
+            case .unknownItem:
+                // Record type "Airport" doesn't exist in CloudKit schema
+                // This is expected if the schema hasn't been deployed yet
+                print("⚠️ CloudKit Airport schema not found - using local CSV data only")
+                print("   To enable CloudKit airports, deploy the 'Airport' record type in CloudKit Dashboard")
+            case .networkFailure, .networkUnavailable, .serviceUnavailable:
+                print("⚠️ CloudKit unavailable - using local CSV data only")
+            case .notAuthenticated:
+                print("⚠️ iCloud not signed in - using local CSV data only")
+            default:
+                print("❌ CloudKit update failed: \(error.localizedDescription)")
+            }
         } catch {
             await MainActor.run {
                 self.isLoading = false

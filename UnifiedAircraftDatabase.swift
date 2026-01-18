@@ -389,6 +389,7 @@ class UnifiedAircraftDatabase: ObservableObject {
 
     private let container = CKContainer(identifier: "iCloud.com.jkadans.TheProPilotApp")
     private var privateDB: CKDatabase { container.privateCloudDatabase }
+    private var publicDB: CKDatabase { container.publicCloudDatabase }  // For shared aircraft across airline
 
     private let userDefaults = UserDefaults(suiteName: "group.com.propilot.app")
     private let localStorageKey = "UnifiedAircraftDatabase"
@@ -578,25 +579,25 @@ class UnifiedAircraftDatabase: ObservableObject {
         syncError = nil
 
         do {
-            // Build predicate to filter by airline
-            // Show aircraft that: match user's airline OR have no airline set (shared/personal)
+            // CloudKit Development now has RECORDNAME QUERYABLE index and airlineIdentifier field
+            // Filter aircraft by airline: show user's airline + shared aircraft (no airline set)
+            var cloudAircraft: [Aircraft] = []
+
             let predicate: NSPredicate
-            if let airline = userAirline {
-                // Filter to user's airline OR aircraft without airline identifier
-                predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
-                    NSPredicate(format: "airlineIdentifier == %@", airline),
-                    NSPredicate(format: "airlineIdentifier == %@", ""),
-                    NSPredicate(format: "airlineIdentifier == nil")
-                ])
+            if let airline = userAirline, !airline.isEmpty {
+                // Filter by airline only (shared aircraft with empty airlineIdentifier require separate query)
+                predicate = NSPredicate(format: "airlineIdentifier == %@", airline)
             } else {
                 // No airline configured - show all aircraft
                 predicate = NSPredicate(value: true)
             }
 
             let query = CKQuery(recordType: "Aircraft", predicate: predicate)
-            let (matchResults, _) = try await privateDB.records(matching: query)
+            query.sortDescriptors = [NSSortDescriptor(key: "tailNumber", ascending: true)]
 
-            var cloudAircraft: [Aircraft] = []
+            // Use PUBLIC database so aircraft are shared across all users of the same airline
+            let (matchResults, _) = try await publicDB.records(matching: query)
+
             for (_, result) in matchResults {
                 if case .success(let record) = result,
                    let ac = Aircraft.fromCKRecord(record) {
@@ -658,8 +659,9 @@ class UnifiedAircraftDatabase: ObservableObject {
     private func saveToCloudKit(_ aircraft: Aircraft) async {
         do {
             let record = aircraft.toCKRecord()
-            _ = try await privateDB.save(record)
-            print("☁️ Saved \(aircraft.tailNumber) to CloudKit")
+            // Use PUBLIC database so aircraft are shared across all users of the same airline
+            _ = try await publicDB.save(record)
+            print("☁️ Saved \(aircraft.tailNumber) to CloudKit (PUBLIC)")
         } catch let error as CKError {
             if error.errorCode == 11 { // Unknown Item - schema not set up
                 print("⚠️ CloudKit schema not configured. \(aircraft.tailNumber) saved locally only.")
@@ -674,8 +676,9 @@ class UnifiedAircraftDatabase: ObservableObject {
     private func deleteFromCloudKit(_ aircraft: Aircraft) async {
         let recordID = CKRecord.ID(recordName: aircraft.id.uuidString)
         do {
-            try await privateDB.deleteRecord(withID: recordID)
-            print("☁️ Deleted \(aircraft.tailNumber) from CloudKit")
+            // Use PUBLIC database so deletion affects shared aircraft
+            try await publicDB.deleteRecord(withID: recordID)
+            print("☁️ Deleted \(aircraft.tailNumber) from CloudKit (PUBLIC)")
         } catch {
             print("❌ Failed to delete \(aircraft.tailNumber) from CloudKit: \(error)")
         }

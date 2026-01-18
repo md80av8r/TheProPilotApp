@@ -300,23 +300,29 @@ class CloudKitMigrationHelper: ObservableObject {
                 migrationStatus = .migrating(progress: progress)
                 progressMessage = "Migrating trip \(index + 1) of \(total): #\(trip.tripNumber)"
 
-                // Check if trip already exists in SwiftData
-                let existingTrip = store.trips.first { $0.id == trip.id }
+                // CRITICAL FIX: Check DATABASE directly, not just in-memory store.trips
+                // The addTrip function now handles this check internally
+                // But we also do a pre-check here to provide accurate skip counts
+                let existsInMemory = store.trips.contains { $0.id == trip.id }
 
-                if existingTrip != nil && mergeWithExisting {
-                    print("⏭️ Migration: Skipping existing trip #\(trip.tripNumber)")
+                if existsInMemory && mergeWithExisting {
+                    print("⏭️ Migration: Skipping existing trip #\(trip.tripNumber) (in memory)")
                     skipped += 1
                 } else {
-                    // Import the trip
-                    if existingTrip != nil {
-                        // Replace mode - find index and delete existing first
-                        if let existingIndex = store.trips.firstIndex(where: { $0.id == trip.id }) {
-                            store.deleteTrip(at: IndexSet(integer: existingIndex))
-                        }
-                    }
+                    // addTrip now internally checks the DATABASE for duplicates
+                    // and will skip if trip already exists in DB
+                    let tripCountBefore = store.trips.count
                     store.addTrip(trip)
-                    imported += 1
-                    print("✅ Migration: Imported trip #\(trip.tripNumber)")
+                    let tripCountAfter = store.trips.count
+
+                    // Check if addTrip actually added it (or skipped due to DB check)
+                    if tripCountAfter > tripCountBefore {
+                        imported += 1
+                        print("✅ Migration: Imported trip #\(trip.tripNumber)")
+                    } else {
+                        skipped += 1
+                        print("⏭️ Migration: Skipping trip #\(trip.tripNumber) (found in database)")
+                    }
                 }
 
                 migratedCount = imported

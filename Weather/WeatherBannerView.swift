@@ -212,7 +212,29 @@ class BannerWeatherService: ObservableObject {
     func fetchMETAR(for airport: String) async throws -> RawMETAR {
         let icao = airport.uppercased()
 
-        // Check cache first (safe - we're on MainActor)
+        // ✈️ CHECK IN-FLIGHT STATE: Use cached weather when airborne
+        // This provides offline access during flights when network may be unavailable
+        if FlightStateManager.shared.isInFlight,
+           let activeLegId = FlightStateManager.shared.activeLegId {
+            // Try to get weather from flight cache
+            if let cachedFlightWeather = await WeatherCacheService.shared.loadCachedWeather(for: activeLegId) {
+                // Check if this airport is departure or arrival
+                if icao == cachedFlightWeather.departureICAO.uppercased(),
+                   let cachedMETAR = cachedFlightWeather.departureMETAR {
+                    print("☁️ Using cached departure METAR for \(icao) (\(cachedFlightWeather.timeAgo))")
+                    return cachedMETAR
+                }
+                if icao == cachedFlightWeather.arrivalICAO.uppercased(),
+                   let cachedMETAR = cachedFlightWeather.arrivalMETAR {
+                    print("☁️ Using cached arrival METAR for \(icao) (\(cachedFlightWeather.timeAgo))")
+                    return cachedMETAR
+                }
+            }
+            // If we're in flight but no cached data for this airport, continue to fetch live
+            print("⚠️ In flight but no cached METAR for \(icao) - fetching live")
+        }
+
+        // Check in-memory cache first (safe - we're on MainActor)
         if let cached = cachedWeather[icao],
            let lastFetch = lastFetchTime[icao],
            Date().timeIntervalSince(lastFetch) < cacheTimeout {
@@ -681,6 +703,24 @@ class BannerWeatherService: ObservableObject {
     func fetchTAF(for airport: String) async throws -> RawTAF {
         let icao = airport.uppercased()
 
+        // ✈️ CHECK IN-FLIGHT STATE: Use cached TAF when airborne
+        if FlightStateManager.shared.isInFlight,
+           let activeLegId = FlightStateManager.shared.activeLegId {
+            if let cachedFlightWeather = await WeatherCacheService.shared.loadCachedWeather(for: activeLegId) {
+                if icao == cachedFlightWeather.departureICAO.uppercased(),
+                   let cachedTAF = cachedFlightWeather.departureTAF {
+                    print("☁️ Using cached departure TAF for \(icao) (\(cachedFlightWeather.timeAgo))")
+                    return cachedTAF
+                }
+                if icao == cachedFlightWeather.arrivalICAO.uppercased(),
+                   let cachedTAF = cachedFlightWeather.arrivalTAF {
+                    print("☁️ Using cached arrival TAF for \(icao) (\(cachedFlightWeather.timeAgo))")
+                    return cachedTAF
+                }
+            }
+            print("⚠️ In flight but no cached TAF for \(icao) - fetching live")
+        }
+
         let urlString = "https://aviationweather.gov/api/data/taf?ids=\(icao)&format=json"
         guard let url = URL(string: urlString) else {
             throw WeatherBannerError.invalidURL
@@ -699,6 +739,24 @@ class BannerWeatherService: ObservableObject {
     // MARK: - MOS Fetching (Iowa State Mesonet)
     func fetchMOS(for airport: String) async throws -> [MOSForecast] {
         let icao = airport.uppercased()
+
+        // ✈️ CHECK IN-FLIGHT STATE: Use cached MOS when airborne
+        if FlightStateManager.shared.isInFlight,
+           let activeLegId = FlightStateManager.shared.activeLegId {
+            if let cachedFlightWeather = await WeatherCacheService.shared.loadCachedWeather(for: activeLegId) {
+                if icao == cachedFlightWeather.departureICAO.uppercased(),
+                   let cachedMOS = cachedFlightWeather.departureMOS {
+                    print("☁️ Using cached departure MOS for \(icao) (\(cachedFlightWeather.timeAgo))")
+                    return cachedMOS
+                }
+                if icao == cachedFlightWeather.arrivalICAO.uppercased(),
+                   let cachedMOS = cachedFlightWeather.arrivalMOS {
+                    print("☁️ Using cached arrival MOS for \(icao) (\(cachedFlightWeather.timeAgo))")
+                    return cachedMOS
+                }
+            }
+            print("⚠️ In flight but no cached MOS for \(icao) - fetching live")
+        }
 
         // Iowa State Mesonet MOS API - returns pandas DataFrame format
         let urlString = "https://mesonet.agron.iastate.edu/api/1/mos.json?station=\(icao)&model=GFS"
@@ -1452,6 +1510,20 @@ struct WeatherBannerView: View {
         }
         .background(LogbookTheme.navyLight)
         .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            LogbookTheme.accentGreen.opacity(0.6),
+                            LogbookTheme.accentBlue.opacity(0.6)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2
+                )
+        )
         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
         .sheet(isPresented: $showWeatherSheet) {
             WeatherDetailSheet(

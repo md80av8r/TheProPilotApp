@@ -206,18 +206,33 @@ class TripGenerationService: ObservableObject {
                 break
                 
             case .newTrip:
-                // Check if this trip already exists in logbook
+                // IMPROVED: Check if this trip already exists in logbook
+                // Uses multiple criteria to catch duplicates more reliably
                 let alreadyExists = existingTrips.contains { existing in
+                    // Check 1: Same calendar day
                     let sameDay = Calendar.current.isDate(existing.date, inSameDayAs: firstFlight.date)
+                    guard sameDay else { return false }
+
+                    // Check 2: Same departure airport on first leg
                     let sameDeparture = existing.legs.first?.departure == firstFlight.departure
-                    
-                    // Also check if trip numbers match (for multi-leg trips)
+
+                    // Check 3: Trip number matches (for multi-leg trips)
                     let sameTripNumber = existing.tripNumber == primaryTripNumber ||
                                          existing.legs.contains { $0.flightNumber == primaryTripNumber }
-                    
-                    return sameDay && (sameDeparture || sameTripNumber)
+
+                    // Check 4: Same route (departure → arrival matches any leg)
+                    let sameRoute = existing.legs.contains { leg in
+                        leg.departure == firstFlight.departure && leg.arrival == firstFlight.arrival
+                    }
+
+                    // Check 5: Flight number of any leg matches
+                    let flightNumberMatch = existing.legs.contains { leg in
+                        leg.flightNumber == extractCleanFlightNumber(firstFlight.tripNumber)
+                    }
+
+                    return sameDeparture || sameTripNumber || sameRoute || flightNumberMatch
                 }
-                
+
                 if !alreadyExists {
                     // Create ONE pending trip with ALL flights in the group
                     let pending = createPendingTrip(from: tripGroup)

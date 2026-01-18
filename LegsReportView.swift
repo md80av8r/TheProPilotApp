@@ -223,7 +223,7 @@ struct LegsReportView: View {
                     }
                 }
             }
-            .navigationTitle("Flight Legs")
+            .navigationTitle("Legs Report View")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {

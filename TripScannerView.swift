@@ -293,7 +293,7 @@ struct TripScannerView: View {
         }
         .sheet(isPresented: $showingEmailSettings) {
             NavigationView {
-                ScannerEmailSettingsView(airlineSettings: airlineSettings)
+                ScannerEmailConfigView(airlineSettings: airlineSettings)
                     .navigationTitle("Email Settings")
                     .navigationBarItems(trailing: Button("Done") {
                         showingEmailSettings = false

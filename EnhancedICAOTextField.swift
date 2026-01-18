@@ -363,20 +363,43 @@ struct EnhancedCrewManagementView: View {
     @Binding var crew: [CrewMember]
     @EnvironmentObject var crewContactManager: CrewContactManager
     @FocusState private var focusedField: Int?
-    
+
     // Clipboard fallback states
     @State private var showingGroupTextAlert = false
     @State private var groupTextNumbers = ""
-    
+
+    // MARK: - Crew Sorting Priority
+    private static let rolePriority: [String: Int] = [
+        "Captain": 0,
+        "First Officer": 1,
+        "Load Master": 2,
+        "Observer": 3,
+        "Check Airman": 4,
+        "Jumpseater": 5
+    ]
+
+    /// Returns sorted indices for crew display (Captain first, then FO, Load Master, etc.)
+    private var sortedCrewIndices: [Int] {
+        crew.indices.sorted { idx1, idx2 in
+            let priority1 = Self.rolePriority[crew[idx1].role] ?? 99
+            let priority2 = Self.rolePriority[crew[idx2].role] ?? 99
+            if priority1 != priority2 {
+                return priority1 < priority2
+            }
+            // Same priority - maintain original order
+            return idx1 < idx2
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Crew Members")
                     .font(.headline)
                     .foregroundColor(.white)
-                
+
                 Spacer()
-                
+
                 Button(action: {
                     crew.append(CrewMember(role: "Load Master", name: ""))
                 }) {
@@ -389,8 +412,9 @@ struct EnhancedCrewManagementView: View {
                     }
                 }
             }
-            
-            ForEach(crew.indices, id: \.self) { index in
+
+            // Display crew in sorted order (Captain → FO → Load Master → Observer → Check Airman → Jumpseater)
+            ForEach(sortedCrewIndices, id: \.self) { index in
                 VStack(spacing: 8) {
                     HStack {
                         // Role picker

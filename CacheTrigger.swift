@@ -1,5 +1,5 @@
 //
-//  WeatherCacheService.swift
+//  CacheTrigger.swift
 //  ProPilotApp
 //
 //  Weather caching service for offline access during flights
@@ -7,11 +7,58 @@
 //
 
 import Foundation
+import Combine
 
 /// When the cache was triggered
 enum CacheTrigger: String, Codable {
     case outTime  // Cached when OUT time set (at gate, strong signal)
     case offTime  // Cached when OFF time detected (takeoff roll, failsafe)
+}
+
+// MARK: - Flight State Manager
+/// Tracks whether we're currently in flight (OUT time set but not IN)
+/// Views use this to decide whether to fetch fresh weather or use cached data
+@MainActor
+class FlightStateManager: ObservableObject {
+    static let shared = FlightStateManager()
+
+    /// The current active leg ID (if in flight)
+    @Published private(set) var activeLegId: UUID?
+
+    /// Whether we're currently airborne (OUT set, IN not set)
+    @Published private(set) var isInFlight: Bool = false
+
+    /// Departure and arrival for the active leg
+    @Published private(set) var departureICAO: String = ""
+    @Published private(set) var arrivalICAO: String = ""
+
+    private init() {}
+
+    /// Called when OUT time is set - marks us as in-flight
+    func startFlight(legId: UUID, departure: String, arrival: String) {
+        activeLegId = legId
+        departureICAO = departure
+        arrivalICAO = arrival
+        isInFlight = true
+        print("✈️ Flight state: IN FLIGHT (\(departure) → \(arrival))")
+    }
+
+    /// Called when IN time is set - marks leg as complete
+    func endFlight() {
+        let wasInFlight = isInFlight
+        activeLegId = nil
+        departureICAO = ""
+        arrivalICAO = ""
+        isInFlight = false
+        if wasInFlight {
+            print("✈️ Flight state: LANDED")
+        }
+    }
+
+    /// Check if a specific leg is the active in-flight leg
+    func isLegInFlight(_ legId: UUID) -> Bool {
+        return activeLegId == legId && isInFlight
+    }
 }
 
 /// Cached weather data for a specific leg
@@ -22,19 +69,13 @@ struct CachedWeatherData: Codable {
     let cachedAt: Date
     let trigger: CacheTrigger
     
-    // Weather products
+    // Weather products (only Codable types)
     var departureMETAR: RawMETAR?
     var arrivalMETAR: RawMETAR?
     var departureTAF: RawTAF?
     var arrivalTAF: RawTAF?
-    var departureMOS: MOSForecast?
-    var arrivalMOS: MOSForecast?
-    var departureWindsAloft: [WindsAloftLevel]?
-    var arrivalWindsAloft: [WindsAloftLevel]?
-    var departureDailyForecasts: [DailyForecast]?
-    var arrivalDailyForecasts: [DailyForecast]?
-    var departureDATIS: String?
-    var arrivalDATIS: String?
+    var departureMOS: [MOSForecast]?  // MOS returns array
+    var arrivalMOS: [MOSForecast]?    // MOS returns array
     
     // Weather images (stored as Data)
     var departureRadarImage: Data?
@@ -100,19 +141,13 @@ actor WeatherCacheService {
             trigger: trigger
         )
         
-        // Fetch all weather products for both airports
+        // Fetch all weather products for both airports (only Codable types)
         async let depMETAR = fetchMETAR(for: departureICAO)
         async let arrMETAR = fetchMETAR(for: arrivalICAO)
         async let depTAF = fetchTAF(for: departureICAO)
         async let arrTAF = fetchTAF(for: arrivalICAO)
         async let depMOS = fetchMOS(for: departureICAO)
         async let arrMOS = fetchMOS(for: arrivalICAO)
-        async let depWinds = fetchWindsAloft(for: departureICAO)
-        async let arrWinds = fetchWindsAloft(for: arrivalICAO)
-        async let depDaily = fetchDailyForecast(for: departureICAO)
-        async let arrDaily = fetchDailyForecast(for: arrivalICAO)
-        async let depDATIS = fetchDATIS(for: departureICAO)
-        async let arrDATIS = fetchDATIS(for: arrivalICAO)
         
         // Await all results
         cache.departureMETAR = await depMETAR
@@ -121,22 +156,18 @@ actor WeatherCacheService {
         cache.arrivalTAF = await arrTAF
         cache.departureMOS = await depMOS
         cache.arrivalMOS = await arrMOS
-        cache.departureWindsAloft = await depWinds
-        cache.arrivalWindsAloft = await arrWinds
-        cache.departureDailyForecasts = await depDaily
-        cache.arrivalDailyForecasts = await arrDaily
-        cache.departureDATIS = await depDATIS
-        cache.arrivalDATIS = await arrDATIS
         
         // Save to disk
         saveCache(cache)
         
-        let productsCount = [
-            cache.departureMETAR, cache.arrivalMETAR,
-            cache.departureTAF, cache.arrivalTAF,
-            cache.departureMOS, cache.arrivalMOS,
-            cache.departureWindsAloft, cache.arrivalWindsAloft
-        ].compactMap { $0 }.count
+        // Count non-nil products (fixes implicit coercion warnings)
+        var productsCount = 0
+        if cache.departureMETAR != nil { productsCount += 1 }
+        if cache.arrivalMETAR != nil { productsCount += 1 }
+        if cache.departureTAF != nil { productsCount += 1 }
+        if cache.arrivalTAF != nil { productsCount += 1 }
+        if cache.departureMOS != nil { productsCount += 1 }
+        if cache.arrivalMOS != nil { productsCount += 1 }
         
         print("   ✅ Cached \(productsCount) weather products")
     }
@@ -240,54 +271,40 @@ actor WeatherCacheService {
     
     private func fetchMETAR(for icao: String) async -> RawMETAR? {
         do {
-            return try await BannerWeatherService.shared.fetchMETAR(for: icao)
+            // BannerWeatherService.shared is on @MainActor
+            return try await MainActor.run {
+                Task {
+                    try await BannerWeatherService.shared.fetchMETAR(for: icao)
+                }
+            }.value
         } catch {
             print("⚠️ Failed to fetch METAR for \(icao): \(error)")
             return nil
         }
     }
-    
+
     private func fetchTAF(for icao: String) async -> RawTAF? {
         do {
-            return try await BannerWeatherService.shared.fetchTAF(for: icao)
+            return try await MainActor.run {
+                Task {
+                    try await BannerWeatherService.shared.fetchTAF(for: icao)
+                }
+            }.value
         } catch {
             print("⚠️ Failed to fetch TAF for \(icao): \(error)")
             return nil
         }
     }
-    
-    private func fetchMOS(for icao: String) async -> MOSForecast? {
+
+    private func fetchMOS(for icao: String) async -> [MOSForecast]? {
         do {
-            return try await BannerWeatherService.shared.fetchMOS(for: icao)
+            return try await MainActor.run {
+                Task {
+                    try await BannerWeatherService.shared.fetchMOS(for: icao)
+                }
+            }.value
         } catch {
             print("⚠️ Failed to fetch MOS for \(icao): \(error)")
-            return nil
-        }
-    }
-    
-    private func fetchWindsAloft(for icao: String) async -> [WindsAloftLevel]? {
-        do {
-            return try await BannerWeatherService.shared.fetchWindsAloft(for: icao)
-        } catch {
-            print("⚠️ Failed to fetch Winds Aloft for \(icao): \(error)")
-            return nil
-        }
-    }
-    
-    private func fetchDailyForecast(for icao: String) async -> [DailyForecast]? {
-        do {
-            return try await BannerWeatherService.shared.fetchDailyForecast(for: icao)
-        } catch {
-            print("⚠️ Failed to fetch Daily Forecast for \(icao): \(error)")
-            return nil
-        }
-    }
-    
-    private func fetchDATIS(for icao: String) async -> String? {
-        do {
-            return try await BannerWeatherService.shared.fetchDATIS(for: icao)
-        } catch {
-            print("⚠️ Failed to fetch DATIS for \(icao): \(error)")
             return nil
         }
     }

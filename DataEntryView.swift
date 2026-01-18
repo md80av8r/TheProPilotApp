@@ -190,28 +190,46 @@ struct DataEntryView: View {
     }
     
     // MARK: - Watch Sync Helper
+    // Track pending sync to coalesce multiple rapid changes
+    @State private var pendingSyncWorkItem: DispatchWorkItem?
+
     private func syncLegToWatch(legIndex: Int) {
         guard legIndex < legs.count else { return }
-        
-        // Debounce sync calls to avoid spamming watch
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+
+        // Cancel any pending sync to coalesce rapid changes
+        pendingSyncWorkItem?.cancel()
+
+        // Create new work item with longer debounce (1.5s) for better coalescing
+        let workItem = DispatchWorkItem {
             PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
-            print("📱 Synced leg \(legIndex + 1) changes to watch")
+            print("📱 Synced leg \(legIndex + 1) changes to watch (coalesced)")
         }
+
+        pendingSyncWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: workItem)
     }
-    // MARK: - Async Loading
+    // MARK: - Async Loading (Parallelized for performance)
     private func loadNightMinutes() async {
-        var cache: [UUID: Int] = [:]
-        
-        for leg in legs {
-            if let departureDate = dateFormatter.date(from: leg.departure) {
-                let nightMins = await leg.nightMinutes(flightDate: departureDate)
-                cache[leg.id] = nightMins
+        // Use TaskGroup to parallelize night minute calculations
+        let results = await withTaskGroup(of: (UUID, Int).self) { group in
+            for leg in legs {
+                group.addTask {
+                    // Use leg's flightDate if available, otherwise use trip date
+                    let legDate = leg.flightDate ?? self.date
+                    let nightMins = await leg.nightMinutes(flightDate: legDate)
+                    return (leg.id, nightMins)
+                }
             }
+
+            var cache: [UUID: Int] = [:]
+            for await (id, minutes) in group {
+                cache[id] = minutes
+            }
+            return cache
         }
-        
+
         await MainActor.run {
-            nightMinutesCache = cache
+            nightMinutesCache = results
         }
     }
     
@@ -1601,18 +1619,70 @@ struct EnhancedAircraftTextField: View {
     
     private func updateSuggestions() {
         let frequentAircraft = getFrequentAircraft()
-        
+
         if text.isEmpty {
-            suggestions = Array(frequentAircraft.prefix(5))
+            // Show sorted list when field is empty
+            // First item is most recent, rest sorted alphabetically then numerically
+            suggestions = sortAircraftList(frequentAircraft)
             showingSuggestions = !suggestions.isEmpty
         } else {
-            suggestions = frequentAircraft.filter { aircraft in
+            // Filter by prefix, then sort the filtered results
+            let filtered = frequentAircraft.filter { aircraft in
                 aircraft.hasPrefix(text.uppercased()) && aircraft != text.uppercased()
             }
+            suggestions = sortAircraftList(filtered)
             showingSuggestions = !suggestions.isEmpty
         }
     }
-    
+
+    /// Sorts aircraft list: most recently used first, then alphabetical (A-Z), then numerical (low to high)
+    /// Example: N833US (last used), then C-FABC, N100AB, N200CD, N1234
+    private func sortAircraftList(_ aircraft: [String]) -> [String] {
+        guard aircraft.count > 1 else { return aircraft }
+
+        // Keep the first item (most recently used) at the top
+        let mostRecent = aircraft.first!
+        let remaining = Array(aircraft.dropFirst())
+
+        // Sort remaining by: letter prefix alphabetically, then numeric portion low to high
+        let sorted = remaining.sorted { reg1, reg2 in
+            let (prefix1, number1) = parseRegistration(reg1)
+            let (prefix2, number2) = parseRegistration(reg2)
+
+            // First compare letter prefixes alphabetically
+            if prefix1 != prefix2 {
+                return prefix1 < prefix2
+            }
+
+            // Same prefix - sort by numeric portion (low to high)
+            return number1 < number2
+        }
+
+        return [mostRecent] + sorted
+    }
+
+    /// Parses registration into letter prefix and numeric value
+    /// "N833US" -> ("N", 833), "N12345" -> ("N", 12345), "C-FABC" -> ("C-F", 0)
+    private func parseRegistration(_ registration: String) -> (prefix: String, number: Int) {
+        var prefix = ""
+        var numberString = ""
+        var foundNumber = false
+
+        for char in registration {
+            if char.isNumber {
+                foundNumber = true
+                numberString.append(char)
+            } else if !foundNumber {
+                // Still in prefix
+                prefix.append(char)
+            }
+            // After first number, stop adding to prefix but continue collecting numbers
+        }
+
+        let number = Int(numberString) ?? 0
+        return (prefix.isEmpty ? "Z" : prefix, number) // "Z" pushes unknown prefixes to end
+    }
+
     private func saveFrequentAircraft(_ registration: String) {
         guard !registration.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
@@ -1777,12 +1847,16 @@ struct TimeEntryField: View {
     // MARK: - Tap Handler (Fill Current Time)
     private func handleTap() {
         let currentTime = Date()
-        
+
+        // Apply time rounding if enabled in settings
+        let shouldRound = AutoTimeSettings.shared.roundTimesToFiveMinutes
+        let roundedTime = TimeRoundingUtility.roundToNearestFiveMinutes(currentTime, enabled: shouldRound)
+
         let formatter = DateFormatter()
         formatter.dateFormat = "HHmm"
         formatter.timeZone = AutoTimeSettings.shared.useZuluTime ? TimeZone(identifier: "UTC") : TimeZone.current
-        
-        timeString = formatter.string(from: currentTime)
+
+        timeString = formatter.string(from: roundedTime)
         displayText = formatTimeDisplay(timeString)
         
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {

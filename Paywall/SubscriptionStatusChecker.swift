@@ -117,19 +117,29 @@ class SubscriptionStatusChecker: ObservableObject {
     }
     
     // MARK: - Permission Checks
-    
+
+    /// Check if running as TestFlight build (bypasses trial restrictions)
+    /// Detects TestFlight at runtime by checking for the App Store receipt filename
+    private var isTestFlightBuild: Bool {
+        guard let receiptURL = Bundle.main.appStoreReceiptURL else { return false }
+        return receiptURL.lastPathComponent == "sandboxReceipt"
+    }
+
     /// Can user create a new trip?
     var canCreateTrip: Bool {
+        if isTestFlightBuild { return true }
         return trialStatus == .active || trialStatus == .subscribed
     }
-    
+
     /// Can user delete a trip?
     var canDeleteTrip: Bool {
+        if isTestFlightBuild { return true }
         return trialStatus == .active || trialStatus == .subscribed
     }
-    
+
     /// Should show paywall?
     var shouldShowPaywall: Bool {
+        if isTestFlightBuild { return false }
         return trialStatus == .tripsExhausted || trialStatus == .timeExpired
     }
     

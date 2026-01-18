@@ -4,6 +4,9 @@ import SwiftUI
 struct DutyTimerWatchView: View {
     @EnvironmentObject var connectivityManager: WatchConnectivityManager
     @State private var currentTime = Date()
+    @State private var showPlanningTripAlert = false
+    @State private var planningTripInfo: (tripNumber: String, tripId: String, departure: String, arrival: String, legCount: Int)?
+    @State private var showEndDutyConfirmation = false
     
     var body: some View {
         VStack(spacing: 8) {
@@ -35,11 +38,19 @@ struct DutyTimerWatchView: View {
                         .fontDesign(.monospaced)
                     
                     Button("End Duty") {
-                        sendEndDuty()
+                        showEndDutyConfirmation = true
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
                     .font(.caption)
+                    .confirmationDialog("End Duty", isPresented: $showEndDutyConfirmation) {
+                        Button("End & Complete Trip", role: .destructive) {
+                            sendEndDuty()
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("This will end your duty timer and complete your trip.")
+                    }
                 }
             } else {
                 VStack(spacing: 8) {
@@ -116,6 +127,18 @@ struct DutyTimerWatchView: View {
         .onAppear {
             requestDutyStatus()
         }
+        .alert("Trip Found", isPresented: $showPlanningTripAlert) {
+            Button("Use Trip", role: .none) {
+                confirmPlanningTrip()
+            }
+            Button("Create New", role: .cancel) {
+                declinePlanningTrip()
+            }
+        } message: {
+            if let tripInfo = planningTripInfo {
+                Text("Trip \(tripInfo.tripNumber)\n\(tripInfo.departure) → \(tripInfo.arrival)\n\(tripInfo.legCount) leg(s)")
+            }
+        }
     }
     
     // MARK: - Computed Properties
@@ -136,13 +159,60 @@ struct DutyTimerWatchView: View {
     }
     
     // MARK: - Messaging Methods
-    
+
     private func sendStartDuty() {
         let message: [String: Any] = [
             "type": "startDuty",
             "timestamp": Date().timeIntervalSince1970
         ]
-        connectivityManager.sendMessageToPhone(message, description: "start duty timer")
+
+        connectivityManager.sendMessageToPhoneWithReply(message, description: "start duty timer") { reply in
+            // Check if phone is asking for confirmation of a planning trip
+            if let status = reply["status"] as? String, status == "confirmTrip" {
+                // Extract trip details
+                let tripNumber = reply["tripNumber"] as? String ?? ""
+                let tripId = reply["tripId"] as? String ?? ""
+                let departure = reply["departure"] as? String ?? ""
+                let arrival = reply["arrival"] as? String ?? ""
+                let legCount = reply["legCount"] as? Int ?? 0
+
+                // Store trip info and show alert
+                self.planningTripInfo = (tripNumber, tripId, departure, arrival, legCount)
+                self.showPlanningTripAlert = true
+
+                print("📱 Planning trip found: \(tripNumber) (\(departure) → \(arrival))")
+            } else {
+                print("✅ Duty started directly (no planning trip found)")
+            }
+        } errorHandler: { error in
+            print("❌ Failed to start duty: \(error.localizedDescription)")
+        }
+    }
+
+    private func confirmPlanningTrip() {
+        guard let tripInfo = planningTripInfo else { return }
+
+        let message: [String: Any] = [
+            "type": "confirmPlanningTrip",
+            "tripId": tripInfo.tripId,
+            "timestamp": Date().timeIntervalSince1970
+        ]
+
+        connectivityManager.sendMessageToPhone(message, description: "confirm planning trip")
+        print("✅ Confirmed planning trip: \(tripInfo.tripNumber)")
+    }
+
+    private func declinePlanningTrip() {
+        guard let tripInfo = planningTripInfo else { return }
+
+        let message: [String: Any] = [
+            "type": "declinePlanningTrip",
+            "tripId": tripInfo.tripId,
+            "timestamp": Date().timeIntervalSince1970
+        ]
+
+        connectivityManager.sendMessageToPhone(message, description: "decline planning trip")
+        print("✅ Declined planning trip - creating new trip")
     }
     
     private func sendEndDuty() {

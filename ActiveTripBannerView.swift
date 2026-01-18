@@ -126,15 +126,22 @@ struct ActiveTripBanner: View {
     let onCompleteTrip: () -> Void
     let onEditTime: (String, String) -> Void
     let onAddLeg: () -> Void
+    let onToggleGroundOps: (() -> Void)?  // NEW: Callback for toggling ground ops mode
     var onActivateTrip: (() -> Void)? = nil  // NEW: Optional callback for activating trip
+    var onAddTaxiLeg: ((Int, String) -> Void)? = nil  // NEW: Callback for adding taxi leg (afterIndex, airport)
+    var onEditTrip: (() -> Void)? = nil  // NEW: Callback for opening DataEntry to edit trip
     @Binding var dutyStartTime: Date?
-    
+
     @ObservedObject var airlineSettings: AirlineSettingsStore
     @ObservedObject var autoTimeSettings = AutoTimeSettings.shared
+    @ObservedObject var dutyTimerManager = DutyTimerManager.shared
     
     @State private var showingEndTripConfirmation = false
     @State private var showingDocumentPicker = false
     @State private var activeTimePickerConfig: TimePickerConfig? = nil
+    @State private var showingTaxiPlacementPicker = false
+    @State private var taxiButtonActive = false  // Toggle state for taxi button
+    @State private var isCollapsed = false  // Collapse/expand state for banner
 
     // FlightAware data
     @State private var flightAwareData: [String: FAFlightCache] = [:]
@@ -169,12 +176,21 @@ struct ActiveTripBanner: View {
     
     // MARK: - Smart Leg Sequencing
     
-    /// Helper to check if a leg has all 4 times filled
+    /// Helper to check if a leg has all required times filled
     private func isLegFullyCompleted(_ leg: FlightLeg) -> Bool {
-        return !leg.outTime.isEmpty &&
-               !leg.offTime.isEmpty &&
-               !leg.onTime.isEmpty &&
-               !leg.inTime.isEmpty
+        if leg.isGroundOperationsOnly {
+            // Ground ops only needs OUT and IN
+            return !leg.outTime.isEmpty && !leg.inTime.isEmpty
+        } else if leg.isDeadhead {
+            // Deadhead needs deadhead OUT and IN
+            return !leg.deadheadOutTime.isEmpty && !leg.deadheadInTime.isEmpty
+        } else {
+            // Regular flight needs all 4 times
+            return !leg.outTime.isEmpty &&
+                   !leg.offTime.isEmpty &&
+                   !leg.onTime.isEmpty &&
+                   !leg.inTime.isEmpty
+        }
     }
     
     /// ✅ FIX: Single source of truth for current leg
@@ -236,10 +252,13 @@ struct ActiveTripBanner: View {
         ZStack {
             // Main banner content
             mainBannerContent
-            
+                .zIndex(0)  // Ensure main content is behind overlay
+
             // Translucent Time Picker Overlay
             if let config = activeTimePickerConfig {
                 timePickerOverlay(config: config)
+                    .zIndex(1)  // Ensure overlay is in front
+                    .transition(.opacity)
             }
         }
         .sheet(isPresented: $showingDocumentPicker) {
@@ -258,6 +277,29 @@ struct ActiveTripBanner: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Are you sure you want to end Trip #\(trip.tripNumber)?\n\nOnce ended, you cannot reactivate this trip. Make sure all flight legs and times are correct.")
+        }
+        .confirmationDialog(
+            "Insert Taxi Leg",
+            isPresented: $showingTaxiPlacementPicker,
+            titleVisibility: .visible
+        ) {
+            // Option to insert BEFORE the first leg
+            if !trip.legs.isEmpty {
+                Button("Before Leg 1: \(trip.legs[0].departure) → \(trip.legs[0].arrival)") {
+                    insertTaxiLeg(beforeIndex: 0)
+                }
+            }
+
+            // Options to insert AFTER each leg
+            ForEach(Array(trip.legs.enumerated()), id: \.element.id) { index, leg in
+                Button("After Leg \(index + 1): \(leg.departure) → \(leg.arrival)") {
+                    insertTaxiLeg(afterIndex: index)
+                }
+            }
+
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Where would you like to insert the taxi leg?")
         }
         .onAppear {
             loadFlightAwareData()
@@ -354,16 +396,16 @@ struct ActiveTripBanner: View {
                 if let status = data.status {
                     Text(status)
                         .font(.caption2.bold())
-                        .padding(.horizontal, 6)
+                        .padding(.horizontal, 20)
                         .padding(.vertical, 2)
                         .background(statusColor(for: status).opacity(0.3))
                         .foregroundColor(statusColor(for: status))
                         .cornerRadius(4)
                 }
             }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        } //ACTIVE TRIP BANNER PADDING
+        .padding(.horizontal, 8)   // Reduced from 12 to 8
+        .padding(.vertical, 4)     // Reduced from 6 to 4
         .background(LogbookTheme.navyLight.opacity(0.5))
     }
 
@@ -384,46 +426,63 @@ struct ActiveTripBanner: View {
     private var mainBannerContent: some View {
         ScrollView {
             VStack(spacing: 0) {
-                // Header
+                // Header (always visible)
                 headerView
 
-                // FlightAware Route/ETA Info (if available)
-                if let currentLegIdx = currentLegIndex ?? (tripNeedsActivation ? 0 : nil),
-                   currentLegIdx < trip.legs.count {
-                    let currentLeg = trip.legs[currentLegIdx]
-                    if let faData = flightAwareData[currentLeg.id.uuidString] {
-                        flightAwareInfoView(faData)
+                // Content (collapsible)
+                if !isCollapsed {
+                    // Prominent Duty Timer Display (if on duty)
+                    if dutyTimerManager.isOnDuty {
+                        prominentDutyTimerView
                     }
-                }
+
+                    // FlightAware Route/ETA Info (if available)
+                    if let currentLegIdx = currentLegIndex ?? (tripNeedsActivation ? 0 : nil),
+                       currentLegIdx < trip.legs.count {
+                        let currentLeg = trip.legs[currentLegIdx]
+                        if let faData = flightAwareData[currentLeg.id.uuidString] {
+                            flightAwareInfoView(faData)
+                        }
+                    }
+
+                    // Add Taxi button + TAT Start (combined row)
+                    taxiButtonAndTatStartView
 
                 // Column Headers
                 columnHeadersView
                 
-                // TAT Start
-                if !trip.tatStart.isEmpty {
-                    tatStartView
-                }
-                
                 // Completed Legs (status == .completed OR all times filled)
+                // IMPORTANT: Exclude the current active leg - it's shown separately below
                 ForEach(Array(trip.legs.enumerated()), id: \.element.id) { index, leg in
-                    if leg.status == .completed || isLegFullyCompleted(leg) {
+                    // Only show if: (completed OR fully filled) AND NOT the current active leg
+                    let isCurrentLeg = currentLegIndex == index
+                    let shouldShow = (leg.status == .completed || isLegFullyCompleted(leg)) && !isCurrentLeg
+
+                    if shouldShow {
                         completedLegRow(leg: leg, index: index)
-                        
+
                         // Add divider after each completed leg
                         Divider()
                             .background(LogbookTheme.accentGreen.opacity(0.3))
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 6)  // Reduced from 10
                     }
                 }
                 
                 // Current Leg (from trip.activeLegIndex) OR first leg if trip needs activation
                 if let legIndex = currentLegIndex {
-                    currentLegView(leg: trip.legs[legIndex], index: legIndex)
-                    
+                    let leg = trip.legs[legIndex]
+                    // If leg has all times filled, show as completed (non-interactive)
+                    // This handles the case where Watch created a new leg but old leg wasn't marked complete
+                    if isLegFullyCompleted(leg) {
+                        completedLegRow(leg: leg, index: legIndex)
+                    } else {
+                        currentLegView(leg: leg, index: legIndex)
+                    }
+
                     // Add divider after current leg
                     Divider()
                         .background(LogbookTheme.accentGreen.opacity(0.5))
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 6)  // Reduced from 10
                 } else if tripNeedsActivation, let firstLeg = trip.legs.first {
                     // Show first leg with activate button when trip is in planning status
                     planningLegView(leg: firstLeg, index: 0)
@@ -431,7 +490,7 @@ struct ActiveTripBanner: View {
                     // Add divider after planning leg
                     Divider()
                         .background(LogbookTheme.accentGreen.opacity(0.5))
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 6)  // Reduced from 10
                 }
                 
                 // Standby legs info (if any AFTER excluding current or first)
@@ -454,19 +513,26 @@ struct ActiveTripBanner: View {
                 
                 Divider()
                     .background(Color.gray.opacity(0.3))
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 6)  // Reduced from 10
                 
-                // Scanner Functions
-                scannerButtonsView
-                
-                // Action Buttons
-                if allLegsComplete {
-                    actionButtonsView
-                }
+                    // Scanner Functions
+                    scannerButtonsView
+
+                    // Action Buttons
+                    if allLegsComplete {
+                        actionButtonsView
+                    }
+                }  // End of !isCollapsed
             }
         }
-        .frame(maxHeight: UIScreen.main.bounds.height * 0.70)
-        .background(LogbookTheme.cardBackground)
+        .padding(.horizontal, 4)  // Reduced to 4 for minimal padding
+        .padding(.vertical, 4)    // Reduced to 4 for minimal padding
+        .frame(minHeight: 0, maxHeight: UIScreen.main.bounds.height * 0.70)  // Flexible height, max 70%
+        .fixedSize(horizontal: false, vertical: true)  // Allow content to size itself vertically
+        .background(
+            // Darker, more opaque background for better contrast
+            LogbookTheme.navy.opacity(0.95)
+        )
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
@@ -482,7 +548,7 @@ struct ActiveTripBanner: View {
                     lineWidth: 2
                 )
         )
-        .shadow(color: LogbookTheme.accentBlue.opacity(0.2), radius: 8, x: 0, y: 4)
+        .shadow(color: Color.black.opacity(0.4), radius: 12, x: 0, y: 6)
     }
     
     // MARK: - Time Picker Overlay
@@ -491,6 +557,7 @@ struct ActiveTripBanner: View {
             // Semi-transparent background
             Color.black.opacity(0.1)
                 .ignoresSafeArea()
+                .allowsHitTesting(true)  // Only intercept hits when visible
                 .onTapGesture {
                     withAnimation(.spring()) {
                         activeTimePickerConfig = nil
@@ -525,17 +592,21 @@ struct ActiveTripBanner: View {
                         }
                     },
                     onClear: {
-                        // Clear the time field by setting empty string
-                        config.onSet(config.type, "")
-                        
-                        print("⏱️ \(config.type) cleared")
-                        
+                        print("⏱️ \(config.type) cleared - dismissing picker first")
+
+                        // IMPORTANT: Dismiss picker FIRST to prevent UI blocking
                         withAnimation(.spring()) {
                             activeTimePickerConfig = nil
                         }
+
+                        // Then clear the time field after a brief delay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            config.onSet(config.type, "")
+                            print("⏱️ \(config.type) time cleared")
+                        }
                     }
                 )
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 6)  // Reduced from 10
                 .padding(.bottom, 8)
                 .transition(.asymmetric(
                     insertion: .move(edge: .bottom).combined(with: .opacity),
@@ -561,31 +632,90 @@ struct ActiveTripBanner: View {
                 Image(systemName: trip.isDeadhead ? "airplane.circle.fill" : "airplane.departure")
                     .font(.title2)
                     .foregroundColor(trip.isDeadhead ? LogbookTheme.accentOrange : LogbookTheme.accentGreen)
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(trip.isDeadhead ? "Deadhead #\(trip.tripNumber)" : "Trip #\(trip.tripNumber)")
                         .font(.headline)
                         .foregroundColor(.white)
-                    
+
                     Text(formatTripDate())
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
             }
-            
+
             Spacer()
-            
-            // Time zone indicator
-            HStack(spacing: 4) {
-                Image(systemName: AutoTimeSettings.shared.useZuluTime ? "globe" : "location.fill")
-                    .font(.caption2)
-                Text(AutoTimeSettings.shared.useZuluTime ? "ZULU" : "LOCAL")
-                    .font(.caption.bold())
+
+            // Time zone toggle button (Zulu/Local)
+            Button(action: {
+                AutoTimeSettings.shared.useZuluTime.toggle()
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: AutoTimeSettings.shared.useZuluTime ? "globe" : "clock")
+                        .font(.caption)
+                    Text(AutoTimeSettings.shared.useZuluTime ? "UTC" : "Local")
+                        .font(.caption)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(AutoTimeSettings.shared.useZuluTime ? Color.cyan.opacity(0.2) : Color.orange.opacity(0.2))
+                .foregroundColor(AutoTimeSettings.shared.useZuluTime ? .cyan : .orange)
+                .cornerRadius(8)
             }
-            .foregroundColor(LogbookTheme.accentBlue.opacity(0.4))
+
+            // Collapse/Expand button
+            Button(action: {
+                withAnimation(.spring(response: 0.3)) {
+                    isCollapsed.toggle()
+                }
+            }) {
+                Image(systemName: isCollapsed ? "chevron.down.circle.fill" : "chevron.up.circle.fill")
+                    .font(.title3)
+                    .foregroundColor(LogbookTheme.accentBlue)
+            }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 8)   // Reduced from 10 to 8
+        .padding(.vertical, 8)
+    }
+
+    // MARK: - Prominent Duty Timer Display
+    private var prominentDutyTimerView: some View {
+        HStack(spacing: 8) {
+            // Status indicator dot
+            Circle()
+                .fill(dutyTimerManager.dutyStatus().color)
+                .frame(width: 8, height: 8)
+
+            // ON DUTY label
+            Text("ON DUTY")
+                .font(.caption.bold())
+                .foregroundColor(.white.opacity(0.8))
+
+            Spacer()
+
+            // Elapsed time (compact but visible)
+            Text(dutyTimerManager.formattedElapsedTime())
+                .font(.subheadline.bold().monospacedDigit())
+                .foregroundColor(dutyTimerManager.dutyStatus().color)
+
+            // Time remaining (compact)
+            let remaining = dutyTimerManager.timeRemaining()
+            let hours = Int(remaining) / 3600
+            let minutes = Int(remaining) / 60 % 60
+            Text("(\(hours)h \(minutes)m)")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.5))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(dutyTimerManager.dutyStatus().color.opacity(0.1))
+        .cornerRadius(6)
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(dutyTimerManager.dutyStatus().color.opacity(0.3), lineWidth: 1)
+        )
+        .padding(.horizontal, 8)
+        .padding(.vertical, 2)
     }
     
     // MARK: - Column Headers
@@ -608,8 +738,8 @@ struct ActiveTripBanner: View {
                 .foregroundColor(.gray)
                 .frame(width: 50)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 8)   // Reduced from 10 to 8
+        .padding(.vertical, 4)     // Reduced from 6 to 4
         .background(LogbookTheme.fieldBackground.opacity(0.5))
     }
     
@@ -622,8 +752,8 @@ struct ActiveTripBanner: View {
                     .foregroundColor(LogbookTheme.accentBlue)
                 Spacer()
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.horizontal, 6)  // Reduced from 10
+            .padding(.top, 6)          // Reduced from 8
             
             HStack(spacing: 4) {
                 Text(formatTime(leg.outTime))
@@ -643,8 +773,8 @@ struct ActiveTripBanner: View {
             }
             .font(.subheadline.monospacedDigit())
             .foregroundColor(.white)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 6)  // Reduced from 10
+            .padding(.bottom, 6)       // Reduced from 8
         }
     }
     
@@ -661,8 +791,18 @@ struct ActiveTripBanner: View {
                     showIcon: true
                 )
 
-                // FlightAware share button (only if OUT time exists)
-                if !leg.outTime.isEmpty && !leg.flightNumber.isEmpty {
+                // Ground Operations Toggle (simple icon button)
+                if let onToggleGroundOps = onToggleGroundOps {
+                    Button(action: onToggleGroundOps) {
+                        Image(systemName: leg.isGroundOperationsOnly ? "airplane.fill" : "airplane")
+                            .font(.system(size: 14))
+                            .foregroundColor(leg.isGroundOperationsOnly ? LogbookTheme.accentOrange : LogbookTheme.textTertiary)
+                    }
+                }
+
+                // FlightAware share button (only if OUT time exists and has flight/trip number OR aircraft N-number)
+                let hasFlightIdentifier = !leg.flightNumber.isEmpty || !trip.tripNumber.isEmpty || !trip.aircraft.isEmpty
+                if !leg.outTime.isEmpty && hasFlightIdentifier {
                     Button(action: {
                         shareFlightAwareLink(for: leg)
                     }) {
@@ -674,17 +814,79 @@ struct ActiveTripBanner: View {
                             .clipShape(Circle())
                     }
                 }
-                
+
                 Spacer()
-                
+
                 statusBadge(for: leg)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.horizontal, 6)  // Reduced from 10
+            .padding(.top, 6)          // Reduced from 8
             
             HStack(spacing: 4) {
-                // Show different time fields for deadhead vs regular flights
-                if leg.isDeadhead {
+                // Show different time fields based on leg type
+                if leg.isGroundOperationsOnly {
+                    // Ground ops: Show OUT and IN interactive, OFF/ON grayed out
+                    InteractiveTimeCell(
+                        label: "OUT",
+                        time: leg.outTime,
+                        onEdit: { field, value in
+                            onEditTime("OUT", value)
+                        },
+                        onShowPicker: { initialTime in
+                            withAnimation(.spring()) {
+                                activeTimePickerConfig = TimePickerConfig(
+                                    type: "OUT",
+                                    initialTime: initialTime,
+                                    onSet: { field, value in
+                                        onEditTime("OUT", value)
+                                    }
+                                )
+                            }
+                        },
+                        showLabel: false
+                    )
+
+                    // OFF - disabled/grayed
+                    Text("--:--")
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.gray.opacity(0.4))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+
+                    // ON - disabled/grayed
+                    Text("--:--")
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(.gray.opacity(0.4))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+
+                    InteractiveTimeCell(
+                        label: "IN",
+                        time: leg.inTime,
+                        onEdit: { field, value in
+                            onEditTime("IN", value)
+                        },
+                        onShowPicker: { initialTime in
+                            withAnimation(.spring()) {
+                                activeTimePickerConfig = TimePickerConfig(
+                                    type: "IN",
+                                    initialTime: initialTime,
+                                    onSet: { field, value in
+                                        onEditTime("IN", value)
+                                    }
+                                )
+                            }
+                        },
+                        showLabel: false
+                    )
+
+                    // Flight time shows 0:00 for ground ops
+                    Text("0:00")
+                        .frame(width: 50)
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundColor(.gray.opacity(0.5))
+
+                } else if leg.isDeadhead {
                     // Deadhead: Show OUT and IN only
                     ForEach([
                         ("OUT", leg.deadheadOutTime),
@@ -712,7 +914,7 @@ struct ActiveTripBanner: View {
                             showLabel: false
                         )
                     }
-                    
+
                     // Spacer to push block time to right
                     Spacer()
                 } else {
@@ -810,12 +1012,12 @@ struct ActiveTripBanner: View {
                     .font(.subheadline.monospacedDigit())
                     .foregroundColor(leg.blockMinutes() > 0 ? LogbookTheme.accentBlue : .gray)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 6)  // Reduced from 10
+            .padding(.bottom, 6)       // Reduced from 8
             
             Divider()
                 .background(LogbookTheme.accentGreen.opacity(0.5))
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 6)  // Reduced from 10
         }
     }
     
@@ -849,8 +1051,8 @@ struct ActiveTripBanner: View {
                         .cornerRadius(6)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.horizontal, 6)  // Reduced from 10
+            .padding(.top, 6)          // Reduced from 8
             
             // Time row - show scheduled OUT/IN, empty OFF/ON
             HStack(spacing: 4) {
@@ -894,8 +1096,8 @@ struct ActiveTripBanner: View {
                     .foregroundColor(.gray.opacity(0.4))
                     .frame(width: 50)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 6)  // Reduced from 10
+            .padding(.bottom, 6)       // Reduced from 8
         }
         .background(LogbookTheme.accentOrange.opacity(0.05))
     }
@@ -903,8 +1105,17 @@ struct ActiveTripBanner: View {
     // Helper function for status badge
     private func statusBadge(for leg: FlightLeg) -> some View {
         let (text, color): (String, Color)
-        
-        if leg.isDeadhead {
+
+        if leg.isGroundOperationsOnly {
+            // Ground ops status: Only check OUT and IN
+            if leg.outTime.isEmpty {
+                (text, color) = ("Awaiting OUT", LogbookTheme.accentOrange)
+            } else if leg.inTime.isEmpty {
+                (text, color) = ("Awaiting IN", LogbookTheme.errorRed)
+            } else {
+                (text, color) = ("Complete", LogbookTheme.successGreen)
+            }
+        } else if leg.isDeadhead {
             // Deadhead status: Only check OUT and IN
             if leg.deadheadOutTime.isEmpty {
                 (text, color) = ("Awaiting OUT", LogbookTheme.accentOrange)
@@ -927,7 +1138,7 @@ struct ActiveTripBanner: View {
                 (text, color) = ("Complete", LogbookTheme.successGreen)
             }
         }
-        
+
         return Text(text)
             .font(.caption.bold())
             .foregroundColor(color)
@@ -954,8 +1165,8 @@ struct ActiveTripBanner: View {
                 
                 Spacer()
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 6)  // Reduced from 10
+            .padding(.vertical, 4)     // Reduced from 6
             .background(LogbookTheme.accentOrange.opacity(0.1))
             
             // Show each standby leg
@@ -966,7 +1177,7 @@ struct ActiveTripBanner: View {
                 if i < standbyLegs.count - 1 {
                     Divider()
                         .background(LogbookTheme.accentOrange.opacity(0.2))
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 6)  // Reduced from 10
                 }
             }
         }
@@ -1022,8 +1233,8 @@ struct ActiveTripBanner: View {
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(4)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 6)
+            .padding(.horizontal, 6)  // Reduced from 10
+            .padding(.top, 4)          // Reduced from 6
             
             // Time row - show scheduled OUT/IN, empty OFF/ON
             HStack(spacing: 4) {
@@ -1067,13 +1278,77 @@ struct ActiveTripBanner: View {
                     .foregroundColor(.gray.opacity(0.4))
                     .frame(width: 50)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 6)
+            .padding(.horizontal, 6)  // Reduced from 10
+            .padding(.bottom, 4)       // Reduced from 6
         }
         .background(LogbookTheme.accentOrange.opacity(0.05))
     }
     
     // MARK: - TAT Views
+    // Combined view: Add Taxi button (left) + TAT Start (right)
+    private var taxiButtonAndTatStartView: some View {
+        HStack {
+            // Add Taxi button on the left (toggle: tap to activate, tap again to cancel)
+            Button(action: {
+                if taxiButtonActive {
+                    // Second tap: Cancel
+                    taxiButtonActive = false
+                } else {
+                    // First tap: Activate
+                    taxiButtonActive = true
+                }
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: taxiButtonActive ? "checkmark.circle.fill" : "plus.circle.fill")
+                        .font(.system(size: 12))
+                    Text(taxiButtonActive ? "Tap to Confirm" : "Taxi")
+                        .font(.caption.bold())
+                }
+                .foregroundColor(taxiButtonActive ? .green : LogbookTheme.accentOrange)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background((taxiButtonActive ? Color.green : LogbookTheme.accentOrange).opacity(0.2))
+                .cornerRadius(6)
+            }
+
+            // Show placement picker when confirmed
+            if taxiButtonActive {
+                Button(action: {
+                    showingTaxiPlacementPicker = true
+                    taxiButtonActive = false  // Reset after opening picker
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 12))
+                        Text("Insert")
+                            .font(.caption.bold())
+                    }
+                    .foregroundColor(.green)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.green.opacity(0.2))
+                    .cornerRadius(6)
+                }
+            }
+
+            Spacer()
+
+            // TAT Start on the right
+            if !trip.tatStart.isEmpty {
+                HStack(spacing: 4) {
+                    Text("TAT Start:")
+                        .font(.caption.bold())
+                        .foregroundColor(.gray)
+                    Text(trip.formattedTATStart)
+                        .font(.caption.monospacedDigit())
+                        .foregroundColor(LogbookTheme.accentGreen)
+                }
+            }
+        }
+        .padding(.horizontal, 6)  // Reduced from 10
+        .padding(.vertical, 4)
+    }
+
     private var tatStartView: some View {
         HStack {
             Spacer()
@@ -1086,7 +1361,7 @@ struct ActiveTripBanner: View {
                     .foregroundColor(LogbookTheme.accentGreen)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 6)  // Reduced from 10
         .padding(.vertical, 4)
     }
     
@@ -1102,7 +1377,7 @@ struct ActiveTripBanner: View {
                     .foregroundColor(LogbookTheme.errorRed)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 6)  // Reduced from 10
         .padding(.vertical, 4)
     }
     
@@ -1110,10 +1385,15 @@ struct ActiveTripBanner: View {
     private var totalsView: some View {
         let totalFlight = trip.legs.reduce(0) { $0 + $1.calculateFlightMinutes() }
         let totalBlock = trip.legs.reduce(0) { $0 + $1.blockMinutes() }
-        
+
         return HStack {
+            // Night time (if any) - left side
+            if !trip.isDeadhead {
+                NightTimeTotalView(legs: trip.legs, tripDate: trip.date)
+            }
+
             Spacer()
-            
+
             if !trip.isDeadhead {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("Total Flight")
@@ -1125,7 +1405,7 @@ struct ActiveTripBanner: View {
                 }
                 .padding(.trailing, 16)
             }
-            
+
             VStack(alignment: .trailing, spacing: 2) {
                 Text("Total Block")
                     .font(.caption2)
@@ -1135,8 +1415,66 @@ struct ActiveTripBanner: View {
                     .foregroundColor(LogbookTheme.accentBlue)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 6)  // Reduced from 10
+        .padding(.vertical, 6)     // Reduced from 8
+    }
+
+    // MARK: - Night Time Total View (async loading)
+    struct NightTimeTotalView: View {
+        let legs: [FlightLeg]
+        let tripDate: Date
+
+        @State private var totalNightMinutes: Int = 0
+        @State private var isLoading = true
+
+        var body: some View {
+            Group {
+                if totalNightMinutes > 0 {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "moon.stars.fill")
+                                .font(.caption2)
+                                .foregroundColor(LogbookTheme.accentOrange)
+                            Text("Night")
+                                .font(.caption2)
+                                .foregroundColor(LogbookTheme.accentOrange)
+                        }
+                        Text(formatNightDuration(totalNightMinutes))
+                            .font(.subheadline.bold().monospacedDigit())
+                            .foregroundColor(LogbookTheme.accentOrange)
+                    }
+                } else if isLoading {
+                    // Optional: show loading indicator
+                    EmptyView()
+                }
+            }
+            .task {
+                await loadNightMinutes()
+            }
+        }
+
+        private func loadNightMinutes() async {
+            var total = 0
+
+            for leg in legs {
+                // Use trip date as base, leg may have its own flightDate
+                let legDate = leg.flightDate ?? tripDate
+                let nightMins = await leg.nightMinutes(flightDate: legDate)
+                total += nightMins
+            }
+
+            await MainActor.run {
+                totalNightMinutes = total
+                isLoading = false
+            }
+        }
+
+        private func formatNightDuration(_ minutes: Int) -> String {
+            if minutes == 0 { return "0:00" }
+            let hours = minutes / 60
+            let mins = minutes % 60
+            return String(format: "%d:%02d", hours, mins)
+        }
     }
     
     // MARK: - Instructions View
@@ -1182,8 +1520,8 @@ struct ActiveTripBanner: View {
                     .font(.caption.bold())
             }
             .foregroundColor(.white)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 10)  // Reduced from 12
+            .padding(.vertical, 12)     // Reduced from 14
             .background(
                 LinearGradient(
                     gradient: Gradient(colors: [
@@ -1196,13 +1534,34 @@ struct ActiveTripBanner: View {
             )
             .cornerRadius(10)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 6)  // Reduced from 10
+        .padding(.vertical, 6)     // Reduced from 8
     }
     
     // MARK: - Scanner Buttons View
     private var scannerButtonsView: some View {
         HStack(spacing: 8) {
+            // Edit Trip button (pencil icon)
+            Button(action: {
+                onEditTrip?()
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.system(size: 14))
+                    Text("Edit")
+                        .font(.caption.bold())
+                }
+                .foregroundColor(.white)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(LogbookTheme.fieldBackground)
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                )
+            }
+
             // Fuel button only for non-deadhead trips
             if !trip.isDeadhead {
                 Button(action: onScanFuel) {
@@ -1265,8 +1624,8 @@ struct ActiveTripBanner: View {
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 6)  // Reduced from 10
+        .padding(.vertical, 6)     // Reduced from 8
     }
     
     // MARK: - Action Buttons View
@@ -1289,10 +1648,7 @@ struct ActiveTripBanner: View {
                 }
                 .accessibilityIdentifier("addNextLegButton")
             }
-            
-            // Share Trip button
-            ShareTripButton(trip: trip, style: .custom)
-            
+
             // End Trip button for all trip types
             Button(action: { showingEndTripConfirmation = true }) {
                 HStack(spacing: 6) {
@@ -1308,31 +1664,41 @@ struct ActiveTripBanner: View {
                 .cornerRadius(8)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 6)  // Reduced from 10
+        .padding(.bottom, 10)      // Reduced from 12
     }
     
     // MARK: - Helper Functions
     private func generateFlightAwareURL(for leg: FlightLeg) -> String? {
-        guard !leg.flightNumber.isEmpty,
+        // Priority: leg flight number > trip number > aircraft N-number (for Part 91)
+        var flightIdentifier = ""
+        if !leg.flightNumber.isEmpty {
+            flightIdentifier = leg.flightNumber
+        } else if !trip.tripNumber.isEmpty {
+            flightIdentifier = trip.tripNumber
+        } else if !trip.aircraft.isEmpty {
+            flightIdentifier = trip.aircraft  // Part 91: Use N-number
+        }
+
+        guard !flightIdentifier.isEmpty,
               !leg.departure.isEmpty,
               !leg.arrival.isEmpty,
               !leg.outTime.isEmpty else {
             return nil
         }
-        
+
         // Format date as YYYYMMDD
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd"
         dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
         let dateString = dateFormatter.string(from: trip.date)
-        
+
         // Use OUT time (already in HHmm format) + Z
         let timeString = leg.outTime + "Z"
-        
+
         // Build URL
-        let urlString = "https://www.flightaware.com/live/flight/\(leg.flightNumber)/history/\(dateString)/\(timeString)/\(leg.departure)/\(leg.arrival)"
-        
+        let urlString = "https://www.flightaware.com/live/flight/\(flightIdentifier)/history/\(dateString)/\(timeString)/\(leg.departure)/\(leg.arrival)"
+
         return urlString
     }
     
@@ -1342,16 +1708,26 @@ struct ActiveTripBanner: View {
             print("❌ Unable to generate FlightAware URL")
             return
         }
-        
+
+        // Priority: leg flight number > trip number > aircraft N-number (for Part 91)
+        var flightIdentifier = ""
+        if !leg.flightNumber.isEmpty {
+            flightIdentifier = leg.flightNumber
+        } else if !trip.tripNumber.isEmpty {
+            flightIdentifier = trip.tripNumber
+        } else if !trip.aircraft.isEmpty {
+            flightIdentifier = trip.aircraft  // Part 91: Use N-number
+        }
+
         // Copy to clipboard
         UIPasteboard.general.string = urlString
-        
+
         // Haptic feedback
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
-        
+
         // Open share sheet
-        let message = "Track my flight \(leg.flightNumber): \(leg.departure) → \(leg.arrival)\n\n\(urlString)"
+        let message = "Track my flight \(flightIdentifier): \(leg.departure) → \(leg.arrival)\n\n\(urlString)"
         let activityVC = UIActivityViewController(
             activityItems: [message],
             applicationActivities: nil
@@ -1365,7 +1741,52 @@ struct ActiveTripBanner: View {
         
         print("✈️ FlightAware link shared: \(urlString)")
     }
-    
+
+    // MARK: - Insert Taxi Leg
+    private func insertTaxiLeg(beforeIndex: Int) {
+        print("🚕 User selected to insert taxi leg BEFORE index \(beforeIndex)")
+
+        // Use the departure airport of the leg we're inserting before
+        let taxiAirport = trip.legs[beforeIndex].departure
+
+        print("🚕 Taxi leg will be at \(taxiAirport) (same departure/arrival)")
+        print("📍 Selected placement: Before leg \(beforeIndex + 1)")
+
+        // Call the callback if provided, otherwise fall back to onAddLeg
+        if let onAddTaxiLeg = onAddTaxiLeg {
+            // Use negative index to indicate "before" position
+            onAddTaxiLeg(-beforeIndex - 1, taxiAirport)
+        } else {
+            print("⚠️ onAddTaxiLeg not implemented - falling back to onAddLeg")
+            onAddLeg()
+        }
+    }
+
+    private func insertTaxiLeg(afterIndex: Int) {
+        print("🚕 User selected to insert taxi leg AFTER index \(afterIndex)")
+
+        // Determine the airport for the taxi leg
+        let taxiAirport: String
+        if afterIndex < trip.legs.count {
+            // Use the arrival airport of the leg we're inserting after
+            taxiAirport = trip.legs[afterIndex].arrival
+        } else {
+            // Inserting at the end - use last leg's arrival
+            taxiAirport = trip.legs.last?.arrival ?? ""
+        }
+
+        print("🚕 Taxi leg will be at \(taxiAirport) (same departure/arrival)")
+        print("📍 Selected placement: After leg \(afterIndex + 1)")
+
+        // Call the callback if provided, otherwise fall back to onAddLeg
+        if let onAddTaxiLeg = onAddTaxiLeg {
+            onAddTaxiLeg(afterIndex, taxiAirport)
+        } else {
+            print("⚠️ onAddTaxiLeg not implemented - falling back to onAddLeg")
+            onAddLeg()
+        }
+    }
+
     private func formatTripDate() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, yyyy"

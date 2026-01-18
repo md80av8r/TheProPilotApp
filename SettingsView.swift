@@ -4,15 +4,18 @@ struct SettingsView: View {
     @ObservedObject var store: SwiftDataLogBookStore
     @ObservedObject var airlineSettings: AirlineSettingsStore
     @ObservedObject var nocSettings: NOCSettingsStore
+    @Binding var sheetToOpen: String?  // NEW: External control for which sheet to open
     @State private var showingHomeBaseConfig = false
     @State private var showingAirlineSetup = false
     @State private var showingScannerEmailSettings = false
     @State private var showingAutoTimeSettings = false
     @State private var showingProximitySettings = false
+    @State private var showingTripCountingSettings = false
+    @State private var showingMileageSettings = false
     @State private var roundTimesToFiveMinutes = UserDefaults.appGroup?.roundTimesToFiveMinutes ?? false
     @ObservedObject private var autoTimeSettings = AutoTimeSettings.shared
     @StateObject private var speedMonitor = GPSSpeedMonitor()
-    
+
 
     var body: some View {
         NavigationView {
@@ -336,6 +339,58 @@ struct SettingsView: View {
                 .listRowBackground(LogbookTheme.navyLight)
                 .textCase(nil)
 
+                // MARK: - Trip Counting Settings Section
+                Section(header: Text("Trip Counting").foregroundColor(.white)) {
+                    // Trip Counting Settings Row
+                    HStack {
+                        Image(systemName: "number.circle")
+                            .foregroundColor(LogbookTheme.accentOrange)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Trip Counting Method")
+                                .font(.headline)
+                            Text("Configure how trips are counted for statistics")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray)
+                            .font(.caption)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        showingTripCountingSettings = true
+                    }
+                }
+                .listRowBackground(LogbookTheme.navyLight)
+                .textCase(nil)
+
+                // MARK: - Mileage Settings Section
+                Section(header: Text("Mileage Tracking").foregroundColor(.white)) {
+                    // Mileage Settings Row
+                    HStack {
+                        Image(systemName: "road.lanes")
+                            .foregroundColor(LogbookTheme.accentOrange)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Mileage & Pay")
+                                .font(.headline)
+                            Text("Track distance and calculate mileage pay")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray)
+                            .font(.caption)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        showingMileageSettings = true
+                    }
+                }
+                .listRowBackground(LogbookTheme.navyLight)
+                .textCase(nil)
+
                 // MARK: - Trip Creation Settings Section
                 Section(header: Text("Trip Creation").foregroundColor(.white)) {
                     @ObservedObject var tripSettings = TripCreationSettings.shared
@@ -634,6 +689,40 @@ struct SettingsView: View {
                         }
                         .sheet(isPresented: $showingProximitySettings) {
                             ProximitySettingsView()
+                        }
+                        .sheet(isPresented: $showingTripCountingSettings) {
+                            TripCountingSettingsView()
+                        }
+                        .sheet(isPresented: $showingMileageSettings) {
+                            MileageSettingsView()
+                        }
+                        .onChange(of: sheetToOpen) { newValue in
+                            // Handle external sheet opening requests from Smart Search
+                            guard let sheetId = newValue else { return }
+
+                            switch sheetId {
+                            case "proximity":
+                                showingProximitySettings = true
+                            case "airlineSetup":
+                                showingAirlineSetup = true
+                            case "tripCounting":
+                                showingTripCountingSettings = true
+                            case "mileage":
+                                showingMileageSettings = true
+                            case "homeBase":
+                                showingHomeBaseConfig = true
+                            case "scannerEmail":
+                                showingScannerEmailSettings = true
+                            case "autoTime":
+                                showingAutoTimeSettings = true
+                            default:
+                                print("⚠️ Unknown settings sheet: \(sheetId)")
+                            }
+
+                            // Clear the trigger
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                sheetToOpen = nil
+                            }
                         }
         }
     }

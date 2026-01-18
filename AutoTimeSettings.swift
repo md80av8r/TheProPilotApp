@@ -5,25 +5,57 @@ import SwiftUI
 // ✅ UNIFIED STORAGE: All settings use App Group for iPhone/Watch sync
 class AutoTimeSettings: ObservableObject {
     static let shared = AutoTimeSettings()
-    
-    // ✅ Use @AppStorage with App Group for automatic sync
-    @AppStorage("useZuluTime", store: UserDefaults(suiteName: "group.com.propilot.app"))
-    var useZuluTime: Bool = true
-    
-    @AppStorage("roundTimesToFiveMinutes", store: UserDefaults(suiteName: "group.com.propilot.app"))
-    var roundTimesToFiveMinutes: Bool = false
-    
-    @AppStorage("takeoffSpeedThreshold", store: UserDefaults(suiteName: "group.com.propilot.app"))
-    var takeoffSpeedThreshold: Double = 80.0
-    
-    @AppStorage("landingSpeedThreshold", store: UserDefaults(suiteName: "group.com.propilot.app"))
-    var landingSpeedThreshold: Double = 40.0
-    
-    @AppStorage("autoTimeLoggingEnabled", store: UserDefaults(suiteName: "group.com.propilot.app"))
-    var isEnabled: Bool = false
 
-    @AppStorage("trackRecordingEnabled", store: UserDefaults(suiteName: "group.com.propilot.app"))
-    var trackRecordingEnabled: Bool = false
+    private let appGroup = UserDefaults(suiteName: "group.com.propilot.app")
+
+    // ✅ Use computed properties with willSet to trigger objectWillChange
+    var useZuluTime: Bool {
+        get { appGroup?.bool(forKey: "useZuluTime") ?? true }
+        set {
+            objectWillChange.send()
+            appGroup?.set(newValue, forKey: "useZuluTime")
+        }
+    }
+
+    var roundTimesToFiveMinutes: Bool {
+        get { appGroup?.bool(forKey: "roundTimesToFiveMinutes") ?? false }
+        set {
+            objectWillChange.send()
+            appGroup?.set(newValue, forKey: "roundTimesToFiveMinutes")
+        }
+    }
+
+    var takeoffSpeedThreshold: Double {
+        get { appGroup?.double(forKey: "takeoffSpeedThreshold") ?? 80.0 }
+        set {
+            objectWillChange.send()
+            appGroup?.set(newValue, forKey: "takeoffSpeedThreshold")
+        }
+    }
+
+    var landingSpeedThreshold: Double {
+        get { appGroup?.double(forKey: "landingSpeedThreshold") ?? 40.0 }
+        set {
+            objectWillChange.send()
+            appGroup?.set(newValue, forKey: "landingSpeedThreshold")
+        }
+    }
+
+    var isEnabled: Bool {
+        get { appGroup?.bool(forKey: "autoTimeLoggingEnabled") ?? false }
+        set {
+            objectWillChange.send()
+            appGroup?.set(newValue, forKey: "autoTimeLoggingEnabled")
+        }
+    }
+
+    var trackRecordingEnabled: Bool {
+        get { appGroup?.bool(forKey: "trackRecordingEnabled") ?? false }
+        set {
+            objectWillChange.send()
+            appGroup?.set(newValue, forKey: "trackRecordingEnabled")
+        }
+    }
 
     private init() {
         print("✅ AutoTimeSettings initialized with App Group storage")

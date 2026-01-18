@@ -48,6 +48,20 @@ class CustomizableTabManager: ObservableObject {
 
         setupDefaultTabs()
         loadConfiguration()
+
+        // iPad-specific: Make Help visible on iPad by default
+        #if targetEnvironment(macCatalyst) || os(macOS)
+        if let helpIndex = availableTabs.firstIndex(where: { $0.id == "help" }) {
+            availableTabs[helpIndex].isVisible = true
+        }
+        #else
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            if let helpIndex = availableTabs.firstIndex(where: { $0.id == "help" }) {
+                availableTabs[helpIndex].isVisible = true
+            }
+        }
+        #endif
+
         loadRecentTab()
         updateTabArrays()
     }
@@ -68,118 +82,119 @@ class CustomizableTabManager: ObservableObject {
             // ═══════════════════════════════════════════════════════════════
             
             // ─────────────────────────────────────────────────────────────────
-            // APPLE WATCH SECTION
+            // HELP & SUPPORT SECTION ⭐ MOVED TO TOP FOR NEW USERS
             // ─────────────────────────────────────────────────────────────────
-            // ID: "appleWatch" → Opens: AppleWatchStatusView
-            TabItem(id: "appleWatch", title: "Apple Watch", systemImage: "applewatch", isVisible: false, order: 4),
-            
+            // ID: "smartSearch" → Opens: SmartSearchView (Unified search: app features + help + logbook)
+            TabItem(id: "smartSearch", title: "Smart Search", systemImage: "magnifyingglass.circle.fill", isVisible: false, order: 4),
+            // ID: "help" → Opens: Enhanced HelpView (iPad: visible tab = true, iPhone: in More = false)
+            // NOTE: This will be adjusted at runtime based on device - see updateTabArrays()
+            TabItem(id: "help", title: "Help & Support", systemImage: "questionmark.circle.fill", isVisible: false, order: 5),
+
+            // ─────────────────────────────────────────────────────────────────
+            // FLIGHT LOGGING SECTION (Most frequently used)
+            // ─────────────────────────────────────────────────────────────────
+            // ID: "autoTimeLogging" → Opens: AutoTimeLoggingSettingsView
+            TabItem(id: "autoTimeLogging", title: "Auto Time Logging", systemImage: "clock.arrow.2.circlepath", isVisible: false, order: 6),
+            // ID: "proximitySettings" → Opens: ProximitySettingsView (Airport detection & radius)
+            TabItem(id: "proximitySettings", title: "Proximity Settings", systemImage: "location.circle.fill", isVisible: false, order: 7),
+            // ID: "flightTracks" → Opens: FlightTrackListView (GPS track recording & viewer)
+            TabItem(id: "flightTracks", title: "Flight Tracks", systemImage: "recordingtape", isVisible: false, order: 8),
+            // ID: "scannerEmailSettings" → Opens: ScannerEmailConfigView
+            TabItem(id: "scannerEmailSettings", title: "Scanner & Email", systemImage: "envelope.fill", isVisible: false, order: 9),
+            // ID: "scanner" → Opens: TripScannerView (standalone scanner)
+            TabItem(id: "scanner", title: "Document Scanner", systemImage: "doc.viewfinder", isVisible: false, order: 10),
+
+            // ─────────────────────────────────────────────────────────────────
+            // SCHEDULE & OPERATIONS SECTION (Daily workflow)
+            // ─────────────────────────────────────────────────────────────────
+            // ID: "nocSchedule" → Opens: NOCSettingsView
+            TabItem(id: "nocSchedule", title: "NOC Schedule Import", systemImage: "calendar.badge.clock", isVisible: false, order: 11),
+            // ID: "tripGeneration" → Opens: TripGenerationSettingsView
+            TabItem(id: "tripGeneration", title: "Trip Generation", systemImage: "wand.and.stars", isVisible: false, order: 12),
+            // ID: "nocAlertSettings" → Opens: NOCAlertSettingsView
+            TabItem(id: "nocAlertSettings", title: "NOC Alert Settings", systemImage: "bell.badge.fill", isVisible: false, order: 13),
+            // ID: "crewContacts" → Opens: CrewImportHelperView
+            TabItem(id: "crewContacts", title: "Crew Contacts", systemImage: "person.3.fill", isVisible: false, order: 14),
+
+            // ─────────────────────────────────────────────────────────────────
+            // FLIGHT TOOLS SECTION (Pre-flight planning)
+            // ─────────────────────────────────────────────────────────────────
+            // ID: "airportDatabase" → Opens: AirportManagementView
+            TabItem(id: "airportDatabase", title: "Airport Database", systemImage: "building.2.crop.circle", isVisible: false, order: 15),
+            // ID: "weather" → Opens: WeatherView
+            TabItem(id: "weather", title: "Weather", systemImage: "cloud.sun.fill", isVisible: false, order: 16),
+            // ID: "gpsRaim" → Opens: GPSRAIMView
+            TabItem(id: "gpsRaim", title: "GPS/RAIM", systemImage: "location.fill", isVisible: false, order: 17),
+            // ID: "areaGuide" → Opens: AreaGuideViewComplete
+            TabItem(id: "areaGuide", title: "Area Guide", systemImage: "map.fill", isVisible: false, order: 18),
+            // ID: "calculator" → Opens: FlightCalculatorView
+            TabItem(id: "calculator", title: "Flight Calculator", systemImage: "function", isVisible: false, order: 19),
+            // ID: "flightOps" → Opens: FlightOpsView
+            TabItem(id: "flightOps", title: "Flight Ops", systemImage: "airplane.circle.fill", isVisible: false, order: 20),
+
+            // ─────────────────────────────────────────────────────────────────
+            // TRACKING & COMPLIANCE SECTION (Renamed for clarity)
+            // ─────────────────────────────────────────────────────────────────
+            // ID: "flightTimeLimits" → Opens: DutyLimitSettingsView
+            TabItem(id: "flightTimeLimits", title: "Flight Time Limits", systemImage: "clock.badge.exclamationmark", isVisible: false, order: 21),
+            // ID: "rolling30Day" → Opens: Rolling30DayComplianceView
+            TabItem(id: "rolling30Day", title: "30-Day Rolling", systemImage: "gauge.with.needle.fill", isVisible: false, order: 22),
+            // ID: "far117Compliance" → Opens: FAR121ComplianceView
+            TabItem(id: "far117Compliance", title: "FAR 121 Compliance", systemImage: "chart.line.uptrend.xyaxis", isVisible: false, order: 23),
+            // ID: "fleetTracker" → Opens: FleetTrackerView
+            TabItem(id: "fleetTracker", title: "Fleet Tracker", systemImage: "chart.bar.fill", isVisible: false, order: 24),
+            // ID: "reports" → Opens: AllLegsView
+            TabItem(id: "reports", title: "Flight Legs", systemImage: "list.bullet.rectangle", isVisible: false, order: 25),
+            // ID: "electronicLogbook" → Opens: SimpleElectronicLogbookView
+            TabItem(id: "electronicLogbook", title: "Electronic Logbook", systemImage: "book.closed.fill", isVisible: false, order: 26),
+
             // ─────────────────────────────────────────────────────────────────
             // AIRLINE & AIRCRAFT SECTION
             // ─────────────────────────────────────────────────────────────────
             // ID: "airlineConfig" → Opens: AirlineConfigurationView
-            TabItem(id: "airlineConfig", title: "Airline Configuration", systemImage: "building.2.fill", isVisible: false, order: 5),
+            TabItem(id: "airlineConfig", title: "Airline Configuration", systemImage: "building.2.fill", isVisible: false, order: 27),
             // ID: "aircraftDatabase" → Opens: UnifiedAircraftView (merged Aircraft Management + Library with CloudKit)
-            TabItem(id: "aircraftDatabase", title: "Aircraft Database", systemImage: "airplane.circle.fill", isVisible: false, order: 6),
-            
-            // ─────────────────────────────────────────────────────────────────
-            // FLIGHT LOGGING SECTION
-            // ─────────────────────────────────────────────────────────────────
-            // ID: "autoTimeLogging" → Opens: AutoTimeLoggingSettingsView
-            TabItem(id: "autoTimeLogging", title: "Auto Time Logging", systemImage: "clock.arrow.2.circlepath", isVisible: false, order: 7),
-            // ID: "scannerEmailSettings" → Opens: ScannerEmailConfigView
-            TabItem(id: "scannerEmailSettings", title: "Scanner & Email", systemImage: "envelope.fill", isVisible: false, order: 8),
-            // ID: "scanner" → Opens: TripScannerView (standalone scanner)
-            TabItem(id: "scanner", title: "Document Scanner", systemImage: "doc.viewfinder", isVisible: false, order: 9),
-            // ID: "flightTracks" → Opens: FlightTrackListView (GPS track recording & viewer)
-            TabItem(id: "flightTracks", title: "Flight Tracks", systemImage: "recordingtape", isVisible: false, order: 10),
-            
-            // ─────────────────────────────────────────────────────────────────
-            // SCHEDULE & OPERATIONS SECTION
-            // ─────────────────────────────────────────────────────────────────
-            // ID: "nocSchedule" → Opens: NOCSettingsView
-            TabItem(id: "nocSchedule", title: "NOC Schedule Import", systemImage: "calendar.badge.clock", isVisible: false, order: 10),
-            // ID: "nocAlertSettings" → Opens: NOCAlertSettingsView
-            TabItem(id: "nocAlertSettings", title: "NOC Alert Settings", systemImage: "bell.badge.fill", isVisible: false, order: 11),
-            // ID: "tripGeneration" → Opens: TripGenerationSettingsView
-            TabItem(id: "tripGeneration", title: "Trip Generation", systemImage: "wand.and.stars", isVisible: false, order: 12),
-            // ID: "crewContacts" → Opens: CrewImportHelperView
-            TabItem(id: "crewContacts", title: "Crew Contacts", systemImage: "person.3.fill", isVisible: false, order: 13),
-            
+            TabItem(id: "aircraftDatabase", title: "Aircraft Database", systemImage: "airplane.circle.fill", isVisible: false, order: 28),
+
             // ─────────────────────────────────────────────────────────────────
             // CLOCKS & TIMERS SECTION
             // ─────────────────────────────────────────────────────────────────
             // ID: "clocks" → Opens: ClocksTabView
-            TabItem(id: "clocks", title: "World Clock", systemImage: "clock.fill", isVisible: false, order: 13),
-            
+            TabItem(id: "clocks", title: "World Clock", systemImage: "clock.fill", isVisible: false, order: 29),
+
             // ─────────────────────────────────────────────────────────────────
-            // FLIGHT TOOLS SECTION
+            // APPLE WATCH SECTION
             // ─────────────────────────────────────────────────────────────────
-            // ID: "airportDatabase" → Opens: AirportManagementView ⭐ NEW
-            TabItem(id: "airportDatabase", title: "Airport Database", systemImage: "building.2.crop.circle", isVisible: false, order: 14),
-            // ID: "gpsRaim" → Opens: GPSRAIMView
-            TabItem(id: "gpsRaim", title: "GPS/RAIM", systemImage: "location.fill", isVisible: false, order: 15),
-            // ID: "weather" → Opens: WeatherView
-            TabItem(id: "weather", title: "Weather", systemImage: "cloud.sun.fill", isVisible: false, order: 16),
-            // ID: "areaGuide" → Opens: AreaGuideViewComplete <--- ADDED HERE
-            TabItem(id: "areaGuide", title: "Area Guide", systemImage: "map.fill", isVisible: false, order: 17),
-            // ID: "calculator" → Opens: FlightCalculatorView
-            TabItem(id: "calculator", title: "Flight Calculator", systemImage: "function", isVisible: false, order: 18),
-            // ID: "flightOps" → Opens: FlightOpsView
-            TabItem(id: "flightOps", title: "Flight Ops", systemImage: "airplane.circle.fill", isVisible: false, order: 19),
-            
-            // ─────────────────────────────────────────────────────────────────
-            // TRACKING & REPORTS SECTION
-            // ─────────────────────────────────────────────────────────────────
-            // ID: "flightTimeLimits" → Opens: DutyLimitSettingsView ⭐ NEW
-            TabItem(id: "flightTimeLimits", title: "Flight Time Limits", systemImage: "clock.badge.exclamationmark", isVisible: false, order: 19),
-            // ID: "rolling30Day" → Opens: Rolling30DayComplianceView
-            TabItem(id: "rolling30Day", title: "30-Day Rolling", systemImage: "gauge.with.needle.fill", isVisible: false, order: 20),
-            // ID: "far117Compliance" → Opens: FAR121ComplianceView
-            TabItem(id: "far117Compliance", title: "FAR 121 Compliance", systemImage: "chart.line.uptrend.xyaxis", isVisible: false, order: 20),
-            // ID: "fleetTracker" → Opens: FleetTrackerView
-            TabItem(id: "fleetTracker", title: "Fleet Tracker", systemImage: "chart.bar.fill", isVisible: false, order: 21),
-            // ID: "reports" → Opens: AllLegsView
-            TabItem(id: "reports", title: "Flight Legs", systemImage: "list.bullet.rectangle", isVisible: false, order: 22),
-            // ID: "electronicLogbook" → Opens: SimpleElectronicLogbookView
-            TabItem(id: "electronicLogbook", title: "Electronic Logbook", systemImage: "book.closed.fill", isVisible: false, order: 23),
-            
+            // ID: "appleWatch" → Opens: AppleWatchStatusView
+            TabItem(id: "appleWatch", title: "Apple Watch", systemImage: "applewatch", isVisible: false, order: 30),
+
             // ─────────────────────────────────────────────────────────────────
             // DOCUMENTS & DATA SECTION
             // ─────────────────────────────────────────────────────────────────
             // ID: "documents" → Opens: DocumentsView (if exists)
-            TabItem(id: "documents", title: "Documents", systemImage: "folder.fill", isVisible: false, order: 23),
+            TabItem(id: "documents", title: "Documents", systemImage: "folder.fill", isVisible: false, order: 31),
             // ID: "notes" → Opens: NotesView (if exists)
-            TabItem(id: "notes", title: "Notes", systemImage: "note.text", isVisible: false, order: 24),
+            TabItem(id: "notes", title: "Notes", systemImage: "note.text", isVisible: false, order: 32),
             // ID: "dataBackup" → Opens: DataBackupSettingsView
-            TabItem(id: "dataBackup", title: "Backup & Restore", systemImage: "externaldrive.fill.badge.timemachine", isVisible: false, order: 25),
+            TabItem(id: "dataBackup", title: "Backup & Restore", systemImage: "externaldrive.fill.badge.timemachine", isVisible: false, order: 33),
             // ID: "monthlySummary" → Opens: MonthlyEmailSettingsView
-            TabItem(id: "monthlySummary", title: "Monthly Summary", systemImage: "envelope.badge.fill", isVisible: false, order: 26),
-            
-            // ─────────────────────────────────────────────────────────────────
-            // HELP & SUPPORT SECTION
-            // ─────────────────────────────────────────────────────────────────
-            // ID: "universalSearch" → Opens: UniversalSearchView (App-wide search)
-            TabItem(id: "universalSearch", title: "Search App", systemImage: "magnifyingglass", isVisible: false, order: 26),
-            // ID: "help" → Opens: HelpView
-            TabItem(id: "help", title: "Help & Support", systemImage: "questionmark.circle.fill", isVisible: false, order: 27),
-            // ID: "search" → Opens: LogbookSearchView
-            TabItem(id: "search", title: "Search Logbook", systemImage: "magnifyingglass.circle.fill", isVisible: false, order: 28),
+            TabItem(id: "monthlySummary", title: "Monthly Summary", systemImage: "envelope.badge.fill", isVisible: false, order: 34),
 
             // ─────────────────────────────────────────────────────────────────
             // JUMPSEAT NETWORK SECTION
             // ─────────────────────────────────────────────────────────────────
-            // ID: "jumpseat" → Opens: JumpseatFinderView ⭐ NEW
-            TabItem(id: "jumpseat", title: "Jumpseat Finder", systemImage: "person.2.fill", isVisible: false, order: 28),
-            
+            // ID: "jumpseat" → Opens: JumpseatFinderView
+            TabItem(id: "jumpseat", title: "Jumpseat Finder", systemImage: "person.2.fill", isVisible: false, order: 35),
+
             // ─────────────────────────────────────────────────────────────────
             // BETA TESTING SECTION
             // ─────────────────────────────────────────────────────────────────
-            // ID: "nocTest" → Opens: NOCTestView ⭐ NEW
-            TabItem(id: "nocTest", title: "NOC Trip Tester", systemImage: "calendar.badge.plus", isVisible: false, order: 29),
+            // ID: "nocTest" → Opens: NOCTestView
+            TabItem(id: "nocTest", title: "NOC Trip Tester", systemImage: "calendar.badge.plus", isVisible: false, order: 36),
             // ID: "gpxTesting" → Opens: GPXTestingView
-            TabItem(id: "gpxTesting", title: "GPX Testing", systemImage: "location.circle", isVisible: false, order: 30),
+            TabItem(id: "gpxTesting", title: "GPX Testing", systemImage: "location.circle", isVisible: false, order: 37),
             // ID: "airportTest" → Opens: AirportDatabaseTestView
-            TabItem(id: "airportTest", title: "Airport Database Test", systemImage: "building.2.crop.circle.fill", isVisible: false, order: 31),
+            TabItem(id: "airportTest", title: "Airport Database Test", systemImage: "building.2.crop.circle.fill", isVisible: false, order: 38),
         ]
 
         // ✅ Subscription Debug (only in DEBUG builds) - added after array initialization
@@ -395,35 +410,35 @@ struct MorePanelOverlay<Content: View>: View {
     @StateObject private var timer = FlexibleTimerManager.shared
     @State private var showingTimerSettings = false
     
-    // Section definitions for cleaner code
-    private let appleWatchTabs = ["appleWatch"]
+    // Section definitions for cleaner code (reorganized with Help at top)
+    private let helpSupportTabs = ["smartSearch", "help"]
+    private let flightLoggingTabs = ["autoTimeLogging", "proximitySettings", "flightTracks", "scannerEmailSettings", "scanner"]
+    private let scheduleOpsTabs = ["nocSchedule", "tripGeneration", "nocAlertSettings", "crewContacts"]
+    private let flightToolsTabs = ["airportDatabase", "weather", "gpsRaim", "areaGuide", "calculator", "flightOps"]
+    private let trackingComplianceTabs = ["flightTimeLimits", "rolling30Day", "far117Compliance", "fleetTracker", "reports", "electronicLogbook"]
     private let airlineAircraftTabs = ["airlineConfig", "aircraftDatabase"]
-    private let flightLoggingTabs = ["autoTimeLogging", "scannerEmailSettings", "scanner", "flightTracks"]
-    private let scheduleOpsTabs = ["nocSchedule", "nocAlertSettings", "tripGeneration", "crewContacts"]
     private let clocksTabs = ["clocks"]
-    private let flightToolsTabs = ["airportDatabase", "gpsRaim", "weather", "areaGuide", "calculator", "flightOps"]
-    private let trackingReportsTabs = ["flightTimeLimits", "rolling30Day", "far117Compliance", "fleetTracker", "reports", "electronicLogbook"]
+    private let appleWatchTabs = ["appleWatch"]
     private let documentsDataTabs = ["documents", "notes", "dataBackup", "monthlySummary"]
-    #if DEBUG
-    private let helpSupportTabs = ["universalSearch", "help", "search", "subscriptionDebug"]
-    #else
-    private let helpSupportTabs = ["universalSearch", "help", "search"]
-    #endif
     private let jumpseatTabs = ["jumpseat"]
-    private let betaTestingTabs = ["nocTest", "gpxTesting"]
+    #if DEBUG
+    private let betaTestingTabs = ["nocTest", "gpxTesting", "airportTest", "subscriptionDebug"]
+    #else
+    private let betaTestingTabs = ["nocTest", "gpxTesting", "airportTest"]
+    #endif
     
     var body: some View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
-                // Left side - transparent tap area to dismiss
+                // Left side - transparent tap area to dismiss (45% for more panel space)
                 Color.clear
-                    .frame(width: geometry.size.width * 0.5)
+                    .frame(width: geometry.size.width * 0.45)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         isShowing = false
                     }
-                
-                // Right side - More panel
+
+                // Right side - More panel (55% wider for better readability)
                 VStack(spacing: 0) {
                     // Header
                     panelHeader
@@ -446,17 +461,17 @@ struct MorePanelOverlay<Content: View>: View {
                                 .background(LogbookTheme.divider)
                                 .padding(.leading, 52)
                             
-                            // All sections
+                            // All sections (reorganized with Help at top)
                             VStack(spacing: 0) {
-                                appleWatchSection
-                                airlineAircraftSection
+                                helpSupportSection  // ⭐ MOVED TO TOP
                                 flightLoggingSection
                                 scheduleOpsSection
-                                clocksSection
                                 flightToolsSection
-                                trackingReportsSection
+                                trackingComplianceSection
+                                airlineAircraftSection
+                                clocksSection
+                                appleWatchSection
                                 documentsDataSection
-                                helpSupportSection  // ⭐ NEW
                                 jumpseatSection
                                 betaTestingSection
                             }
@@ -465,11 +480,11 @@ struct MorePanelOverlay<Content: View>: View {
                     }
                     
                     Spacer()
-                    
+
                     // Timer at bottom
                     timerSection
                 }
-                .frame(width: geometry.size.width * 0.5)
+                .frame(width: geometry.size.width * 0.55)
                 .background(LogbookTheme.navyDark)
             }
         }
@@ -573,10 +588,10 @@ struct MorePanelOverlay<Content: View>: View {
     }
     
     @ViewBuilder
-    private var trackingReportsSection: some View {
-        if moreTabs.contains(where: { trackingReportsTabs.contains($0.id) }) {
-            sectionHeader(title: "TRACKING & REPORTS")
-            ForEach(moreTabs.filter { trackingReportsTabs.contains($0.id) }) { tab in
+    private var trackingComplianceSection: some View {
+        if moreTabs.contains(where: { trackingComplianceTabs.contains($0.id) }) {
+            sectionHeader(title: "TRACKING & COMPLIANCE")
+            ForEach(moreTabs.filter { trackingComplianceTabs.contains($0.id) }) { tab in
                 tabButton(for: tab)
             }
             sectionDivider()
@@ -668,6 +683,7 @@ struct MorePanelOverlay<Content: View>: View {
         
         // Flight Logging
         case "autoTimeLogging": return LogbookTheme.accentOrange
+        case "proximitySettings": return .purple
         case "scannerEmailSettings": return LogbookTheme.accentOrange
         case "scanner": return LogbookTheme.accentOrange
         
@@ -700,9 +716,8 @@ struct MorePanelOverlay<Content: View>: View {
         case "monthlySummary": return LogbookTheme.accentBlue
         
         // Help & Support
-        case "universalSearch": return .blue
+        case "smartSearch": return .blue
         case "help": return .cyan
-        case "search": return .purple
         #if DEBUG
         case "subscriptionDebug": return .orange
         #endif
@@ -1118,29 +1133,29 @@ struct iPadMorePanelOverlay<Content: View>: View {
     @StateObject private var timer = FlexibleTimerManager.shared
     @State private var showingTimerSettings = false
 
-    // Section definitions
-    private let appleWatchTabs = ["appleWatch"]
+    // Section definitions (reorganized with Help at top)
+    private let helpSupportTabs = ["smartSearch", "help"]
+    private let flightLoggingTabs = ["autoTimeLogging", "proximitySettings", "flightTracks", "scannerEmailSettings", "scanner"]
+    private let scheduleOpsTabs = ["nocSchedule", "tripGeneration", "nocAlertSettings", "crewContacts"]
+    private let flightToolsTabs = ["airportDatabase", "weather", "gpsRaim", "areaGuide", "calculator", "flightOps"]
+    private let trackingComplianceTabs = ["flightTimeLimits", "rolling30Day", "far117Compliance", "fleetTracker", "reports", "electronicLogbook"]
     private let airlineAircraftTabs = ["airlineConfig", "aircraftDatabase"]
-    private let flightLoggingTabs = ["autoTimeLogging", "scannerEmailSettings", "scanner", "flightTracks"]
-    private let scheduleOpsTabs = ["nocSchedule", "nocAlertSettings", "tripGeneration", "crewContacts"]
     private let clocksTabs = ["clocks"]
-    private let flightToolsTabs = ["airportDatabase", "gpsRaim", "weather", "areaGuide", "calculator", "flightOps"]
-    private let trackingReportsTabs = ["flightTimeLimits", "rolling30Day", "far117Compliance", "fleetTracker", "reports", "electronicLogbook"]
+    private let appleWatchTabs = ["appleWatch"]
     private let documentsDataTabs = ["documents", "notes", "dataBackup", "monthlySummary"]
-    #if DEBUG
-    private let helpSupportTabs = ["universalSearch", "help", "search", "subscriptionDebug"]
-    #else
-    private let helpSupportTabs = ["universalSearch", "help", "search"]
-    #endif
     private let jumpseatTabs = ["jumpseat"]
-    private let betaTestingTabs = ["nocTest", "gpxTesting"]
+    #if DEBUG
+    private let betaTestingTabs = ["nocTest", "gpxTesting", "airportTest", "subscriptionDebug"]
+    #else
+    private let betaTestingTabs = ["nocTest", "gpxTesting", "airportTest"]
+    #endif
 
     var body: some View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
-                // Left side - transparent tap area to dismiss (larger on iPad)
+                // Left side - transparent tap area to dismiss (45% for more panel space)
                 Color.black.opacity(0.4)
-                    .frame(width: geometry.size.width * 0.5)
+                    .frame(width: geometry.size.width * 0.45)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.25)) {
@@ -1148,7 +1163,7 @@ struct iPadMorePanelOverlay<Content: View>: View {
                         }
                     }
 
-                // Right side - iPad-optimized More panel (single column, wider cards)
+                // Right side - iPad-optimized More panel (55% wider, single column layout)
                 VStack(spacing: 0) {
                     // Header
                     iPadPanelHeader
@@ -1188,25 +1203,25 @@ struct iPadMorePanelOverlay<Content: View>: View {
                     // Timer at bottom
                     iPadTimerSection
                 }
-                .frame(width: geometry.size.width * 0.5)
+                .frame(width: geometry.size.width * 0.55)
                 .background(LogbookTheme.navyDark)
             }
         }
         .edgesIgnoringSafeArea(.all)
     }
 
-    // MARK: - All Sections Helper
+    // MARK: - All Sections Helper (reorganized with Help at top)
     private var allSections: [(title: String, tabs: [TabItem])] {
         [
-            ("Apple Watch", moreTabs.filter { appleWatchTabs.contains($0.id) }),
-            ("Airline & Aircraft", moreTabs.filter { airlineAircraftTabs.contains($0.id) }),
+            ("Help & Support", moreTabs.filter { helpSupportTabs.contains($0.id) }),
             ("Flight Logging", moreTabs.filter { flightLoggingTabs.contains($0.id) }),
             ("Schedule & Operations", moreTabs.filter { scheduleOpsTabs.contains($0.id) }),
-            ("Clocks & Timers", moreTabs.filter { clocksTabs.contains($0.id) }),
             ("Flight Tools", moreTabs.filter { flightToolsTabs.contains($0.id) }),
-            ("Tracking & Reports", moreTabs.filter { trackingReportsTabs.contains($0.id) }),
+            ("Tracking & Compliance", moreTabs.filter { trackingComplianceTabs.contains($0.id) }),
+            ("Airline & Aircraft", moreTabs.filter { airlineAircraftTabs.contains($0.id) }),
+            ("Clocks & Timers", moreTabs.filter { clocksTabs.contains($0.id) }),
+            ("Apple Watch", moreTabs.filter { appleWatchTabs.contains($0.id) }),
             ("Documents & Data", moreTabs.filter { documentsDataTabs.contains($0.id) }),
-            ("Help & Support", moreTabs.filter { helpSupportTabs.contains($0.id) }),
             ("Jumpseat Network", moreTabs.filter { jumpseatTabs.contains($0.id) }),
             ("Beta Testing", moreTabs.filter { betaTestingTabs.contains($0.id) })
         ]
@@ -1267,6 +1282,7 @@ struct iPadMorePanelOverlay<Content: View>: View {
         case "airlineConfig": return LogbookTheme.accentGreen
         case "aircraftDatabase": return LogbookTheme.accentBlue
         case "autoTimeLogging", "scannerEmailSettings", "scanner": return LogbookTheme.accentOrange
+        case "proximitySettings": return .purple
         case "nocSchedule": return LogbookTheme.accentGreen
         case "nocAlertSettings": return .orange
         case "tripGeneration": return .purple
@@ -1285,9 +1301,8 @@ struct iPadMorePanelOverlay<Content: View>: View {
         case "notes": return .yellow
         case "dataBackup": return LogbookTheme.accentOrange
         case "monthlySummary": return LogbookTheme.accentBlue
-        case "universalSearch": return .blue
+        case "smartSearch": return .blue
         case "help": return .cyan
-        case "search": return .purple
         case "jumpseat": return .cyan
         case "nocTest": return .purple
         case "gpxTesting": return .orange

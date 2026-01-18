@@ -11,7 +11,7 @@ struct LogbookTheme {
     // MARK: - Accent Colors
     static let accentBlue = Color(red: 0.2, green: 0.6, blue: 1.0)
     static let accentGreen = Color(red: 0.2, green: 0.8, blue: 0.4)
-    static let accentOrange = Color(red: 1.0, green: 0.6, blue: 0.2)
+    static let accentOrange = Color(red: 0.87, green: 0.72, blue: 0.53)  // #DEB887 - Sandy Tan
     static let accentYellow = Color(red: 1.0, green: 0.8, blue: 0.2)  // Added for fuel button
     static let accentPurple = Color(red: 0.6, green: 0.4, blue: 1.0)  // Added for document button
     static let accentRed = Color(red: 1.0, green: 0.3, blue: 0.3)     // Added as alias

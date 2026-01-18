@@ -27,7 +27,8 @@ struct ContentView: View {
     @StateObject private var airlineSettings = AirlineSettingsStore()
     @StateObject private var crewContactManager = CrewContactManager()
     @StateObject private var scannerCropCoordinator = CropCoordinator()
-    @StateObject private var watchConnectivity = PhoneWatchConnectivity()
+    // ✅ Don't create a new instance - use the shared singleton
+    private var watchConnectivity: PhoneWatchConnectivity { PhoneWatchConnectivity.shared }
     @StateObject private var locationManager = PilotLocationManager()
     @StateObject private var opsManager = OPSCallingManager()
     @StateObject private var sharedDocumentStore = TripDocumentManager()
@@ -35,7 +36,8 @@ struct ContentView: View {
     @StateObject private var speedMonitor = GPSSpeedMonitor()
     @StateObject private var tabManager = CustomizableTabManager.shared
     @StateObject private var dutyTimerManager = DutyTimerManager.shared
-    
+    @StateObject private var dutyLimitSettings = DutyLimitSettingsStore.shared
+
     // 🆕 PAYWALL: Subscription status checker
     @StateObject private var trialChecker = SubscriptionStatusChecker.shared
     
@@ -68,6 +70,9 @@ struct ContentView: View {
     @State private var showingFreightPaperwork = false
     @State private var showingWeatherBanner = false  // ✅ NEW: Weather banner toggle
     @State private var showingFBOBanner = false  // 🏢 FBO Banner toggle
+    @State private var showingFlightTimeLimits = true  // ⏰ Flight Time Limits toggle (default: ON - pilots want to see duty limits)
+    @State private var showingTripCountingSettings = false  // 🔢 Trip Counting Settings
+    @State private var showingMileageSettings = false  // 🛣️ Mileage Settings
     @State private var showWelcomeScreen = false  // ✅ NEW: Welcome screen for first-time users
     @State private var showingPaywall = false  // 🆕 PAYWALL: Show subscription paywall
     @State private var showingRaidoImportPicker = false  // RAIDO JSON import
@@ -94,7 +99,7 @@ struct ContentView: View {
     @State private var selectedTab: String = "logbook"
     @State private var selectedTripId: UUID? = nil
     @State private var navigationPath = NavigationPath()
-    
+
     // MARK: - Cherry-picked from NEW version
     @State private var showingDeleteTimeConfirmation = false  // ✅ NEW: Delete time dialog
     @State private var selectedDocumentType: TripDocumentType = .other  // ✅ NEW: Document type for email
@@ -146,14 +151,10 @@ struct ContentView: View {
     }
     
     private var revenueTripsCount: Int {
-        let count = store.trips.filter { trip in
-            let isOperating = trip.tripType == .operating
-            let hasNumber = !trip.tripNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            return isOperating && hasNumber
-        }.count
-        return count
+        // Use new trip counting settings
+        return TripCountingSettings.shared.countTrips(from: store.trips)
     }
-    
+
     private var deadheadCount: Int {
         let count = store.trips.filter { trip in
             let isDeadhead = trip.tripType == .deadhead
@@ -161,31 +162,112 @@ struct ContentView: View {
         }.count
         return count
     }
-    
+
+    // MARK: - YTD Statistics
+    private var ytdTripsCount: Int {
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now))!
+        let ytdTrips = store.trips.filter { $0.date >= startOfYear }
+        return TripCountingSettings.shared.countTrips(from: ytdTrips)
+    }
+
+    private var ytdBlockHours: String {
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now))!
+        let ytdTrips = store.trips.filter { $0.date >= startOfYear }
+        let totalMinutes = ytdTrips.flatMap { $0.legs }.reduce(0) { $0 + $1.blockMinutes() }
+        let hours = totalMinutes / 60
+        let mins = totalMinutes % 60
+        return "\(hours).\(mins / 6)"
+    }
+
+    private var ytdNauticalMiles: Int {
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now))!
+        let ytdTrips = store.trips.filter { $0.date >= startOfYear }
+        return Int(ytdTrips.reduce(0.0) { $0 + MileageSettings.shared.calculateTripMileage(trip: $1) })
+    }
+
+    // MARK: - All Time Statistics
+    private var allTimeBlockHours: String {
+        let totalMinutes = store.trips.flatMap { $0.legs }.reduce(0) { $0 + $1.blockMinutes() }
+        let hours = totalMinutes / 60
+        let mins = totalMinutes % 60
+        return "\(hours).\(mins / 6)"
+    }
+
+    private var allTimeNauticalMiles: Int {
+        return Int(calculateTotalMileage())
+    }
+
     private var tripStatisticsView: some View {
         let revenueTrips = revenueTripsCount
         let deadheads = deadheadCount
         let totalLegs = totalLegsCount
-        
+
         let tripWord = revenueTrips == 1 ? "trip" : "trips"
         let legsText = "\(totalLegs) legs across \(revenueTrips) \(tripWord)"
-        
+
         let deadheadWord = deadheads == 1 ? "deadhead" : "deadheads"
         let deadheadText = "+ \(deadheads) \(deadheadWord)"
-        
+
         let deadheadColor = LogbookTheme.accentOrange.opacity(0.8)
-        
-        return HStack(spacing: 4) {
-            Text(legsText)
-                .font(.caption)
-                .foregroundColor(LogbookTheme.textSecondary)
-            
-            if deadheads > 0 {
-                Text(deadheadText)
+
+        // Calculate total mileage if enabled
+        let mileageSettings = MileageSettings.shared
+        let totalMileage = mileageSettings.showMileage ? calculateTotalMileage() : 0.0
+
+        return VStack(spacing: 4) {
+            HStack(spacing: 4) {
+                Text(legsText)
                     .font(.caption)
-                    .foregroundColor(deadheadColor)
+                    .foregroundColor(LogbookTheme.textSecondary)
+
+                if deadheads > 0 {
+                    Text(deadheadText)
+                        .font(.caption)
+                        .foregroundColor(deadheadColor)
+                }
+            }
+
+            // Mileage row (if enabled)
+            if mileageSettings.showMileage && totalMileage > 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "road.lanes")
+                        .font(.system(size: 10))
+                        .foregroundColor(LogbookTheme.accentOrange)
+
+                    Text(mileageSettings.formatMileage(totalMileage))
+                        .font(.caption)
+                        .foregroundColor(LogbookTheme.textSecondary)
+
+                    // Mileage pay (if configured)
+                    if mileageSettings.dollarsPerMile > 0 {
+                        let pay = mileageSettings.calculateMileagePay(nauticalMiles: totalMileage)
+                        Text("•")
+                            .font(.caption)
+                            .foregroundColor(LogbookTheme.textSecondary.opacity(0.5))
+                        Text(mileageSettings.formatMileagePay(pay))
+                            .font(.caption)
+                            .foregroundColor(LogbookTheme.accentOrange)
+                    }
+                }
             }
         }
+    }
+
+    // MARK: - Mileage Calculation
+    private func calculateTotalMileage() -> Double {
+        var totalMiles: Double = 0.0
+
+        for trip in store.trips {
+            totalMiles += MileageSettings.shared.calculateTripMileage(trip: trip)
+        }
+
+        return totalMiles
     }
     
     // MARK: - Scanner Completion Views
@@ -331,7 +413,7 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showingDataEntry) {
                 tripEditingSheet
-                    .presentationDetents([.large])
+                    .presentationDetents([.large, .fraction(0.95)])
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingTripDetail) {
@@ -674,7 +756,8 @@ struct ContentView: View {
         setupClearTimesListener()  // ✅ NEW
         setupNotificationPermissions()
         setupNotificationObservers()
-        setupWatchConnectivity()
+        // ✅ Watch connectivity is set up in ProPilotApp.swift during app initialization
+        // No need to call it again here
         checkAndAutoStartDutyForActiveTrip()
         checkIfShouldShowWelcome()  // ✅ NEW: Check welcome screen status
         checkBackupAndMonthlySummary()  // Check backup prompts
@@ -727,14 +810,6 @@ struct ContentView: View {
         }
     }
     
-    private func setupWatchConnectivity() {
-        watchConnectivity.setReferences(
-            logBookStore: store,
-            opsManager: opsManager,
-            activityManager: activityManager,
-            locationManager: locationManager
-        )
-    }
     
     var body: some View {
         Group {
@@ -1132,7 +1207,11 @@ struct ContentView: View {
         case "autoTimeLogging":
             AutoTimeLoggingSettingsView()
                 .preferredColorScheme(.dark)
-            
+
+        case "proximitySettings":
+            ProximitySettingsView()
+                .preferredColorScheme(.dark)
+
         case "scannerEmailSettings":
             ScannerEmailConfigView(airlineSettings: airlineSettings)
                 .preferredColorScheme(.dark)
@@ -1205,19 +1284,27 @@ struct ContentView: View {
 
         // ✅ NEW: Universal Search
         case "universalSearch":
-            UniversalSearchView { tabId in
-                // Navigate to the selected tab
-                NotificationCenter.default.post(
-                    name: .navigateToTab,
-                    object: nil,
-                    userInfo: ["tabId": tabId]
-                )
-            }
+            UniversalSearchView(
+                onNavigate: { tabId in
+                    // Navigate to the selected tab
+                    NotificationCenter.default.post(
+                        name: .navigateToTab,
+                        object: nil,
+                        userInfo: ["tabId": tabId]
+                    )
+                }
+            )
             .preferredColorScheme(.dark)
+
+        // ✅ NEW: Smart Search (Unified search: app features + help + logbook)
+        case "smartSearch":
+            SmartSearchView()
+                .environmentObject(store)
+                .preferredColorScheme(.dark)
 
         // ✅ NEW: Help & Support
         case "help":
-            HelpView()
+            EnhancedHelpView()
                 .preferredColorScheme(.dark)
 
         // ✅ NEW: Search Logbook
@@ -1233,9 +1320,6 @@ struct ContentView: View {
                 .preferredColorScheme(.dark)
         #endif
 
-        case "settings":
-            settingsTab
-            
         default:
             // Fallback - show a placeholder instead of removed MoreTabView
             Text("View not found: \(tabId)")
@@ -1265,6 +1349,25 @@ struct ContentView: View {
                 GPSSpoofingStatusPill()
                     .padding(.trailing, 6)
                 // ═══════════════════════════════════════════════════════════════
+
+                // ⏰ Flight Time Limits Icon - toggles tracking on/off
+                Button(action: {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    withAnimation(.spring()) {
+                        dutyLimitSettings.trackingEnabled.toggle()
+                    }
+                }) {
+                    Image(systemName: "clock.badge.exclamationmark")
+                        .font(.system(size: 20))
+                        .foregroundColor(dutyLimitSettings.trackingEnabled ? LogbookTheme.accentGreen : LogbookTheme.accentOrange)
+                        .padding(8)
+                        .background(
+                            Circle()
+                                .fill(dutyLimitSettings.trackingEnabled ? LogbookTheme.accentGreen.opacity(0.2) : LogbookTheme.accentOrange.opacity(0.2))
+                        )
+                }
+                .padding(.trailing, 6)
 
                 // 🏢 FBO Contact Icon
                 FBOIcon(
@@ -1299,12 +1402,15 @@ struct ContentView: View {
             TrialStatusBanner()
              
             // MARK: - FAR 117 Real-Time Status (Collapsible)
-            VStack(spacing: 0) {
-                ConfigurableLimitsStatusView(store: store)
+            if dutyLimitSettings.trackingEnabled {
+                VStack(spacing: 0) {
+                    ConfigurableLimitsStatusView(store: store)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(LogbookTheme.navyDark)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
-            .background(LogbookTheme.navyDark)
 
             // MARK: - FBO Banner (Collapsible)
             if showingFBOBanner {
@@ -1420,6 +1526,17 @@ struct ContentView: View {
                                 if updatedTrip.status == .planning {
                                     updatedTrip.status = .active
                                 }
+                                
+                                // ☁️ NEW: Cache weather at OUT time (primary trigger)
+                                let leg = updatedTrip.logpages[foundPage].legs[foundLegInPage]
+                                Task {
+                                    await WeatherCacheService.shared.cacheWeatherForLeg(
+                                        legId: leg.id,
+                                        departureICAO: leg.departure,
+                                        arrivalICAO: leg.arrival,
+                                        trigger: CacheTrigger.outTime
+                                    )
+                                }
                             case "OFF":
                                 updatedTrip.logpages[foundPage].legs[foundLegInPage].offTime = timeValue
                             case "ON":
@@ -1446,52 +1563,151 @@ struct ContentView: View {
                     },
                     onAddLeg: {
                         var updatedTrip = store.trips[tripIndex]
-                        var newLeg = FlightLeg(
+
+                        // Create a blank new leg with only departure from last leg's arrival
+                        let newLeg = FlightLeg(
                             departure: updatedTrip.legs.last?.arrival ?? "",
                             arrival: "",
                             outTime: "",
                             offTime: "",
                             onTime: "",
-                            inTime: ""
+                            inTime: "",
+                            flightNumber: "",
+                            isDeadhead: false,
+                            isGroundOperationsOnly: false,
+                            status: .standby  // Start as standby, will be set to active if needed
                         )
-                        
-                        // ✅ NEW CODE HERE:
-                        let allPreviousComplete = updatedTrip.legs.allSatisfy { leg in
-                            !leg.outTime.isEmpty &&
-                            !leg.offTime.isEmpty &&
-                            !leg.onTime.isEmpty &&
-                            !leg.inTime.isEmpty
-                        }
-                        
-                        if allPreviousComplete {
-                            newLeg.status = .active
-                            print("✅ New leg set to ACTIVE (all previous legs fully complete)")
+
+                        // Add the new leg to the LAST logpage (don't restructure the entire trip)
+                        if !updatedTrip.logpages.isEmpty {
+                            let lastPageIndex = updatedTrip.logpages.count - 1
+                            updatedTrip.logpages[lastPageIndex].legs.append(newLeg)
                         } else {
-                            newLeg.status = .standby
-                            print("⏸️ New leg set to STANDBY (previous legs have missing times)")
+                            // Fallback: create first logpage if none exist
+                            updatedTrip.logpages = [Logpage(pageNumber: 1, tatStart: updatedTrip.tatStart, legs: [newLeg])]
                         }
-                        
-                        updatedTrip.legs.append(newLeg)
-                        
-                        // ✅ Check if previous leg should advance
+
+                        // Check if all previous legs are complete (respecting their type)
+                        let allPreviousComplete = updatedTrip.legs.dropLast().allSatisfy { leg in
+                            if leg.isGroundOperationsOnly {
+                                return !leg.outTime.isEmpty && !leg.inTime.isEmpty
+                            } else if leg.isDeadhead {
+                                return !leg.deadheadOutTime.isEmpty && !leg.deadheadInTime.isEmpty
+                            } else {
+                                return !leg.outTime.isEmpty && !leg.offTime.isEmpty &&
+                                       !leg.onTime.isEmpty && !leg.inTime.isEmpty
+                            }
+                        }
+
+                        // Set the new leg's status based on previous legs completion
+                        let newLegFlatIndex = updatedTrip.legs.count - 1
+                        if allPreviousComplete {
+                            // Find and update the new leg's status to active
+                            var flatIndex = 0
+                            for pageIndex in updatedTrip.logpages.indices {
+                                for legIndex in updatedTrip.logpages[pageIndex].legs.indices {
+                                    if flatIndex == newLegFlatIndex {
+                                        updatedTrip.logpages[pageIndex].legs[legIndex].status = .active
+                                        print("✅ New leg set to ACTIVE (all previous legs complete)")
+                                    }
+                                    flatIndex += 1
+                                }
+                            }
+                        } else {
+                            print("⏸️ New leg set to STANDBY (previous legs incomplete)")
+                        }
+
+                        // Check if previous leg should advance
                         if updatedTrip.legs.count > 1 {
                             updatedTrip.checkAndAdvanceLeg(at: updatedTrip.legs.count - 2)
                         }
-                        
+
                         store.updateTrip(updatedTrip, at: tripIndex)
-                        
-                        // ✅ Sync new leg to watch
+
+                        // Sync new leg to watch
                         PhoneWatchConnectivity.shared.currentLegIndex = updatedTrip.legs.count - 1
                         PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
-                        
+
                         selectedTripForEditing = store.trips[tripIndex]
                         showingDataEntry = true
+                    },
+                    onToggleGroundOps: {
+                        print("🚗 ===== TAXI BUTTON PRESSED =====")
+                        var updatedTrip = store.trips[tripIndex]
+
+                        print("🚗 BEFORE: Trip has \(updatedTrip.legs.count) legs")
+                        print("🚗 BEFORE: Logpages count = \(updatedTrip.logpages.count)")
+                        for (i, logpage) in updatedTrip.logpages.enumerated() {
+                            print("🚗 BEFORE: Logpage \(i) has \(logpage.legs.count) legs")
+                        }
+
+                        if let currentLegIndex = updatedTrip.activeLegIndex,
+                           currentLegIndex < updatedTrip.legs.count {
+                            print("🚗 Current active leg index: \(currentLegIndex)")
+
+                            // Find the leg in logpages structure
+                            var flatIndex = 0
+                            var foundPage = -1
+                            var foundLegInPage = -1
+
+                            for (pageIndex, logpage) in updatedTrip.logpages.enumerated() {
+                                for legInPageIndex in logpage.legs.indices {
+                                    if flatIndex == currentLegIndex {
+                                        foundPage = pageIndex
+                                        foundLegInPage = legInPageIndex
+                                        break
+                                    }
+                                    flatIndex += 1
+                                }
+                                if foundPage >= 0 { break }
+                            }
+
+                            guard foundPage >= 0, foundLegInPage >= 0 else {
+                                print("❌ Could not locate leg \(currentLegIndex) in logpages")
+                                return
+                            }
+
+                            print("🚗 Found leg at page \(foundPage), leg \(foundLegInPage)")
+
+                            // Toggle the flag
+                            updatedTrip.logpages[foundPage].legs[foundLegInPage].isGroundOperationsOnly.toggle()
+
+                            let isGroundOps = updatedTrip.logpages[foundPage].legs[foundLegInPage].isGroundOperationsOnly
+
+                            // Clear OFF/ON if enabling ground ops
+                            if isGroundOps {
+                                updatedTrip.logpages[foundPage].legs[foundLegInPage].offTime = ""
+                                updatedTrip.logpages[foundPage].legs[foundLegInPage].onTime = ""
+                                print("🚗 Ground operations mode enabled - OFF/ON times cleared")
+                            } else {
+                                print("✈️ Ground operations mode disabled - normal flight mode")
+                            }
+
+                            print("🚗 MIDDLE: Trip has \(updatedTrip.legs.count) legs (before checkAndAdvanceLeg)")
+
+                            // Check if leg should advance after toggling
+                            updatedTrip.checkAndAdvanceLeg(at: currentLegIndex)
+
+                            print("🚗 AFTER checkAndAdvanceLeg: Trip has \(updatedTrip.legs.count) legs")
+                            print("🚗 AFTER: Logpages count = \(updatedTrip.logpages.count)")
+                            for (i, logpage) in updatedTrip.logpages.enumerated() {
+                                print("🚗 AFTER: Logpage \(i) has \(logpage.legs.count) legs")
+                            }
+
+                            // Save
+                            store.updateTrip(updatedTrip, at: tripIndex)
+                            print("🚗 Trip saved to store")
+
+                            PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
+                            print("🚗 Synced to watch")
+                        }
+                        print("🚗 ===== TAXI BUTTON COMPLETE =====")
                     },
                     onActivateTrip: {
                         // Activate the trip: change status from .planning to .active
                         var updatedTrip = store.trips[tripIndex]
                         updatedTrip.status = .active
-                        
+
                         // Set first leg to active if it's in standby
                         if !updatedTrip.legs.isEmpty && updatedTrip.legs[0].status == .standby {
                             // Find first leg in logpages
@@ -1500,23 +1716,146 @@ struct ContentView: View {
                                 print("✅ First leg activated")
                             }
                         }
-                        
+
                         store.updateTrip(updatedTrip, at: tripIndex)
-                        
+
                         // Start duty timer if enabled
                         if !DutyTimerManager.shared.isOnDuty {
                             DutyTimerManager.shared.startDuty()
                             print("⏱️ Duty timer started automatically")
                         }
-                        
+
                         PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
                         print("🚀 Trip #\(updatedTrip.tripNumber) activated!")
+                    },
+                    onAddTaxiLeg: { position, airport in
+                        var updatedTrip = store.trips[tripIndex]
+
+                        // Determine insertion point FIRST (we need to know this for status calculation)
+                        let insertIndex: Int
+                        if position < 0 {
+                            // Negative position means "before" - decode it
+                            insertIndex = -position - 1
+                            print("🚕 Inserting taxi leg BEFORE index \(insertIndex) at \(airport)")
+                        } else {
+                            // Positive position means "after"
+                            insertIndex = position + 1
+                            print("🚕 Inserting taxi leg AFTER index \(position) at \(airport)")
+                        }
+
+                        // Determine what status the new taxi leg should have
+                        let taxiLegStatus: LegStatus
+                        if let currentActiveLegIndex = updatedTrip.activeLegIndex {
+                            if insertIndex <= currentActiveLegIndex {
+                                // Inserting BEFORE or AT the current active leg
+                                // New taxi leg becomes active, old active leg shifts to standby
+                                taxiLegStatus = .active
+                                print("🚕 Taxi leg will be .active (inserting before current active leg at index \(currentActiveLegIndex))")
+                            } else {
+                                // Inserting AFTER the active leg - taxi is standby
+                                taxiLegStatus = .standby
+                                print("🚕 Taxi leg will be .standby (inserting after active leg)")
+                            }
+                        } else {
+                            // No active leg - taxi becomes active
+                            taxiLegStatus = .active
+                            print("🚕 Taxi leg will be .active (no current active leg)")
+                        }
+
+                        // Create taxi leg with calculated status
+                        let taxiLeg = FlightLeg(
+                            departure: airport,
+                            arrival: airport,  // Same airport for taxi
+                            outTime: "",
+                            offTime: "",
+                            onTime: "",
+                            inTime: "",
+                            flightNumber: "",
+                            isDeadhead: false,
+                            isGroundOperationsOnly: true,  // Mark as ground ops
+                            status: taxiLegStatus
+                        )
+
+                        // Insert into the logpage structure
+                        if !updatedTrip.logpages.isEmpty {
+                            print("📊 BEFORE insertion: Trip has \(updatedTrip.legs.count) legs across \(updatedTrip.logpages.count) logpages")
+                            for (idx, page) in updatedTrip.logpages.enumerated() {
+                                print("   Logpage \(idx): \(page.legs.count) legs")
+                            }
+
+                            // Convert flat index to logpage position
+                            var currentFlatIndex = 0
+                            var targetPageIndex = 0
+                            var targetLegIndex = 0
+                            var foundPosition = false
+
+                            for (pageIdx, logpage) in updatedTrip.logpages.enumerated() {
+                                print("🔍 Checking logpage \(pageIdx): currentFlatIndex=\(currentFlatIndex), legs.count=\(logpage.legs.count), insertIndex=\(insertIndex)")
+
+                                // Check if insertIndex falls within this logpage
+                                if insertIndex <= currentFlatIndex + logpage.legs.count {
+                                    targetPageIndex = pageIdx
+                                    targetLegIndex = insertIndex - currentFlatIndex
+                                    foundPosition = true
+                                    print("✅ Found target: page \(targetPageIndex), leg \(targetLegIndex)")
+                                    break
+                                }
+                                currentFlatIndex += logpage.legs.count
+                            }
+
+                            if !foundPosition {
+                                // Insert at end of last logpage
+                                targetPageIndex = updatedTrip.logpages.count - 1
+                                targetLegIndex = updatedTrip.logpages[targetPageIndex].legs.count
+                                print("⚠️ Insert position beyond existing legs - appending to end of last logpage")
+                            }
+
+                            updatedTrip.logpages[targetPageIndex].legs.insert(taxiLeg, at: targetLegIndex)
+                            print("✅ Taxi leg inserted at page \(targetPageIndex), position \(targetLegIndex) with status \(taxiLegStatus)")
+                            print("📊 AFTER insertion: Trip now has \(updatedTrip.legs.count) legs")
+                            for (idx, page) in updatedTrip.logpages.enumerated() {
+                                print("   Logpage \(idx): \(page.legs.count) legs")
+                            }
+
+                            // If we inserted the taxi leg as active BEFORE the old active leg,
+                            // the old active leg's index has shifted by +1, so we need to update it to standby
+                            if taxiLegStatus == .active {
+                                // After insertion, the old active leg is now at position insertIndex + 1
+                                let newIndexOfOldActiveLeg = insertIndex + 1
+                                if newIndexOfOldActiveLeg < updatedTrip.legs.count {
+                                    updatedTrip.updateLegStatus(at: newIndexOfOldActiveLeg, to: .standby)
+                                    print("🔄 Updated old active leg (now at index \(newIndexOfOldActiveLeg)) to .standby")
+                                }
+                            }
+                        } else {
+                            // No logpages exist - create first one
+                            updatedTrip.logpages = [Logpage(pageNumber: 1, tatStart: updatedTrip.tatStart, legs: [taxiLeg])]
+                            print("✅ Created first logpage with taxi leg")
+                        }
+
+                        print("🚕 Final trip structure before save:")
+                        print("   Total legs: \(updatedTrip.legs.count)")
+                        for (idx, leg) in updatedTrip.legs.enumerated() {
+                            print("   Leg \(idx): \(leg.departure)→\(leg.arrival), status=\(leg.status), isGroundOps=\(leg.isGroundOperationsOnly), id=\(leg.id)")
+                        }
+                        print("   activeLegIndex: \(updatedTrip.activeLegIndex ?? -1)")
+
+                        store.updateTrip(updatedTrip, at: tripIndex)
+                        PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
+                        print("🚕 Taxi leg added successfully with status: \(taxiLegStatus)")
+                    },
+                    onEditTrip: {
+                        // Open DataEntryView for editing the active trip
+                        selectedTripForEditing = store.trips[tripIndex]
+                        populateForEdit(at: tripIndex)
+                        showingDataEntry = true
                     },
                     dutyStartTime: $dutyTimerManager.dutyStartTime,
                     airlineSettings: airlineSettings
                     )
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 16)  // Breathing room from screen edges
                     .padding(.bottom, 8)
+                    .layoutPriority(2)  // Higher priority but respects maxHeight constraint
             }
             
             // MARK: - Empty State (Smart Logic)
@@ -1530,28 +1869,102 @@ struct ContentView: View {
                 }
             }
             
-            // MARK: - View All Legs Button
-            Button(action: { showLegsView = true }) {
-                HStack(spacing: 4) {
-                    Text("View All Legs")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(LogbookTheme.accentBlue)
-                    
-                    tripStatisticsView
+            // MARK: - View All Legs Button and Trip Statistics
+            HStack(spacing: 16) {
+                // View All Legs Button
+                Button(action: { showLegsView = true }) {
+                    HStack(spacing: 24) {
+                        Image(systemName: "book.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(LogbookTheme.accentBlue)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            // Row 1: YTD Trips • Hours • NM
+                            HStack(spacing: 4) {
+                                Text("YTD")
+                                    .font(.caption2)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.gray)
+                                Text("\(ytdTripsCount)")
+                                    .font(.caption)
+                                    .foregroundColor(LogbookTheme.textSecondary)
+                                Text("•")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray.opacity(0.5))
+                                Text(ytdBlockHours)
+                                    .font(.caption)
+                                    .foregroundColor(LogbookTheme.textSecondary)
+                                Text("•")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray.opacity(0.5))
+                                Text("\(ytdNauticalMiles)")
+                                    .font(.caption)
+                                    .foregroundColor(LogbookTheme.textSecondary)
+                            }
+
+                            // Row 2: ALL Trips - Hours - Miles
+                            HStack(spacing: 4) {
+                                Text("ALL")
+                                    .font(.caption2)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.gray)
+                                Text("\(revenueTripsCount)")
+                                    .font(.caption)
+                                    .foregroundColor(LogbookTheme.textSecondary)
+                                Text("-")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray.opacity(0.5))
+                                Text(allTimeBlockHours)
+                                    .font(.caption)
+                                    .foregroundColor(LogbookTheme.textSecondary)
+                                Text("-")
+                                    .font(.caption2)
+                                    .foregroundColor(.gray.opacity(0.5))
+                                Text("\(allTimeNauticalMiles)")
+                                    .font(.caption)
+                                    .foregroundColor(LogbookTheme.textSecondary)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 10)
                 }
-                .padding(.vertical, 10)
+
+                Spacer()
+
+                // Mileage Settings Button (road icon)
+                Button(action: { showingMileageSettings = true }) {
+                    Image(systemName: "road.lanes")
+                        .font(.system(size: 16))
+                        .foregroundColor(MileageSettings.shared.showMileage ? LogbookTheme.accentOrange : .gray)
+                        .padding(8)
+                }
+
+                // Trip Counting Settings Button (gear icon)
+                Button(action: { showingTripCountingSettings = true }) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.gray)
+                        .padding(8)
+                }
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
-            .sheet(isPresented: $showLegsView) {
-                FlightLegsView(store: store)
+            .background(LogbookTheme.navy)  // Prevent trips from showing through
+            .zIndex(1)  // Ensure this stays on top of scrolling content
+            .sheet(isPresented: $showingTripCountingSettings) {
+                TripCountingSettingsView()
+            }
+            .sheet(isPresented: $showingMileageSettings) {
+                MileageSettingsView()
             }
             
             Divider()
                 .background(LogbookTheme.accentBlue.opacity(0.2))
                 .padding(.horizontal, 16)
-            
+                .padding(.bottom, 4)
+                .background(LogbookTheme.navy)  // Prevent trips from showing through
+                .zIndex(1)  // Ensure this stays on top of scrolling content
+
             // MARK: - Trips List
             OrganizedLogbookView(store: store) { idx in
                 populateForEdit(at: idx)
@@ -1621,7 +2034,7 @@ struct ContentView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 8)
                 .background(
-                    trialChecker.canCreateTrip ? 
+                    trialChecker.canCreateTrip ?
                     LogbookTheme.accentGreen.opacity(0.10) :
                     Color.white.opacity(0.05)
                 )
@@ -1773,15 +2186,6 @@ struct ContentView: View {
             nocSettings: nocSettings,
             scannerSettings: scannerSettings,
             documentStore: sharedDocumentStore
-        )
-        .preferredColorScheme(.dark)
-    }
-    
-    private var settingsTab: some View {
-        SettingsView(
-            store: store,
-            airlineSettings: airlineSettings,
-            nocSettings: nocSettings
         )
         .preferredColorScheme(.dark)
     }
@@ -1979,6 +2383,17 @@ struct ContentView: View {
             updatedTrip.logpages[foundPage].legs[foundLegInPage].outTime = timeValue
             if updatedTrip.status == .planning {
                 updatedTrip.status = .active
+            }
+            
+            // ☁️ NEW: Cache weather at OUT time (primary trigger)
+            let leg = updatedTrip.logpages[foundPage].legs[foundLegInPage]
+            Task {
+                await WeatherCacheService.shared.cacheWeatherForLeg(
+                    legId: leg.id,
+                    departureICAO: leg.departure,
+                    arrivalICAO: leg.arrival,
+                    trigger: CacheTrigger.outTime
+                )
             }
         case "OFF":
             updatedTrip.logpages[foundPage].legs[foundLegInPage].offTime = timeValue
@@ -2811,6 +3226,18 @@ struct ContentView: View {
                     if updatedTrip.logpages[foundPage].legs[foundLegInPage].offTime.isEmpty {
                         updatedTrip.logpages[foundPage].legs[foundLegInPage].offTime = timeValue
                         print("✈️ Auto-logged OFF time: \(timeValue)")
+                        
+                        // ☁️ NEW: Cache weather at OFF time (failsafe trigger)
+                        let leg = updatedTrip.logpages[foundPage].legs[foundLegInPage]
+                        Task {
+                            await WeatherCacheService.shared.cacheWeatherForLeg(
+                                legId: leg.id,
+                                departureICAO: leg.departure,
+                                arrivalICAO: leg.arrival,
+                                trigger: CacheTrigger.offTime
+                            )
+                        }
+                        
                         self.showAutoTimeNotification(type: "OFF", time: timeValue, speed: speed)
                     } else {
                         print("⚠️ OFF time already set - not overwriting")
@@ -3169,4 +3596,3 @@ struct WeatherConditionIcon: View {
         }
     }
 }
-
