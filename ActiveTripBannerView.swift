@@ -130,18 +130,21 @@ struct ActiveTripBanner: View {
     var onActivateTrip: (() -> Void)? = nil  // NEW: Optional callback for activating trip
     var onAddTaxiLeg: ((Int, String) -> Void)? = nil  // NEW: Callback for adding taxi leg (afterIndex, airport)
     var onEditTrip: (() -> Void)? = nil  // NEW: Callback for opening DataEntry to edit trip
+    var onReactivateGroundOpsLeg: ((Int) -> Void)? = nil  // Callback to undo/reactivate a completed ground ops leg
     @Binding var dutyStartTime: Date?
 
     @ObservedObject var airlineSettings: AirlineSettingsStore
     @ObservedObject var autoTimeSettings = AutoTimeSettings.shared
     @ObservedObject var dutyTimerManager = DutyTimerManager.shared
-    
+
     @State private var showingEndTripConfirmation = false
     @State private var showingDocumentPicker = false
     @State private var activeTimePickerConfig: TimePickerConfig? = nil
     @State private var showingTaxiPlacementPicker = false
     @State private var taxiButtonActive = false  // Toggle state for taxi button
     @State private var isCollapsed = false  // Collapse/expand state for banner
+    @State private var showingGroundOpsConfirmation = false  // Confirmation before auto-advancing taxi leg
+    @State private var pendingGroundOpsLegIndex: Int? = nil  // Track which leg triggered confirmation
 
     // FlightAware data
     @State private var flightAwareData: [String: FAFlightCache] = [:]
@@ -300,6 +303,21 @@ struct ActiveTripBanner: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Where would you like to insert the taxi leg?")
+        }
+        .confirmationDialog(
+            "Mark as Taxi Leg?",
+            isPresented: $showingGroundOpsConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Yes, Mark as Taxi", role: .destructive) {
+                // User confirmed - proceed with toggle
+                onToggleGroundOps?()
+            }
+            Button("Cancel", role: .cancel) {
+                pendingGroundOpsLegIndex = nil
+            }
+        } message: {
+            Text("This leg already has OUT and IN times. Marking it as a taxi leg will complete it and advance to the next leg.\n\nYou can undo this by tapping 'Undo Taxi' on the completed leg.")
         }
         .onAppear {
             loadFlightAwareData()
@@ -750,11 +768,31 @@ struct ActiveTripBanner: View {
                 Text("\(leg.departure) → \(leg.arrival)")
                     .font(.subheadline.bold())
                     .foregroundColor(LogbookTheme.accentBlue)
+
+                // Show undo button for completed ground ops legs
+                if leg.isGroundOperationsOnly, let onReactivate = onReactivateGroundOpsLeg {
+                    Button(action: {
+                        onReactivate(index)
+                    }) {
+                        HStack(spacing: 3) {
+                            Image(systemName: "arrow.uturn.backward.circle.fill")
+                                .font(.system(size: 12))
+                            Text("Undo Taxi")
+                                .font(.caption2.bold())
+                        }
+                        .foregroundColor(LogbookTheme.accentOrange)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(LogbookTheme.accentOrange.opacity(0.2))
+                        .cornerRadius(4)
+                    }
+                }
+
                 Spacer()
             }
             .padding(.horizontal, 6)  // Reduced from 10
             .padding(.top, 6)          // Reduced from 8
-            
+
             HStack(spacing: 4) {
                 Text(formatTime(leg.outTime))
                     .frame(maxWidth: .infinity)
@@ -792,8 +830,17 @@ struct ActiveTripBanner: View {
                 )
 
                 // Ground Operations Toggle (simple icon button)
-                if let onToggleGroundOps = onToggleGroundOps {
-                    Button(action: onToggleGroundOps) {
+                if let _ = onToggleGroundOps {
+                    Button(action: {
+                        // If turning ON ground ops and OUT/IN are already filled, show confirmation
+                        if !leg.isGroundOperationsOnly && !leg.outTime.isEmpty && !leg.inTime.isEmpty {
+                            pendingGroundOpsLegIndex = index
+                            showingGroundOpsConfirmation = true
+                        } else {
+                            // Either turning OFF ground ops, or times aren't filled yet - proceed directly
+                            onToggleGroundOps?()
+                        }
+                    }) {
                         Image(systemName: leg.isGroundOperationsOnly ? "airplane.fill" : "airplane")
                             .font(.system(size: 14))
                             .foregroundColor(leg.isGroundOperationsOnly ? LogbookTheme.accentOrange : LogbookTheme.textTertiary)

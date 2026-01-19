@@ -1850,6 +1850,51 @@ struct ContentView: View {
                         populateForEdit(at: tripIndex)
                         showingDataEntry = true
                     },
+                    onReactivateGroundOpsLeg: { legIndex in
+                        print("🔄 ===== UNDO TAXI BUTTON PRESSED =====")
+                        print("🔄 Reactivating completed ground ops leg at index \(legIndex)")
+                        var updatedTrip = store.trips[tripIndex]
+
+                        // Find the leg in logpages structure
+                        var flatIndex = 0
+                        var foundPage = -1
+                        var foundLegInPage = -1
+
+                        for (pageIndex, logpage) in updatedTrip.logpages.enumerated() {
+                            for legInPageIndex in logpage.legs.indices {
+                                if flatIndex == legIndex {
+                                    foundPage = pageIndex
+                                    foundLegInPage = legInPageIndex
+                                    break
+                                }
+                                flatIndex += 1
+                            }
+                            if foundPage >= 0 { break }
+                        }
+
+                        guard foundPage >= 0, foundLegInPage >= 0 else {
+                            print("❌ Could not locate leg \(legIndex) in logpages")
+                            return
+                        }
+
+                        print("🔄 Found leg at page \(foundPage), leg \(foundLegInPage)")
+
+                        // First, set the current active leg to standby (if there is one)
+                        if let currentActiveLegIndex = updatedTrip.activeLegIndex {
+                            print("🔄 Current active leg is at index \(currentActiveLegIndex), setting to standby")
+                            updatedTrip.updateLegStatus(at: currentActiveLegIndex, to: .standby)
+                        }
+
+                        // Set the target leg back to active and turn off ground ops
+                        updatedTrip.logpages[foundPage].legs[foundLegInPage].status = .active
+                        updatedTrip.logpages[foundPage].legs[foundLegInPage].isGroundOperationsOnly = false
+                        print("🔄 Leg \(legIndex) reactivated as normal flight (ground ops disabled)")
+
+                        // Save
+                        store.updateTrip(updatedTrip, at: tripIndex)
+                        PhoneWatchConnectivity.shared.syncCurrentLegToWatch()
+                        print("🔄 ===== UNDO TAXI COMPLETE =====")
+                    },
                     dutyStartTime: $dutyTimerManager.dutyStartTime,
                     airlineSettings: airlineSettings
                     )
